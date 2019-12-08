@@ -462,7 +462,6 @@ add_library(core
   PowerPC/Interpreter/Interpreter_Paired.cpp
   PowerPC/Interpreter/Interpreter_SystemRegisters.cpp
   PowerPC/Interpreter/Interpreter_Tables.cpp
-	PrimeHack/AimMods.cpp
   PrimeHack/HackConfig.cpp
   PrimeHack/HackManager.cpp
 )
