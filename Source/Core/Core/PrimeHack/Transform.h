@@ -73,6 +73,7 @@ struct Transform {
   Transform operator*(Transform const &rhs) const;
   Transform& operator*=(Transform const &rhs);
   void build_rotation(float yaw, float pitch, float roll);
+  void build_rotation_loc_safe(float yaw, float pitch, float roll);
   
   void read_from(u32 address);
   void write_to(u32 address);

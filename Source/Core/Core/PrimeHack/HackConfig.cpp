@@ -12,6 +12,7 @@
 #include "Core/PrimeHack/Mods/DisableBloom.h"
 #include "Core/PrimeHack/Mods/FpsControls.h"
 #include "Core/PrimeHack/Mods/RestoreDashing.h"
+#include "Core/PrimeHack/Mods/MorphBallCamera.h"
 #include "Core/PrimeHack/Mods/Invulnerability.h"
 #include "Core/PrimeHack/Mods/Noclip.h"
 #include "Core/PrimeHack/Mods/SkipCutscene.h"
@@ -54,6 +55,7 @@ void InitializeHack() {
   hack_mgr.add_mod("disable_bloom", std::make_unique<DisableBloom>());
   hack_mgr.add_mod("fps_controls", std::make_unique<FpsControls>());
   hack_mgr.add_mod("invulnerability", std::make_unique<Invulnerability>());
+  hack_mgr.add_mod("morphball_camera", std::make_unique<MorphBallCamera>());
   hack_mgr.add_mod("noclip", std::make_unique<Noclip>());
   hack_mgr.add_mod("skip_cutscene", std::make_unique<SkipCutscene>());
   hack_mgr.add_mod("restore_dashing", std::make_unique<RestoreDashing>());
@@ -73,6 +75,7 @@ void InitializeHack() {
 
 
   hack_mgr.enable_mod("fps_controls");
+  hack_mgr.enable_mod("morphball_camera");
   hack_mgr.enable_mod("springball_button");
   hack_mgr.enable_mod("context_sensitive_controls");
   hack_mgr.enable_mod("portal_skip_mp2");

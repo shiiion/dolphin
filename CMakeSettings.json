@@ -1,4 +1,4 @@
-{
+﻿{
   "configurations": [
     {
       "name": "Release",
@@ -11,9 +11,11 @@
       "variables": [
         {
           "name": "Qt5_DIR",
-          "value": "${workspaceRoot}\\Externals\\Qt\\Qt5.15.0\\msvc2019_64\\lib\\cmake\\Qt5"
+          "value": "${workspaceRoot}\\Externals\\Qt\\Qt5.15.0\\msvc2019_64\\lib\\cmake\\Qt5",
+          "type": "STRING"
         }
-      ]
+      ],
+      "cmakeToolchain": "${workspaceRoot}\\blank_cmake_toolchain.cmake"
     },
     {
       "name": "Debug",
@@ -26,7 +28,8 @@
       "variables": [
         {
           "name": "Qt5_DIR",
-          "value": "${workspaceRoot}\\Externals\\Qt\\Qt5.15.0\\msvc2019_64\\lib\\cmake\\Qt5"
+          "value": "${workspaceRoot}\\Externals\\Qt\\Qt5.15.0\\msvc2019_64\\lib\\cmake\\Qt5",
+          "type": "STRING"
         }
       ]
     },
@@ -41,15 +44,18 @@
       "variables": [
         {
           "name": "Qt5_DIR",
-          "value": "${workspaceRoot}\\Externals\\Qt\\Qt5.15.0\\msvc2019_arm64\\lib\\cmake\\Qt5"
+          "value": "${workspaceRoot}\\Externals\\Qt\\Qt5.15.0\\msvc2019_arm64\\lib\\cmake\\Qt5",
+          "type": "STRING"
         },
         {
           "name": "CMAKE_SYSTEM_NAME",
-          "value": "Windows"
+          "value": "Windows",
+          "type": "STRING"
         },
         {
           "name": "CMAKE_SYSTEM_PROCESSOR",
-          "value": "aarch64"
+          "value": "aarch64",
+          "type": "STRING"
         }
       ]
     },
@@ -64,15 +70,18 @@
       "variables": [
         {
           "name": "Qt5_DIR",
-          "value": "${workspaceRoot}\\Externals\\Qt\\Qt5.15.0\\msvc2019_arm64\\lib\\cmake\\Qt5"
+          "value": "${workspaceRoot}\\Externals\\Qt\\Qt5.15.0\\msvc2019_arm64\\lib\\cmake\\Qt5",
+          "type": "STRING"
         },
         {
           "name": "CMAKE_SYSTEM_NAME",
-          "value": "Windows"
+          "value": "Windows",
+          "type": "STRING"
         },
         {
           "name": "CMAKE_SYSTEM_PROCESSOR",
-          "value": "aarch64"
+          "value": "aarch64",
+          "type": "STRING"
         }
       ]
     }

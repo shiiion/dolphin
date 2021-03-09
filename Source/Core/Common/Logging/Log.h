@@ -64,6 +64,9 @@ enum LOG_TYPE
   WII_IPC,
   WIIMOTE,
 
+  // Adding a Log Category for PrimeHack:
+  PRIMEHACK,
+
   NUMBER_OF_LOGS  // Must be last
 };
 

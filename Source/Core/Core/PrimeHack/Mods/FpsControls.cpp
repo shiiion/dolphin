@@ -71,7 +71,19 @@ void FpsControls::run_mod(Game game, Region region) {
   }
 }
 
-void FpsControls::calculate_pitch_delta() {
+bool FpsControls::ball_check(u32 ball_address)
+{
+  u32 ball_state = read32(ball_address);
+
+  if ((ball_state == 1 || ball_state == 2)) {
+    return true;
+  }
+
+  return false;
+}
+
+void FpsControls::calculate_pitch_delta()
+{
   const float compensated_sens = GetSensitivity() * TURNRATE_RATIO / 60.f;
 
   if (CheckPitchRecentre()) {
@@ -265,6 +277,11 @@ void FpsControls::run_mod_menu(Game game, Region region) {
 }
 
 void FpsControls::run_mod_mp1(Region region) {
+  // Don't run FP camera logic in Morphball mode.
+  if (ball_check(get_player_address() + 0x2f4)) {
+    return;
+  }
+
   handle_beam_visor_switch(prime_one_beams, prime_one_visors);
   CheckBeamVisorSetting(Game::PRIME_1);
 
@@ -376,6 +393,13 @@ void FpsControls::run_mod_mp2(Region region) {
   if (!mem_check(cplayer_address)) {
     return;
   }
+
+  // Don't run FP camera logic in Morphball mode.
+  if (ball_check(cplayer_address + 0x374))
+  {
+    return;
+  }
+
 
   if (read32(mp2_static.load_state_address) != 1) {
     return;
@@ -604,6 +628,10 @@ void FpsControls::run_mod_mp3(Game active_game, Region active_region) {
     return;
   }
 
+  // Morphball Camera.
+  if (ball_check(cplayer_address + 0x358)) {
+    return;
+  }
   // In NTSC-J version there is a quiz to select the difficulty
   // This checks if we are ingame
   if (active_region == Region::NTSC_J && read32(mp3_static.cplayer_ptr_address + 0x298) == 0xFFFFFFFF) {

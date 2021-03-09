@@ -40,3 +40,4 @@ CMakeLists.txt.user
 /.vscode/
 /Source/Core/DolphinQt/hack_config.ini
 /Source/Core/DolphinQt/.sav
+blank_cmake_toolchain.cmake

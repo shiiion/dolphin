@@ -22,6 +22,8 @@ private:
   // ------------------------------
   // -----Active Mod Functions-----
   // ------------------------------
+  bool ball_check(u32 ball_address);
+
   void calculate_pitch_delta();
   void calculate_pitch_locked(Game game, Region region);
   void calculate_pitch_to_target(float target_pitch);
