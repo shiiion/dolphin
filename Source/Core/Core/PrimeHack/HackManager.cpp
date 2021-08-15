@@ -7,6 +7,7 @@
 #include "Core/PowerPC/MMU.h"
 
 #include "Core/ConfigManager.h"
+#include "Core/Config/MainSettings.h"
 
 #include "InputCommon/GenericMouse.h"
 
@@ -170,7 +171,7 @@ void HackManager::update_mod_states() {
   set_mod_enabled("auto_efb", UseMPAutoEFB());
   set_mod_enabled("cut_beam_fx_mp1", GetEnableSecondaryGunFX());
 
-  if (settings.bEnableCheats) {
+  if (Config::Get(Config::MAIN_ENABLE_CHEATS)) {
     set_mod_enabled("noclip", GetNoclip());
     set_mod_enabled("invulnerability", GetInvulnerability());
     set_mod_enabled("skip_cutscene", GetSkipCutscene());
