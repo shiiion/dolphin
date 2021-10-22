@@ -17,10 +17,13 @@ namespace prime {
   }
 
   bool BloomIntensityMP3::init_mod(Game game, Region region) {
+    if (game != Game::PRIME_3 && game != Game::PRIME_3_STANDALONE) {
+      return true;
+    }
+    prime::GetVariableManager()->register_variable("bloom_intensity");
+    slider_val = (GetBloomIntensity() / 100.f);
     switch (game) {
     case Game::PRIME_3:
-      prime::GetVariableManager()->register_variable("bloom_intensity");
-      slider_val = (GetBloomIntensity() / 100.f);
       if (region == Region::NTSC_U) {
         replace_start_bloom_func(0x80004290, 0x804852cc);
       }
@@ -29,8 +32,6 @@ namespace prime {
       }
       break;
     case Game::PRIME_3_STANDALONE:
-      prime::GetVariableManager()->register_variable("bloom_intensity");
-      slider_val = (GetBloomIntensity() / 100.f);
       if (region == Region::NTSC_U) {
         replace_start_bloom_func(0x80004290, 0x80486880);
       }
@@ -51,7 +52,7 @@ namespace prime {
     switch (game) {
     case Game::PRIME_3:
     case Game::PRIME_3_STANDALONE:
-      if(slider_val != (GetBloomIntensity() / 100.f)) {
+      if (slider_val != (GetBloomIntensity() / 100.f)) {
         slider_val = (GetBloomIntensity() / 100.f);
         prime::GetVariableManager()->set_variable("bloom_intensity", slider_val);
       }
