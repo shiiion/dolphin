@@ -37,7 +37,7 @@ PrimeWidget::PrimeWidget(GraphicsWindow* parent)
   ToggleShowCrosshair(m_toggle_gc_show_crosshair->isChecked());
   ArmPositionModeChanged(m_manual_arm_position->isChecked());
 
-  m_select_colour->setStyleSheet(
+  m_select_color->setStyleSheet(
       tr("border: 1px solid #") +
       QString::number(Config::Get(Config::GC_CROSSHAIR_COLOR_RGBA) & 0xFFFFFF00, 16) + tr(";"));
 }
@@ -112,14 +112,14 @@ void PrimeWidget::CreateWidgets()
   crosshair_color_box->setLayout(crosshair_color_layout);
 
   colorpicker = new QColorDialog();
-  m_select_colour = new QPushButton(tr("Select Colour"));
-  m_reset_colour = new QPushButton(tr("Reset Colour"));
-  m_reset_colour->setMaximumWidth(100);
+  m_select_color = new QPushButton(tr("Select Color"));
+  m_reset_color = new QPushButton(tr("Reset Color"));
+  m_reset_color->setMaximumWidth(100);
 
   crosshair_color_layout->addWidget(m_toggle_gc_show_crosshair);
   crosshair_color_layout->addSpacing(4);
-  crosshair_color_layout->addWidget(m_reset_colour);
-  crosshair_color_layout->addWidget(m_select_colour);
+  crosshair_color_layout->addWidget(m_reset_color);
+  crosshair_color_layout->addWidget(m_select_color);
 
   // Viewmodel Position
   auto* viewmodel_box = new QGroupBox(tr("Viewmodel Position"));
@@ -197,7 +197,7 @@ void PrimeWidget::ArmPositionModeChanged(bool mode)
 
 void PrimeWidget::ToggleShowCrosshair(bool mode)
 {
-  m_select_colour->setEnabled(mode);
+  m_select_color->setEnabled(mode);
 }
 
 void PrimeWidget::ConnectWidgets()
@@ -228,19 +228,19 @@ void PrimeWidget::ConnectWidgets()
     }
   });
 
-  connect(m_select_colour, &QPushButton::clicked, this, [=]() {
+  connect(m_select_color, &QPushButton::clicked, this, [=]() {
     QColor c = colorpicker->getColor(QColor::fromRgba(0x4b7ea331), this,
-                                     tr("Select a cursor colour"), QColorDialog::ShowAlphaChannel);
+                                     tr("Select a cursor color"), QColorDialog::ShowAlphaChannel);
 
     int r, g, b, a;
     c.getRgb(&r, &g, &b, &a);
-    u32 colour = r << 24 | g << 16 | b << 8 | a;
+    u32 color = r << 24 | g << 16 | b << 8 | a;
 
-    m_select_colour->setStyleSheet(tr("border: 2px solid ") + c.name() + tr(";"));
-    Config::SetBaseOrCurrent(Config::GC_CROSSHAIR_COLOR_RGBA, colour);
+    m_select_color->setStyleSheet(tr("border: 2px solid ") + c.name() + tr(";"));
+    Config::SetBaseOrCurrent(Config::GC_CROSSHAIR_COLOR_RGBA, color);
   });
-  connect(m_reset_colour, &QPushButton::clicked, this, [=]() {
-    m_select_colour->setStyleSheet(tr("border: 2px double #4b7ea3;"));
+  connect(m_reset_color, &QPushButton::clicked, this, [=]() {
+    m_select_color->setStyleSheet(tr("border: 2px double #4b7ea3;"));
     Config::SetBaseOrCurrent(Config::GC_CROSSHAIR_COLOR_RGBA, 0x4b7ea331);
   });
 }
