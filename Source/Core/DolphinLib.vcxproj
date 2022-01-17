@@ -15,6 +15,18 @@
     <Import Project="$(VSPropsDir)PCHUse.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
+  </PropertyGroup>
   <Import Project="DolphinLib.props" />
   <ImportGroup Condition="'$(Platform)'=='x64'">
     <Import Project="DolphinLib.x64.props" />
@@ -24,7 +36,22 @@
   </ImportGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+    <ClCompile>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <ClCompile>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -55,6 +82,7 @@
     <ClCompile Include="InputCommon\ControllerEmu\ControlGroup\PrimeHackModes.cpp" />
     <ClCompile Include="InputCommon\DInputMouseAbsolute.cpp" />
     <ClCompile Include="InputCommon\GenericMouse.cpp" />
+    <ClCompile Include="InputCommon\ControllerEmu\ControlGroup\PrimeHackMorph.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\PrimeHack\AddressDB.h" />
@@ -83,6 +111,7 @@
     <ClInclude Include="InputCommon\ControllerEmu\ControlGroup\PrimeHackModes.h" />
     <ClInclude Include="InputCommon\DInputMouseAbsolute.h" />
     <ClInclude Include="InputCommon\GenericMouse.h" />
+    <ClInclude Include="InputCommon\ControllerEmu\ControlGroup\PrimeHackMorph.h" />
     <ClInclude Include="VideoCommon\PrimePixelErrorTextures.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

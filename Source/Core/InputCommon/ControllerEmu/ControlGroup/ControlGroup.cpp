@@ -13,6 +13,7 @@
 #include "InputCommon/ControllerEmu/ControllerEmu.h"
 #include "InputCommon/ControllerEmu/Setting/NumericSetting.h"
 #include "InputCommon/ControllerEmu/ControlGroup/PrimeHackModes.h"
+#include "InputCommon/ControllerEmu/ControlGroup/PrimeHackMorph.h"
 
 namespace ControllerEmu
 {
@@ -114,13 +115,22 @@ void ControlGroup::LoadConfig(IniFile::Section* sec, const std::string& defdev,
   }
 
   // extensions
-  if (type == GroupType::PrimeHack)
+  if (type == GroupType::PrimeHackMode)
   {
     auto* const ext = static_cast<PrimeHackModes*>(this);
 
     std::string i;
     sec->Get(base + name + "/Mode", &i, "0");
     ext->SetSelectedDevice(stoi(i));
+  }
+
+  if (type == GroupType::PrimeHackMorph)
+  {
+    auto* const ext = static_cast<PrimeHackMorph*>(this);
+
+    std::string prof;
+    sec->Get(base + name + "/MorphBallProfile", &prof);
+    ext->SetSelection(prof);
   }
 }
 
@@ -177,11 +187,18 @@ void ControlGroup::SaveConfig(IniFile::Section* sec, const std::string& defdev,
       ai->SaveConfig(sec, base + ai->GetName() + "/");
   }
 
-  if (type == GroupType::PrimeHack)
+  if (type == GroupType::PrimeHackMode)
   {
     auto* const ext = static_cast<PrimeHackModes*>(this);
 
     sec->Set(base + name + "/Mode", std::to_string(ext->GetSelectedDevice()), "0");
+  }
+
+  if (type == GroupType::PrimeHackMorph)
+  {
+    auto* const ext = static_cast<PrimeHackMorph*>(this);
+
+    sec->Set(base + name + "/MorphBallProfile", ext->GetSelection());
   }
 }
 

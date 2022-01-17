@@ -13,20 +13,25 @@
 #include <QRadioButton>
 #include <QTimer>
 
+#include "Common/FileUtil.h"
+#include "Common/FileSearch.h"
+
 #include "Core/HW/Wiimote.h"
 #include "Core/HW/WiimoteEmu/WiimoteEmu.h"
 #include "Core/HW/WiimoteEmu/Extension/Nunchuk.h"
 #include "Core/PrimeHack/HackConfig.h"
 
-#include "DolphinQt/Config/Mapping/MappingWindow.h"
 #include "DolphinQt/Config/Mapping/WiimoteEmuExtension.h"
 
 #include "InputCommon/ControllerEmu/ControlGroup/Attachments.h"
 #include "InputCommon/ControllerEmu/ControlGroup/PrimeHackModes.h"
+#include "InputCommon/ControllerEmu/ControlGroup/PrimeHackMorph.h"
 #include "InputCommon/InputConfig.h"
 
 #include <QDesktopServices>
 #include <QUrl>
+
+constexpr const char* PROFILES_DIR = "Profiles/";
 
 WiimoteEmuMetroid::WiimoteEmuMetroid(MappingWindow* window, WiimoteEmuExtension* extension)
     : MappingWidget(window), m_extension_widget(extension)
@@ -42,6 +47,40 @@ WiimoteEmuMetroid::WiimoteEmuMetroid(MappingWindow* window, WiimoteEmuExtension*
 
   ConfigChanged();
   SaveSettings();
+}
+
+void WiimoteEmuMetroid::PopulateMorphBallProfiles(QComboBox* combobox)
+{
+  combobox->clear();
+
+  const std::string profiles_path =
+      File::GetUserPath(D_CONFIG_IDX) + PROFILES_DIR + GetConfig()->GetProfileName();
+  for (const auto& filename : Common::DoFileSearch({profiles_path}, {".ini"}))
+  {
+    std::string basename;
+    SplitPath(filename, nullptr, &basename, nullptr);
+    if (!basename.empty())  // Ignore files with an empty name to avoid multiple problems
+      combobox->addItem(QString::fromStdString(basename),
+                                      QString::fromStdString(filename));
+  }
+
+  combobox->insertSeparator(combobox->count());
+
+  const std::string builtin_profiles_path =
+      File::GetSysDirectory() + PROFILES_DIR + GetConfig()->GetProfileName();
+  for (const auto& filename : Common::DoFileSearch({builtin_profiles_path}, {".ini"}))
+  {
+    std::string basename;
+    SplitPath(filename, nullptr, &basename, nullptr);
+    if (!basename.empty())
+    {
+      // i18n: "Stock" refers to input profiles included with Dolphin
+      combobox->addItem(tr("%1 (Stock)").arg(QString::fromStdString(basename)),
+                                      QString::fromStdString(filename));
+    }
+  }
+
+  combobox->setCurrentIndex(-1);
 }
 
 void WiimoteEmuMetroid::CreateMainLayout()
@@ -94,6 +133,13 @@ void WiimoteEmuMetroid::CreateMainLayout()
   auto* visor_box = CreateGroupBox(tr("Visors"), Wiimote::GetWiimoteGroup(
       GetPort(), WiimoteEmu::WiimoteGroup::Visors));
   groupbox1->addWidget(visor_box);
+
+  auto* morphball_control_box = CreateGroupBox(tr("Morphball Controller Profile"), Wiimote::GetWiimoteGroup(
+    GetPort(), WiimoteEmu::WiimoteGroup::MorphballControls));
+  groupbox1->addWidget(morphball_control_box);
+  m_morphball_combobox = (morphball_control_box->findChild<QComboBox*>(tr("ProfileList")));
+  m_morphball_combobox->setToolTip(tr("Set the controller profile to use\nwhen in Morph Ball in MP3."));
+  PopulateMorphBallProfiles(m_morphball_combobox);
 
 
   auto* rumble_box = CreateGroupBox(tr("Rumble"), Wiimote::GetWiimoteGroup(
@@ -163,6 +209,7 @@ void WiimoteEmuMetroid::Connect()
     &WiimoteEmuMetroid::OnDeviceSelected);
   connect(m_radio_controller, &QRadioButton::toggled, this,
     &WiimoteEmuMetroid::OnDeviceSelected);
+  connect(m_morphball_combobox, &QComboBox::currentTextChanged, this, &WiimoteEmuMetroid::OnMorphControlSelectionChanged);
 }
 
 void WiimoteEmuMetroid::OnDeviceSelected()
@@ -172,6 +219,19 @@ void WiimoteEmuMetroid::OnDeviceSelected()
 
   ce_modes->SetSelectedDevice(m_radio_mouse->isChecked() ? 0 : 1);
   camera_control->setEnabled(!m_radio_mouse->isChecked());
+
+  ConfigChanged();
+  SaveSettings();
+}
+
+void WiimoteEmuMetroid::OnMorphControlSelectionChanged()
+{
+  //Called as soon as our selection is changed to update the controller preset for Morphball mode.
+  auto* morph_group = static_cast<ControllerEmu::PrimeHackMorph*>(
+      Wiimote::GetWiimoteGroup(GetPort(), WiimoteEmu::WiimoteGroup::MorphballControls));
+
+  std::string curr_text = m_morphball_combobox->currentText().toStdString();
+  morph_group->SetSelection(curr_text);
 
   ConfigChanged();
   SaveSettings();
@@ -198,6 +258,9 @@ void WiimoteEmuMetroid::LoadSettings()
 {
   Wiimote::LoadConfig(); // No need to update hack settings since it's already in LoadConfig.
 
+  auto* morph_group = static_cast<ControllerEmu::PrimeHackMorph*>(
+    Wiimote::GetWiimoteGroup(GetPort(), WiimoteEmu::WiimoteGroup::MorphballControls));
+
   auto* modes = static_cast<ControllerEmu::PrimeHackModes*>(
     Wiimote::GetWiimoteGroup(GetPort(), WiimoteEmu::WiimoteGroup::Modes));
 
@@ -216,6 +279,10 @@ void WiimoteEmuMetroid::LoadSettings()
   m_radio_mouse->setChecked(checked);
   m_radio_controller->setChecked(!checked);
   camera_control->setEnabled(!checked);
+
+  QString text = tr(morph_group->GetSelection().c_str());
+
+  m_morphball_combobox->setCurrentIndex(m_morphball_combobox->findText(text));
 }
 
 void WiimoteEmuMetroid::SaveSettings()
