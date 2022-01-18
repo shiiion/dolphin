@@ -14,8 +14,19 @@ namespace ControllerEmu
     return m_selection_value;
   }
 
+  const std::string& PrimeHackMorph::GetMainProfileName() const
+  {
+    return m_previous_selection;
+  }
+
   void PrimeHackMorph::SetSelection(std::string& val)
   {
     m_selection_value = val;
+  }
+
+  //Used to store the original profile from the main profile for the current WiimoteEmu Window
+  void PrimeHackMorph::SetMainProfileName(std::string& val)
+  {
+    m_previous_selection = val;
   }
 }  // namespace ControllerEmu

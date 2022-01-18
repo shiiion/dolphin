@@ -12,6 +12,7 @@ class QComboBox;
 class QLabel;
 class QRadioButton;
 class WiimoteEmuExtension;
+class MappingWindow;
 
 class WiimoteEmuMetroid final : public MappingWidget
 {

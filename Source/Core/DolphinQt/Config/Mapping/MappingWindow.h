@@ -52,6 +52,7 @@ public:
   explicit MappingWindow(QWidget* parent, Type type, int port_num);
 
   int GetPort() const;
+  std::string GetProfileName() const;
   ControllerEmu::EmulatedController* GetController() const;
   bool IsMappingAllDevices() const;
   void ShowExtensionMotionTabs(bool show);

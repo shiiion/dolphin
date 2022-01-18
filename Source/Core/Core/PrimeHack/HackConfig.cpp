@@ -4,6 +4,11 @@
 #include <string>
 
 #include "Common/IniFile.h"
+#include "Common/CommonPaths.h"
+#include "Common/FileSearch.h"
+#include "Common/FileUtil.h"
+#include "Common/IniFile.h"
+#include "Common/StringUtil.h"
 
 #include "Core/PrimeHack/PrimeUtils.h"
 #include "Core/PrimeHack/EmuVariableManager.h"
@@ -33,9 +38,13 @@
 #include "Core/Config/GraphicsSettings.h"
 
 #include "InputCommon/ControllerInterface/ControllerInterface.h"
+#include "InputCommon/ControllerEmu/ControlGroup/PrimeHackMorph.h"
+#include "InputCommon/InputConfig.h"
 
 #include "VideoCommon/VideoConfig.h"
 #include <Core/Host.h>
+
+constexpr const char* PROFILES_DIR = "Profiles/";
 
 namespace prime {
 namespace {
@@ -249,6 +258,57 @@ std::tuple<float, float, float> GetArmXYZ() {
   float z = Config::Get(Config::ARMPOSITION_UPDOWN) / 100.f;
 
   return std::make_tuple(x, y, z);
+}
+
+// First is morphball profile, Second is main controller profile
+std::pair<std::string, std::string> getProfiles()
+{
+  auto* group = static_cast<ControllerEmu::PrimeHackMorph*>(
+    Wiimote::GetWiimoteGroup(0, WiimoteEmu::WiimoteGroup::MorphballControls));
+
+  //Make sure we get the full path
+  const std::string morph_profile_path = File::GetUserPath(D_CONFIG_IDX) + PROFILES_DIR +
+    Wiimote::GetConfig()->GetProfileName() + "/" + group->GetSelection() +
+    ".ini";
+
+  //Make sure we get the full path
+  const std::string main_profile_path = File::GetUserPath(D_CONFIG_IDX) + PROFILES_DIR +
+    Wiimote::GetConfig()->GetProfileName() + "/" + group->GetMainProfileName() +
+    ".ini";
+
+  return { morph_profile_path, main_profile_path };
+}
+
+void ChangeControllerProfileMorphBall(bool in_morphball, std::string profile_path)
+{
+  //If in morphball load morphball ini, otherwise we load the current profile
+  if (in_morphball)
+  {
+    //Always just get the first controller port
+    //TODO: MAAAAYBE make this work for other ports?
+    
+    //Load the ini
+    IniFile ini;
+    ini.Load(profile_path);
+
+    Wiimote::GetConfig()->GetController(0)->LoadConfig(ini.GetOrCreateSection("Profile"));
+    Wiimote::GetConfig()->GetController(0)->UpdateReferences(g_controller_interface);
+
+    //const auto lock = Wiimote::GetConfig()->GetController(0)->GetStateLock();
+  }
+  else
+  {
+    //Should swap back to main profile with this.
+
+    //Load the ini
+    IniFile ini;
+    ini.Load(profile_path);
+
+    Wiimote::GetConfig()->GetController(0)->LoadConfig(ini.GetOrCreateSection("Profile"));
+    Wiimote::GetConfig()->GetController(0)->UpdateReferences(g_controller_interface);
+
+    //const auto lock = Wiimote::GetConfig()->GetController(0)->GetStateLock();
+  }
 }
 
 void UpdateHackSettings() {

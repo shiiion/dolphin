@@ -1,7 +1,7 @@
 #include "Core/PrimeHack/Mods/FpsControls.h"
 
 #include "Core/PrimeHack/Mods/ContextSensitiveControls.h"
-#include "Core/PrimeHack/PrimeUtils.h"
+#include "Core/PrimeHack/PrimeUtils.h"  //Loads HackConfig.h for us
 
 #include "Common/Timer.h"
 
@@ -670,6 +670,7 @@ void FpsControls::run_mod_mp3(Game active_game, Region active_region) {
     } else {
       handle_cursor(cursor + 0x9c, cursor + 0x15c, active_region);
     }
+
   };
 
   // Handles menu screen cursor
@@ -778,6 +779,25 @@ void FpsControls::run_mod_mp3(Game active_game, Region active_region) {
 
   // Nothing new here
   write32(0, angular_momentum + 0x18);
+
+  // If we just switched to morph ball then change controls,
+  //else if we were just in morph ball last frame but aren't this frame, then switch profile back.
+  //This is to avoid constantly load the same profile over and over as that would be slow.
+  u32 current_ball_state = read32(ball_state);
+  if (current_ball_state == 1 && !was_in_morph_ball)
+  {
+    //Tell HackConfig to switch the controller profile to Morph Ball preset
+    std::string profile = morphball_profile;
+    ChangeControllerProfileMorphBall(true, profile);
+    was_in_morph_ball = true;
+  }
+  else if (current_ball_state == 0 && was_in_morph_ball)
+  {
+    //Tell HackConfig to switch the controller profile back to the controller's previous preset.
+    std::string profile = default_profile;
+    ChangeControllerProfileMorphBall(false, profile);
+    was_in_morph_ball = false;
+  }
 }
 
 void FpsControls::CheckBeamVisorSetting(Game game)
@@ -1824,5 +1844,10 @@ void FpsControls::init_mod_mp3_standalone(Region region) {
     add_code_change(0x80017258, 0x48000120);
   } else {}
   has_beams = false;
+
+  //Setup the standard profiles from the .ini file for MP3 Only
+  std::pair<std::string, std::string> profiles = getProfiles();
+  morphball_profile = profiles.first;
+  default_profile = profiles.second;
 }
 }

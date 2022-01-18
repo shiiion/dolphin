@@ -15,6 +15,8 @@
 
 #include "Core/Core.h"
 #include "Core/HotkeyManager.h"
+#include "Core/HW/Wiimote.h"
+#include "Core/HW/WiimoteEmu/WiimoteEmu.h"
 
 #include "Common/CommonPaths.h"
 #include "Common/FileSearch.h"
@@ -55,6 +57,7 @@
 #include "DolphinQt/Settings.h"
 
 #include "InputCommon/ControllerEmu/ControllerEmu.h"
+#include "InputCommon/ControllerEmu/ControlGroup/PrimeHackMorph.h"
 #include "InputCommon/ControllerInterface/ControllerInterface.h"
 #include "InputCommon/ControllerInterface/CoreDevice.h"
 #include "InputCommon/InputConfig.h"
@@ -306,6 +309,15 @@ void MappingWindow::OnSaveProfilePressed()
 
   if (profile_name.isEmpty())
     return;
+  else
+  {
+    //Make absolutely sure we get the current profile name to save in PrimeHackMorph object
+    auto* morph_group = static_cast<ControllerEmu::PrimeHackMorph*>(
+      Wiimote::GetWiimoteGroup(GetPort(), WiimoteEmu::WiimoteGroup::MorphballControls));
+
+    std::string prof_name = profile_name.toStdString();
+    morph_group->SetMainProfileName(prof_name);
+  }
 
   const std::string profile_path = File::GetUserPath(D_CONFIG_IDX) + PROFILES_DIR +
                                    m_config->GetProfileName() + "/" + profile_name.toStdString() +
@@ -320,6 +332,7 @@ void MappingWindow::OnSaveProfilePressed()
 
   if (m_profiles_combo->findText(profile_name) == -1)
   {
+
     PopulateProfileSelection();
     m_profiles_combo->setCurrentIndex(m_profiles_combo->findText(profile_name));
   }
@@ -550,6 +563,11 @@ QWidget* MappingWindow::AddWidget(const QString& name, QWidget* widget)
 int MappingWindow::GetPort() const
 {
   return m_port;
+}
+
+std::string MappingWindow::GetProfileName() const
+{
+  return m_profiles_combo->currentText().toStdString();
 }
 
 ControllerEmu::EmulatedController* MappingWindow::GetController() const

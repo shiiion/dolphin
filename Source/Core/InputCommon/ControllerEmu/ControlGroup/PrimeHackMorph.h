@@ -22,9 +22,12 @@ namespace ControllerEmu
     explicit PrimeHackMorph(const std::string& name, const std::string& default_selection);
 
     const std::string& GetSelection() const;
+    const std::string& GetMainProfileName() const;
     void SetSelection(std::string& val);
+    void SetMainProfileName(std::string& val);
 
   private:
     std::string m_selection_value;
+    std::string m_previous_selection;
   };
 }  // namespace ControllerEmu

@@ -20,13 +20,16 @@
 #include "Core/HW/WiimoteEmu/WiimoteEmu.h"
 #include "Core/HW/WiimoteEmu/Extension/Nunchuk.h"
 #include "Core/PrimeHack/HackConfig.h"
+#include "Core/PrimeHack/HackManager.h"
 
 #include "DolphinQt/Config/Mapping/WiimoteEmuExtension.h"
+#include "DolphinQt/Config/Mapping/MappingWindow.h"
 
 #include "InputCommon/ControllerEmu/ControlGroup/Attachments.h"
 #include "InputCommon/ControllerEmu/ControlGroup/PrimeHackModes.h"
 #include "InputCommon/ControllerEmu/ControlGroup/PrimeHackMorph.h"
 #include "InputCommon/InputConfig.h"
+
 
 #include <QDesktopServices>
 #include <QUrl>
@@ -283,10 +286,17 @@ void WiimoteEmuMetroid::LoadSettings()
   QString text = tr(morph_group->GetSelection().c_str());
 
   m_morphball_combobox->setCurrentIndex(m_morphball_combobox->findText(text));
+
 }
 
 void WiimoteEmuMetroid::SaveSettings()
 {
+  //Make sure to populate profile into morphball group before it's updated by controller saveconfig.
+  auto* morph_group = static_cast<ControllerEmu::PrimeHackMorph*>(
+    Wiimote::GetWiimoteGroup(GetPort(), WiimoteEmu::WiimoteGroup::MorphballControls));
+  std::string profile_name = GetParent()->GetProfileName();
+  morph_group->SetMainProfileName(profile_name);
+
   Wiimote::GetConfig()->SaveConfig();
 
   prime::UpdateHackSettings();
