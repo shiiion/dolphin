@@ -23,6 +23,7 @@
       <SubSystem>Console</SubSystem>
     </Link>
     <ClCompile>
+<<<<<<< HEAD
       <LanguageStandard Condition="'$(Configuration)|$(Platform)'=='Release|x64'">stdcpp20</LanguageStandard>
     </ClCompile>
     <ClCompile>
@@ -33,6 +34,9 @@
     </ClCompile>
     <ClCompile>
       <LanguageStandard Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">stdcpp20</LanguageStandard>
+=======
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
+>>>>>>> 426aae7624b00b77d1243cb24b9ebfcfd612139a
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>

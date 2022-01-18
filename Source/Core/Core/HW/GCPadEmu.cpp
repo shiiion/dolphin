@@ -337,7 +337,17 @@ std::tuple<double, double> GCPad::GetPrimeStickXY()
 
 bool GCPad::CheckPitchRecentre()
 {
-  return m_primehack_stick->controls[5]->GetState() > 0.5;
+  // Check if L Button is pressed.
+  // This forces interpolation to stop while holding button for strafe so we don't have that jerking
+  // back to center When locking on since we've pressed or let go (if using NOT) of the recenter button.
+  // More accurately simulates the GC Prime freelook.
+  // TODO: adjust the recenter interpolation rate (or better yet, allows USERS to adjust recenter
+  // value) (function is elsewhere)
+  // Also, this isn't perfect because if the user aims again before recentering, the old rate will still exist, so maybe RESET rate???
+  if (m_triggers->controls[2]->GetState() > 0.5)
+    return false;
+  else
+    return m_primehack_stick->controls[5]->GetState() > 0.5;
 }
 
 bool GCPad::PrimeControllerMode()
