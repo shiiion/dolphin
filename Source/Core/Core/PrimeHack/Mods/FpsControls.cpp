@@ -780,23 +780,39 @@ void FpsControls::run_mod_mp3(Game active_game, Region active_region) {
   // Nothing new here
   write32(0, angular_momentum + 0x18);
 
-  // If we just switched to morph ball then change controls,
-  //else if we were just in morph ball last frame but aren't this frame, then switch profile back.
+  //TODO: Need to fix one edge case.  Sometimes you can get stuck in morphball profile if you don't load/save a profile before exiting
+  //      the configuration menu.  Doesn't seem to happen consistently.
+  // 
+  //      Possible solution:  Change MappingWindow.cpp to force the loaded profile into the index upon opening the window.
+  //                          But right now, no text (that I know of) is being loaded into it, hence it being blank upon
+  //                          entry into the Emulated controller menu.  Might have to make an index variable to store index
+
+
   //This is to avoid constantly load the same profile over and over as that would be slow.
   u32 current_ball_state = read32(ball_state);
   if (current_ball_state == 1 && !was_in_morph_ball)
   {
     //Tell HackConfig to switch the controller profile to Morph Ball preset
     std::string profile = morphball_profile;
-    ChangeControllerProfileMorphBall(true, profile);
-    was_in_morph_ball = true;
+
+    //If empty, simply don't bother with this whole morphball profile nonsense.
+    if (!profile.empty())
+    {
+      ChangeControllerProfileMorphBall(true, profile);
+      was_in_morph_ball = true;
+    }
   }
   else if (current_ball_state == 0 && was_in_morph_ball)
   {
     //Tell HackConfig to switch the controller profile back to the controller's previous preset.
     std::string profile = default_profile;
-    ChangeControllerProfileMorphBall(false, profile);
-    was_in_morph_ball = false;
+
+    //If empty
+    if (!profile.empty())
+    {
+      ChangeControllerProfileMorphBall(false, profile);
+      was_in_morph_ball = false;
+    }
   }
 }
 

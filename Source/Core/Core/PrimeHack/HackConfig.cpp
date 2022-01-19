@@ -267,14 +267,27 @@ std::pair<std::string, std::string> getProfiles()
     Wiimote::GetWiimoteGroup(0, WiimoteEmu::WiimoteGroup::MorphballControls));
 
   //Make sure we get the full path
-  const std::string morph_profile_path = File::GetUserPath(D_CONFIG_IDX) + PROFILES_DIR +
-    Wiimote::GetConfig()->GetProfileName() + "/" + group->GetMorphBallProfileName() +
-    ".ini";
+  const std::string morph_profname = group->GetMorphBallProfileName();
+  const std::string main_profname = group->GetMainProfileName();
+  std::string morph_profile_path;
+  std::string main_profile_path;
 
-  //Make sure we get the full path
-  const std::string main_profile_path = File::GetUserPath(D_CONFIG_IDX) + PROFILES_DIR +
-    Wiimote::GetConfig()->GetProfileName() + "/" + group->GetMainProfileName() +
-    ".ini";
+  //Prevent any goofiness.  If either profile name is empty just burn it all down...
+  //  Just kidding, simply return nothing in either string.
+  if (!morph_profname.empty() && !main_profname.empty())
+  {
+    morph_profile_path = File::GetUserPath(D_CONFIG_IDX) + PROFILES_DIR +
+      Wiimote::GetConfig()->GetProfileName() + "/" + group->GetMorphBallProfileName() +
+      ".ini";
+    main_profile_path = File::GetUserPath(D_CONFIG_IDX) + PROFILES_DIR +
+      Wiimote::GetConfig()->GetProfileName() + "/" + group->GetMainProfileName() +
+      ".ini";
+  }
+  else
+  {
+    morph_profile_path = "";
+    main_profile_path = "";
+  }
 
   return { morph_profile_path, main_profile_path };
 }
