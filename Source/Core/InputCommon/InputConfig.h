@@ -47,8 +47,6 @@ public:
 
   std::string GetGUIName() const { return m_gui_name; }
   std::string GetProfileName() const { return m_profile_name; }
-  std::string GetININame() const { return m_ini_name; }
-  std::string GetINIProfileName() const { return m_ini_profile_name; }
   int GetControllerCount() const;
   void SetINIProfileName(std::string const& name);
 
