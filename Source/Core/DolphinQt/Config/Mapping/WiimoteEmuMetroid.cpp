@@ -236,6 +236,8 @@ void WiimoteEmuMetroid::OnMorphControlSelectionChanged()
   std::string curr_text = m_morphball_combobox->currentText().toStdString();
   morph_group->SetSelection(curr_text);
 
+  //TODO: Find a nice way to fix saving "NONE" for the profile.  Maybe pull it directly from the currently selected control's ini file.
+
   ConfigChanged();
   SaveSettings();
 }
@@ -291,12 +293,6 @@ void WiimoteEmuMetroid::LoadSettings()
 
 void WiimoteEmuMetroid::SaveSettings()
 {
-  //Make sure to populate profile into morphball group before it's updated by controller saveconfig.
-  auto* morph_group = static_cast<ControllerEmu::PrimeHackMorph*>(
-    Wiimote::GetWiimoteGroup(GetPort(), WiimoteEmu::WiimoteGroup::MorphballControls));
-  std::string profile_name = GetParent()->GetProfileName();
-  morph_group->SetMainProfileName(profile_name);
-
   Wiimote::GetConfig()->SaveConfig();
 
   prime::UpdateHackSettings();

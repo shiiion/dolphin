@@ -281,11 +281,12 @@ std::pair<std::string, std::string> getProfiles()
 
 void ChangeControllerProfileMorphBall(bool in_morphball, std::string profile_path)
 {
-  //If in morphball load morphball ini, otherwise we load the current profile
   if (in_morphball)
   {
     //Always just get the first controller port
     //TODO: MAAAAYBE make this work for other ports?
+
+    //Swap to morphball profile
     
     //Load the ini
     IniFile ini;
@@ -298,7 +299,7 @@ void ChangeControllerProfileMorphBall(bool in_morphball, std::string profile_pat
   }
   else
   {
-    //Should swap back to main profile with this.
+    //Swap back to main profile.
 
     //Load the ini
     IniFile ini;
