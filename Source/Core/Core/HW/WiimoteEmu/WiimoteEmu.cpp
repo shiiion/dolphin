@@ -815,7 +815,7 @@ std::tuple<double, double> Wiimote::GetPrimeStickXY()
 
 bool Wiimote::CheckPitchRecentre()
 {
-    return m_primehack_stick->controls[5]->GetState() > 0.5;
+  return m_primehack_stick->controls[5]->GetState() > 0.5;
 }
 
 std::tuple<bool, bool> Wiimote::GetBVMenuOptions()

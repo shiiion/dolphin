@@ -22,8 +22,8 @@
 #include "Core/PrimeHack/HackConfig.h"
 #include "Core/PrimeHack/HackManager.h"
 
-#include "DolphinQt/Config/Mapping/WiimoteEmuExtension.h"
 #include "DolphinQt/Config/Mapping/MappingWindow.h"
+#include "DolphinQt/Config/Mapping/WiimoteEmuExtension.h"
 
 #include "InputCommon/ControllerEmu/ControlGroup/Attachments.h"
 #include "InputCommon/ControllerEmu/ControlGroup/PrimeHackModes.h"
