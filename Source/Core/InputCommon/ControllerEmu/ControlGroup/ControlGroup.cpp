@@ -130,10 +130,9 @@ void ControlGroup::LoadConfig(IniFile::Section* sec, const std::string& defdev,
 
     std::string prof;
     sec->Get(base + name + "/MorphBallProfile", &prof);
-    ext->SetSelection(prof);
-    std::string mainprof;
-    sec->Get(base + name + "/MainProfileName", &mainprof);
-    ext->SetMainProfileName(mainprof);
+    ext->SetMorphBallProfileName(prof);
+    sec->Get(base + name + "/MainProfileName", &prof);
+    ext->SetMainProfileName(prof);
   }
 }
 
@@ -201,7 +200,7 @@ void ControlGroup::SaveConfig(IniFile::Section* sec, const std::string& defdev,
   {
     auto* const ext = static_cast<PrimeHackMorph*>(this);
 
-    sec->Set(base + name + "/MorphBallProfile", ext->GetSelection());
+    sec->Set(base + name + "/MorphBallProfile", ext->GetMorphBallProfileName());
     sec->Set(base + name + "/MainProfileName", ext->GetMainProfileName());
   }
 }

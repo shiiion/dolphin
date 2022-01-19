@@ -268,7 +268,7 @@ std::pair<std::string, std::string> getProfiles()
 
   //Make sure we get the full path
   const std::string morph_profile_path = File::GetUserPath(D_CONFIG_IDX) + PROFILES_DIR +
-    Wiimote::GetConfig()->GetProfileName() + "/" + group->GetSelection() +
+    Wiimote::GetConfig()->GetProfileName() + "/" + group->GetMorphBallProfileName() +
     ".ini";
 
   //Make sure we get the full path
@@ -281,34 +281,23 @@ std::pair<std::string, std::string> getProfiles()
 
 void ChangeControllerProfileMorphBall(bool in_morphball, std::string profile_path)
 {
+  IniFile ini;
+  ini.Load(profile_path);
+
   if (in_morphball)
   {
-    //Always just get the first controller port
     //TODO: MAAAAYBE make this work for other ports?
-
     //Swap to morphball profile
-    
-    //Load the ini
-    IniFile ini;
-    ini.Load(profile_path);
-
+ 
     Wiimote::GetConfig()->GetController(0)->LoadConfig(ini.GetOrCreateSection("Profile"));
     Wiimote::GetConfig()->GetController(0)->UpdateReferences(g_controller_interface);
-
-    //const auto lock = Wiimote::GetConfig()->GetController(0)->GetStateLock();
   }
   else
   {
     //Swap back to main profile.
 
-    //Load the ini
-    IniFile ini;
-    ini.Load(profile_path);
-
     Wiimote::GetConfig()->GetController(0)->LoadConfig(ini.GetOrCreateSection("Profile"));
     Wiimote::GetConfig()->GetController(0)->UpdateReferences(g_controller_interface);
-
-    //const auto lock = Wiimote::GetConfig()->GetController(0)->GetStateLock();
   }
 }
 

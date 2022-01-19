@@ -8,8 +8,8 @@ namespace ControllerEmu
   {
   }
 
-    // Always return controller mode for platforms with input APIs we don't support.
-  const std::string& PrimeHackMorph::GetSelection() const
+    // Returns the MorphBall Profile
+  const std::string& PrimeHackMorph::GetMorphBallProfileName() const
   {
     return m_selection_value;
   }
@@ -19,12 +19,11 @@ namespace ControllerEmu
     return m_previous_selection;
   }
 
-  void PrimeHackMorph::SetSelection(std::string& val)
+  void PrimeHackMorph::SetMorphBallProfileName(std::string& val)
   {
     m_selection_value = val;
   }
 
-  //Used to store the original profile from the main profile for the current WiimoteEmu Window
   void PrimeHackMorph::SetMainProfileName(std::string& val)
   {
     m_previous_selection = val;

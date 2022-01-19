@@ -196,11 +196,6 @@ void InputConfig::SaveConfig()
   inifile.Save(ini_filename);
 }
 
-void InputConfig::SetINIProfileName(std::string const& name)
-{
-  m_ini_profile_name = name;
-}
-
 ControllerEmu::EmulatedController* InputConfig::GetController(int index) const
 {
   return m_controllers.at(index).get();

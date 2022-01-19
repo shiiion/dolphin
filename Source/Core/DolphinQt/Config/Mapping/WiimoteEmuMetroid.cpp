@@ -234,7 +234,7 @@ void WiimoteEmuMetroid::OnMorphControlSelectionChanged()
       Wiimote::GetWiimoteGroup(GetPort(), WiimoteEmu::WiimoteGroup::MorphballControls));
 
   std::string curr_text = m_morphball_combobox->currentText().toStdString();
-  morph_group->SetSelection(curr_text);
+  morph_group->SetMorphBallProfileName(curr_text);
 
   //TODO: Find a nice way to fix saving "NONE" for the profile.  Maybe pull it directly from the currently selected control's ini file.
 
@@ -285,7 +285,7 @@ void WiimoteEmuMetroid::LoadSettings()
   m_radio_controller->setChecked(!checked);
   camera_control->setEnabled(!checked);
 
-  QString text = tr(morph_group->GetSelection().c_str());
+  QString text = tr(morph_group->GetMorphBallProfileName().c_str());
 
   m_morphball_combobox->setCurrentIndex(m_morphball_combobox->findText(text));
 
