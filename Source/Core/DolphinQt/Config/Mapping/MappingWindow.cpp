@@ -15,6 +15,8 @@
 
 #include "Core/Core.h"
 #include "Core/HotkeyManager.h"
+#include "Core/HW/Wiimote.h"
+#include "Core/HW/WiimoteEmu/WiimoteEmu.h"
 
 #include "Common/CommonPaths.h"
 #include "Common/FileSearch.h"
@@ -55,6 +57,7 @@
 #include "DolphinQt/Settings.h"
 
 #include "InputCommon/ControllerEmu/ControllerEmu.h"
+#include "InputCommon/ControllerEmu/ControlGroup/PrimeHackMorph.h"
 #include "InputCommon/ControllerInterface/ControllerInterface.h"
 #include "InputCommon/ControllerInterface/CoreDevice.h"
 #include "InputCommon/InputConfig.h"

@@ -6,6 +6,8 @@
 
 #include "DolphinQt/Config/Mapping/MappingWidget.h"
 
+class QHBoxLayout;
+class QGroupBox;
 class QComboBox;
 class QLabel;
 class QRadioButton;
@@ -23,13 +25,17 @@ public:
   QRadioButton* m_radio_mouse;
   QRadioButton* m_radio_controller;
   QPushButton* m_help_button;
+  QComboBox* m_morphball_combobox;
+
 private:
   void LoadSettings() override;
   void SaveSettings() override;
   void CreateMainLayout();
+  void PopulateMorphBallProfiles(QComboBox* combobox);
   void Connect();
 
   void OnDeviceSelected();
+  void OnMorphControlSelectionChanged();
   void ConfigChanged();
   void Update();
 

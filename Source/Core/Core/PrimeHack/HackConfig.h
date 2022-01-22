@@ -76,6 +76,10 @@ CameraLock GetLockCamera();
 bool CheckPitchRecentre();
 bool ControllerMode();
 
+// Used to handle Morphball Controller Switch in WiimoteEmuMetroid.cpp, PrimeHackWiiEmu.cpp, etc.
+std::pair<std::string, std::string> getProfiles();
+void ChangeControllerProfileMorphBall(std::string profile);
+
 double GetHorizontalAxis();
 double GetVerticalAxis();
 
