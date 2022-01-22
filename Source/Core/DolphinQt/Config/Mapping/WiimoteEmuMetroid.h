@@ -31,12 +31,15 @@ private:
   void LoadSettings() override;
   void SaveSettings() override;
   void CreateMainLayout();
-  void PopulateMorphBallProfiles(QComboBox* combobox);
+  void UpdateMorphProfileBackupFile();
+  void PopulateMorphBallProfiles();
   void Connect();
 
   void OnDeviceSelected();
   void OnMorphControlSelectionChanged();
   void ConfigChanged();
+  void MappingWindowProfileSave();
+  void MappingWindowProfileLoad();
   void Update();
 
   WiimoteEmuExtension* m_extension_widget;

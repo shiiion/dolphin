@@ -301,6 +301,7 @@ void MappingWindow::OnLoadProfilePressed()
 
   const auto lock = GetController()->GetStateLock();
   emit ConfigChanged();
+  emit ProfileLoaded();
 }
 
 void MappingWindow::OnSaveProfilePressed()
@@ -326,6 +327,8 @@ void MappingWindow::OnSaveProfilePressed()
     PopulateProfileSelection();
     m_profiles_combo->setCurrentIndex(m_profiles_combo->findText(profile_name));
   }
+  emit ConfigChanged();
+  emit ProfileSaved();
 }
 
 void MappingWindow::OnSelectDevice(int)
