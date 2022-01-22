@@ -22,9 +22,7 @@ namespace ControllerEmu
     explicit PrimeHackMorph(const std::string& name, const std::string& default_selection);
 
     const std::string& GetMorphBallProfileName() const;
-    const std::string& GetMainProfileName() const;
     void SetMorphBallProfileName(std::string& val);
-    void SetMainProfileName(std::string& val);
 
   private:
     std::string m_selection_value;

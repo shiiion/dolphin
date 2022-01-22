@@ -268,7 +268,6 @@ std::pair<std::string, std::string> getProfiles()
 
   //Make sure we get the full path
   const std::string morph_profname = group->GetMorphBallProfileName();
-  const std::string main_profname = group->GetMainProfileName();
   std::string morph_profile_path;
   std::string main_profile_path;
 

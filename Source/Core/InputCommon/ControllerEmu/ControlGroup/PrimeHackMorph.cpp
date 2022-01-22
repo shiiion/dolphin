@@ -14,18 +14,8 @@ namespace ControllerEmu
     return m_selection_value;
   }
 
-  const std::string& PrimeHackMorph::GetMainProfileName() const
-  {
-    return m_previous_selection;
-  }
-
   void PrimeHackMorph::SetMorphBallProfileName(std::string& val)
   {
     m_selection_value = val;
-  }
-
-  void PrimeHackMorph::SetMainProfileName(std::string& val)
-  {
-    m_previous_selection = val;
   }
 }  // namespace ControllerEmu
