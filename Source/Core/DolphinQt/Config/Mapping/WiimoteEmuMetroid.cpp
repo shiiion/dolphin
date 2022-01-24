@@ -166,6 +166,7 @@ void WiimoteEmuMetroid::CreateMainLayout()
   groupbox1->addWidget(morphball_control_box);
   m_morphball_combobox = (morphball_control_box->findChild<QComboBox*>(tr("ProfileList")));
   m_morphball_combobox->setToolTip(tr("Set the controller profile to use\nwhen in Morph Ball in MP3."));
+  m_morphball_combobox->setEditable(false);
 
   PopulateMorphBallProfiles();
 

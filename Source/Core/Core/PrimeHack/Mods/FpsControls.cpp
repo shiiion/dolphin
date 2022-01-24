@@ -780,29 +780,8 @@ void FpsControls::run_mod_mp3(Game active_game, Region active_region) {
   // Nothing new here
   write32(0, angular_momentum + 0x18);
 
-
-  //This is to avoid constantly load the same profile over and over as that would be slow.
   u32 current_ball_state = read32(ball_state);
-  if (current_ball_state == 1 && !was_in_morph_ball)
-  {
-    //Tell HackConfig to switch the controller profile to Morph Ball preset
-    std::string profile = getProfiles().first;
-
-    //If empty or "None" then we know the user doesn't want to use Morphball preset.
-    if (!profile.empty() && (profile != std::string("None")))
-    {
-      ChangeControllerProfileMorphBall(profile);
-    }
-    was_in_morph_ball = true;
-  }
-  else if (current_ball_state == 0 && was_in_morph_ball)
-  {
-    //Tell HackConfig to switch the controller profile back to the controller's previous preset.
-    std::string profile = getProfiles().second;
-
-    ChangeControllerProfileMorphBall(profile);
-    was_in_morph_ball = false;
-  }
+  swap_morph_profiles(current_ball_state);
 }
 
 void FpsControls::CheckBeamVisorSetting(Game game)

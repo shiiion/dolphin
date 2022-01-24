@@ -260,26 +260,20 @@ std::tuple<float, float, float> GetArmXYZ() {
   return std::make_tuple(x, y, z);
 }
 
-// First is morphball profile, Second is main controller profile
-std::pair<std::string, std::string> getProfiles()
-{
+
+std::pair<std::string, std::string> GetProfiles() {
   auto* group = static_cast<ControllerEmu::PrimeHackMorph*>(
     Wiimote::GetWiimoteGroup(0, WiimoteEmu::WiimoteGroup::MorphballControls));
 
-  //Make sure we get the full path
   const std::string morph_profname = group->GetMorphBallProfileName();
   std::string morph_profile_path;
   std::string main_profile_path;
 
-  //Prevent any goofiness...
-  if (!morph_profname.empty() && (morph_profname != std::string("None")))
-  {
+  if (!morph_profname.empty() && (morph_profname != std::string("None"))) {
     morph_profile_path = File::GetUserPath(D_CONFIG_IDX) + PROFILES_DIR +
       Wiimote::GetConfig()->GetProfileName() + "/" + group->GetMorphBallProfileName() +
       ".ini";
-  }
-  else
-  {
+  } else {
     morph_profile_path = "";
   }
 
@@ -293,19 +287,10 @@ void ChangeControllerProfileMorphBall(std::string profile_path)
   IniFile ini;
   ini.Load(profile_path);
 
-  //Hacky way to figure out if we're loading from backup controller state or loading a real profile
-  IniFile::Section* section = ini.GetSection("Wiimote1");
+  std::string profile_name = ini.GetSection("Wiimote1") ? "Wiimote1" : "Profile";
 
-  if (section)
-  {
-    Wiimote::GetConfig()->GetController(0)->LoadConfig(ini.GetOrCreateSection("Wiimote1"));
-    Wiimote::GetConfig()->GetController(0)->UpdateReferences(g_controller_interface);
-  }
-  else
-  {
-    Wiimote::GetConfig()->GetController(0)->LoadConfig(ini.GetOrCreateSection("Profile"));
-    Wiimote::GetConfig()->GetController(0)->UpdateReferences(g_controller_interface);
-  }
+  Wiimote::GetConfig()->GetController(0)->LoadConfig(ini.GetOrCreateSection(profile_name));
+  Wiimote::GetConfig()->GetController(0)->UpdateReferences(g_controller_interface);
 }
 
 void UpdateHackSettings() {
