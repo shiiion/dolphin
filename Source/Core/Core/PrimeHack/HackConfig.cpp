@@ -269,7 +269,7 @@ std::pair<std::string, std::string> GetProfiles() {
   std::string morph_profile_path;
   std::string main_profile_path;
 
-  if (!morph_profname.empty() && (morph_profname != std::string("None"))) {
+  if (!morph_profname.empty() && (morph_profname != std::string("Disabled"))) {
     morph_profile_path = File::GetUserPath(D_CONFIG_IDX) + PROFILES_DIR +
       Wiimote::GetConfig()->GetProfileName() + "/" + group->GetMorphBallProfileName() +
       ".ini";

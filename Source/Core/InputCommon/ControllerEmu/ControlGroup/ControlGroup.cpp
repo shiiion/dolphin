@@ -205,7 +205,7 @@ void ControlGroup::SaveConfig(IniFile::Section* sec, const std::string& defdev,
 
     std::string morph_prof = ext->GetMorphBallProfileName();
     if (morph_prof.empty())
-      morph_prof = "None";
+      morph_prof = "Disabled";
     sec->Set(base + name + "/MorphBallProfile", morph_prof);
 
 

@@ -213,7 +213,7 @@ void swap_morph_profiles(u32 ball_state) {
   if (ball_state == 1 && !was_in_morphball) {
     std::string profile = GetProfiles().first;
 
-    if (!profile.empty() && (profile != std::string("None"))) {
+    if (!profile.empty() && (profile != std::string("Disabled"))) {
       ChangeControllerProfileMorphBall(profile);
     }
     was_in_morphball = true;

@@ -344,8 +344,6 @@ Wiimote::Wiimote(const unsigned int index) : m_index(index)
   m_primehack_visors->AddSetting(
     &m_primehack_visor_menu, {"Enable Visor Menu", nullptr, nullptr, _trans("Enable Visor Menu")}, false);
 
-  // PrimeHack Morphball Controls
-  // Menu options for this Group are stored in the WiimoteEmu files (WiimoteEmuMetroid.cpp, PrimeHackEmuWii.cpp, etc.)
   groups.emplace_back(m_primehack_morphball_controls = new ControllerEmu::PrimeHackMorph(_trans("PrimeHack"), ""));
 
   groups.emplace_back(m_primehack_camera = new ControllerEmu::ControlGroup(_trans("PrimeHack")));
