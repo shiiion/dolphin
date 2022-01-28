@@ -159,7 +159,7 @@ void WiimoteEmuMetroid::CreateMainLayout()
       GetPort(), WiimoteEmu::WiimoteGroup::Visors));
   groupbox1->addWidget(visor_box);
 
-  auto* morphball_control_box = CreateGroupBox(tr("Morphball Controller Profile"), Wiimote::GetWiimoteGroup(
+  auto* morphball_control_box = CreateGroupBox(tr("Morphball Profile"), Wiimote::GetWiimoteGroup(
     GetPort(), WiimoteEmu::WiimoteGroup::MorphballControls));
   groupbox1->addWidget(morphball_control_box);
   m_morphball_combobox = (morphball_control_box->findChild<QComboBox*>(tr("ProfileList")));
