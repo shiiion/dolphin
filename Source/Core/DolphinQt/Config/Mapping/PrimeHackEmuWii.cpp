@@ -71,6 +71,7 @@ void PrimeHackEmuWii::CreateMainLayout()
   //TODO:  Look into shrinking this by MAYBE shrinking the button padding to 1 instead of 2???
   m_morphball_combobox = new QComboBox();
   m_morphball_combobox->setObjectName(tr("ProfileList"));
+  m_morphball_combobox->setToolTip(tr("Set the controller profile to use\nwhen in Morph Ball."));
   m_morphball_combobox->setEditable(false);
   QFormLayout* misc_box_layout = static_cast<QFormLayout*>(misc_box->layout());
   misc_box_layout->addRow(tr("Morphball Profile"), m_morphball_combobox);
