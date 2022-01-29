@@ -339,6 +339,8 @@ void FpsControls::run_mod_mp1(Region region) {
     if (read32(ball_state) == 0) {
       writef32(calculate_yaw_vel(), angular_momentum);
     }
+
+    swap_morph_profiles(ball_state);
   }
 }
 
@@ -499,6 +501,8 @@ void FpsControls::run_mod_mp2(Region region) {
 
     // Nothing new here
     write32(0, angular_momentum + 0x18);
+
+    swap_morph_profiles(ball_state);
   }
 }
 
@@ -780,8 +784,7 @@ void FpsControls::run_mod_mp3(Game active_game, Region active_region) {
   // Nothing new here
   write32(0, angular_momentum + 0x18);
 
-  u32 current_ball_state = read32(ball_state);
-  swap_morph_profiles(current_ball_state);
+  swap_morph_profiles(ball_state);
 }
 
 void FpsControls::CheckBeamVisorSetting(Game game)
