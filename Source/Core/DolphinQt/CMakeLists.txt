@@ -17,7 +17,11 @@ set(CMAKE_AUTOMOC ON)
 # When Qt5 and Qt6 are given in same NAMES entry, only Qt5 is ever found.
 # find_package(QT NAMES Qt6 COMPONENTS Core Gui Widgets)
 # if(NOT QT_DIR)
-find_package(QT NAMES Qt5 COMPONENTS Core Gui Widgets)
+if (UNIX AND NOT APPLE)
+  find_package(QT NAMES Qt5 COMPONENTS Core Gui Widgets)
+else()
+  find_package(QT NAMES Qt6 COMPONENTS Core Gui Widgets)
+endif()
 # endif()
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Gui Widgets)
 message(STATUS "Found Qt version ${QT_VERSION}")
@@ -663,12 +667,12 @@ if(APPLE)
     add_custom_command(TARGET dolphin-emu
       POST_BUILD COMMAND
       /usr/bin/codesign -f -s "${MACOS_CODE_SIGNING_IDENTITY}" --deep --options=runtime --entitlements "${CMAKE_SOURCE_DIR}/Source/Core/DolphinQt/DolphinEmu$<$<CONFIG:Debug>:Debug>.entitlements" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Dolphin.app" || true)
-    
+
     # Code sign builds for build systems that do have release/debug variants (Xcode)
     add_custom_command(TARGET dolphin-emu
       POST_BUILD COMMAND
       /usr/bin/codesign -f -s "${MACOS_CODE_SIGNING_IDENTITY}" --deep --options=runtime --entitlements "${CMAKE_SOURCE_DIR}/Source/Core/DolphinQt/DolphinEmuDebug.entitlements" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG}/Dolphin.app" || true)
-      
+
     add_custom_command(TARGET dolphin-emu
       POST_BUILD COMMAND
       /usr/bin/codesign -f -s "${MACOS_CODE_SIGNING_IDENTITY}" --deep --options=runtime --entitlements "${CMAKE_SOURCE_DIR}/Source/Core/DolphinQt/DolphinEmu.entitlements" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE}/Dolphin.app" || true)
