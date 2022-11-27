@@ -25,10 +25,10 @@ public:
       }
       break;
     case Game::PRIME_1_GCN_R1:
-      add_return_one(0x8015204c);
+      add_return_one(0x801518e4);
       break;
     case Game::PRIME_1_GCN_R2:
-      add_return_one(0x801d5d78);
+      add_return_one(0x8015204c);
       break;
     case Game::PRIME_2:
       if (region == Region::NTSC_U) {
