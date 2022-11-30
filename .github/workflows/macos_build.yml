@@ -1,0 +1,157 @@
+name: MacOS Build Steps
+
+on: [push, pull_request]
+
+jobs:
+  build_macos:
+    name: macOS Build
+    runs-on: macos-11.0
+    env:
+      CCACHE_BASEDIR: ${{ github.workspace }}
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_COMPRESS: true
+      CCACHE_COMPRESSLEVEL: 9
+      CCACHE_MAXSIZE: 200M
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install Packages
+        env:
+          HOMEBREW_NO_INSTALL_CLEANUP: 1
+          HOMEBREW_NO_ANALYTICS: 1
+        run: |
+          if ! brew install ccache; then
+            brew update
+            brew install ccache
+          fi
+
+      - name: Cache Dependencies
+        id: cache-deps
+        uses: actions/cache@v3
+        with:
+          path: ~/deps
+          key: macOS deps ${{ hashFiles('.github/workflows/scripts/macos/build-dependencies.sh') }}
+
+      - name: Build Dependencies
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: .github/workflows/scripts/macos/build-dependencies.sh
+
+      - name: Cache MoltenVK
+        id: cache-moltenvk
+        uses: actions/cache@v3
+        with:
+          path: ~/moltenvk
+          key: macOS MoltenVK ${{ hashFiles('Externals/MoltenVK') }}
+
+      - name: Build MoltenVK
+        if: steps.cache-moltenvk.outputs.cache-hit != 'true'
+        run: |
+          MVK_VER="$(sed -nr 's/^.*set\(MOLTENVK_VERSION "([^"]+)".*$/\1/p' Externals/MoltenVK/CMakeLists.txt)"
+          if [ -z "$MVK_VER" ]; then
+            echo "::error::Failed to parse MoltenVK version from CMakeLists"
+            exit 1
+          fi
+          git clone --depth 1 --branch "$MVK_VER" https://github.com/KhronosGroup/MoltenVK.git mvk-build
+          pushd mvk-build
+          git apply ../Externals/MoltenVK/patches/*.patch
+          ./fetchDependencies --macos
+          make macos
+          chmod 755 Package/Release/MoltenVK/dylib/macOS/libMoltenVK.dylib
+          mkdir -p "$HOME/moltenvk/lib/"
+          mv Package/Release/MoltenVK/dylib/macOS/libMoltenVK.dylib "$HOME/moltenvk/lib/"
+          popd
+          rm -rf mvk-build
+
+      # -- SETUP CCACHE - https://cristianadam.eu/20200113/speeding-up-c-plus-plus-github-actions-using-ccache/
+      - name: Prepare ccache timestamp
+        id: ccache_cache_timestamp
+        run: echo "timestamp=$(date -u "+%Y-%m-%d-%H;%M;%S")" >> $GITHUB_OUTPUT
+
+      - name: Cache ccache cache
+        uses: actions/cache@v3
+        with:
+          path: .ccache
+          key: macOS ccache ${{ steps.ccache_cache_timestamp.outputs.timestamp }}
+          restore-keys: macOS ccache
+
+      - name: Generate CMake Files
+        run: |
+          cmake -DCMAKE_OSX_ARCHITECTURES=x86_64 \
+                -DCMAKE_SYSTEM_PROCESSOR=x86_64 \
+                -DCMAKE_SYSTEM_NAME=Darwin \
+                -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 \
+                -DCMAKE_PREFIX_PATH="$HOME/deps;$HOME/moltenvk" \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DUSE_BUNDLED_MOLTENVK=OFF \
+                -DMACOS_CODE_SIGNING=OFF \
+                -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
+                -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+                -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+                -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON \
+                -B build .
+          cmake -DCMAKE_OSX_ARCHITECTURES=arm64 \
+                -DCMAKE_SYSTEM_PROCESSOR=arm64 \
+                -DCMAKE_SYSTEM_NAME=Darwin \
+                -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 \
+                -DCMAKE_PREFIX_PATH="$HOME/deps;$HOME/moltenvk" \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DUSE_BUNDLED_MOLTENVK=OFF \
+                -DMACOS_CODE_SIGNING=OFF \
+                -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
+                -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+                -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+                -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON \
+                -B build-arm .
+
+      - name: Build Dolphin (x86_64)
+        working-directory: build
+        run: |
+          ccache -p
+          ccache -s
+          ccache -z
+          make -j$(getconf _NPROCESSORS_ONLN) dolphin-emu
+          ccache -s
+
+      - name: Build Dolphin (arm64)
+        working-directory: build-arm
+        run: |
+          ccache -p
+          ccache -s
+          ccache -z
+          make -j$(getconf _NPROCESSORS_ONLN) dolphin-emu
+          ccache -s
+
+      - name: Prepare Build Artifacts
+        id: create-artifact
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          lipo -create build/Binaries/Dolphin.app/Contents/MacOS/Dolphin build-arm/Binaries/Dolphin.app/Contents/MacOS/Dolphin -o dolphin
+          mv dolphin build/Binaries/Dolphin.app/Contents/MacOS/Dolphin
+          TAG="$(git tag --points-at HEAD)"
+          if [ ! -z "$TAG" ]; then
+            SUFFIX="$TAG"
+          elif [ "$EVENT_NAME" == "pull_request" ]; then
+            PR_TITLE=$(echo "${PR_TITLE}" | tr -cd '[a-zA-Z0-9[:space:]]_-')
+            SUFFIX="pr[$PR_NUM]-sha[$PR_SHA]-title[$PR_TITLE"
+            SUFFIX=$(printf "%.99s]" "$SUFFIX")
+          else
+            SUFFIX="sha[$(git rev-parse --short HEAD)]"
+          fi
+          APPNAME="PrimeHack-$SUFFIX"
+          mv build/Binaries/Dolphin.app "$APPNAME.app"
+          tar cvzf "$APPNAME.tar.gz" "$APPNAME.app"
+          echo "name=$APPNAME" >> "$GITHUB_OUTPUT"
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.create-artifact.outputs.name }}
+          path: "*.tar.gz"
