@@ -29,6 +29,7 @@ void PrimeCheatsWidget::CreateWidgets()
   m_checkbox_invulnerability = new QCheckBox(tr("Invulnerability"));
   m_checkbox_skipcutscenes = new QCheckBox(tr("Skippable Cutscenes"));
   m_checkbox_scandash = new QCheckBox(tr("Restore Scan Dash"));
+  m_checkbox_bsjmp2 = new QCheckBox(tr("Restore Bomb Space Jumps on MP2 (Wii Only)"));
   m_checkbox_skipportalmp2 = new QCheckBox(tr("Skip MP2 Portal Cutscene"));
   m_checkbox_friendvouchers = new QCheckBox(tr("Remove Friend Vouchers Requirement (Trilogy Only)"));
   m_checkbox_hudmemo = new QCheckBox(tr("Disable Hud Popup on Pickup Acquire"));
@@ -38,6 +39,7 @@ void PrimeCheatsWidget::CreateWidgets()
   layout->addWidget(m_checkbox_invulnerability);
   layout->addWidget(m_checkbox_skipcutscenes);
   layout->addWidget(m_checkbox_scandash);
+  layout->addWidget(m_checkbox_bsjmp2);
   layout->addWidget(m_checkbox_skipportalmp2);
   layout->addWidget(m_checkbox_friendvouchers);
   layout->addWidget(m_checkbox_hudmemo);
@@ -55,6 +57,7 @@ void PrimeCheatsWidget::ConnectWidgets()
   connect(m_checkbox_invulnerability, &QCheckBox::toggled, this, &PrimeCheatsWidget::OnSaveConfig);
   connect(m_checkbox_skipcutscenes, &QCheckBox::toggled, this, &PrimeCheatsWidget::OnSaveConfig);
   connect(m_checkbox_scandash, &QCheckBox::toggled, this, &PrimeCheatsWidget::OnSaveConfig);
+  connect(m_checkbox_bsjmp2, &QCheckBox::toggled, this, &PrimeCheatsWidget::OnSaveConfig);
   connect(m_checkbox_skipportalmp2, &QCheckBox::toggled, this, &PrimeCheatsWidget::OnSaveConfig);
   connect(m_checkbox_friendvouchers, &QCheckBox::toggled, this, &PrimeCheatsWidget::OnSaveConfig);
   connect(m_checkbox_hudmemo, &QCheckBox::toggled, this, &PrimeCheatsWidget::OnSaveConfig);
@@ -67,6 +70,7 @@ void PrimeCheatsWidget::OnSaveConfig()
   Config::SetBaseOrCurrent(Config::PRIMEHACK_INVULNERABILITY, m_checkbox_invulnerability->isChecked());
   Config::SetBaseOrCurrent(Config::PRIMEHACK_SKIPPABLE_CUTSCENES, m_checkbox_skipcutscenes->isChecked());
   Config::SetBaseOrCurrent(Config::PRIMEHACK_RESTORE_SCANDASH, m_checkbox_scandash->isChecked());
+  Config::SetBaseOrCurrent(Config::PRIMEHACK_RESTORE_BSJ_MP2, m_checkbox_bsjmp2->isChecked());
   Config::SetBaseOrCurrent(Config::PRIMEHACK_SKIPMP2_PORTAL, m_checkbox_skipportalmp2->isChecked());
   Config::SetBaseOrCurrent(Config::PRIMEHACK_FRIENDVOUCHERS, m_checkbox_friendvouchers->isChecked());
   Config::SetBaseOrCurrent(Config::PRIMEHACK_DISABLE_HUDMEMO, m_checkbox_hudmemo->isChecked());
@@ -80,6 +84,7 @@ void PrimeCheatsWidget::OnLoadConfig()
   m_checkbox_invulnerability->setChecked(Config::Get(Config::PRIMEHACK_INVULNERABILITY));
   m_checkbox_skipcutscenes->setChecked(Config::Get(Config::PRIMEHACK_SKIPPABLE_CUTSCENES));
   m_checkbox_scandash->setChecked(Config::Get(Config::PRIMEHACK_RESTORE_SCANDASH));
+  m_checkbox_bsjmp2->setChecked(Config::Get(Config::PRIMEHACK_RESTORE_BSJ_MP2));
   m_checkbox_skipportalmp2->setChecked(Config::Get(Config::PRIMEHACK_SKIPMP2_PORTAL));
   m_checkbox_friendvouchers->setChecked(Config::Get(Config::PRIMEHACK_FRIENDVOUCHERS));
   m_checkbox_hudmemo->setChecked(Config::Get(Config::PRIMEHACK_DISABLE_HUDMEMO));
@@ -96,6 +101,8 @@ void PrimeCheatsWidget::AddDescriptions()
     QT_TR_NOOP("Make most cutscenes skippable. The button to do so varies from each game. It is usually the Jump key or the Menu button.");
   static const char TR_SCANDASH[] =
     QT_TR_NOOP("Re-enable the ability to dash with the scan visor. This is a speed-running trick in the original release, and was subsequently patched in later releases.");
+  static const char TR_BSJ_MP2[] =
+    QT_TR_NOOP("Re-enable the ability to bomb space jump in Echoes Wii version. This is a speed-running trick in the gamecube releases, and was subsequently patched in wii releases.");
   static const char TR_SKIPPORTAL[] =
     QT_TR_NOOP("Skips having to watch the portal cutscenes in Metroid Prime 2 (Trilogy), allowing you to teleport immediately.");
   static const char TR_FRIENDVOUCHERS[] =
@@ -109,6 +116,7 @@ void PrimeCheatsWidget::AddDescriptions()
   m_checkbox_invulnerability->setToolTip(tr(TR_INVULNERABILITY));
   m_checkbox_skipcutscenes->setToolTip(tr(TR_SKIPCUTSCENES));
   m_checkbox_scandash->setToolTip(tr(TR_SCANDASH));
+  m_checkbox_bsjmp2->setToolTip(tr(TR_BSJ_MP2));
   m_checkbox_skipportalmp2->setToolTip(tr(TR_SKIPPORTAL));
   m_checkbox_friendvouchers->setToolTip(tr(TR_FRIENDVOUCHERS));
   m_checkbox_hudmemo->setToolTip(tr(TR_HUDMEMO));

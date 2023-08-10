@@ -40,6 +40,10 @@ void patch_strg_entry_mp3(u32 vers) {
       patched_table_addr = 0x8067a400;
     case 2:
       patched_table_addr = 0x80684800;
+    case 3:
+      patched_table_addr = 0x80687000;
+    case 4:
+      patched_table_addr = 0x8068A800;
     default:
       break;
   }
@@ -96,6 +100,12 @@ bool STRGPatch::init_mod(Game game, Region region) {
     if (region == Region::NTSC_U) {
       replace_string_addr = 0x80684800;
       add_code_change(0x803cdd64, gen_vmcall(vmc_id, 2));
+    } else if (region == Region::PAL) {
+      replace_string_addr = 0x80687000;
+      add_code_change(0x803cf644, gen_vmcall(vmc_id, 3));
+    } else if (region == Region::NTSC_J) {
+      replace_string_addr = 0x8068A800;
+      add_code_change(0x803d1ac0, gen_vmcall(vmc_id, 4));
     }
     break;
   }

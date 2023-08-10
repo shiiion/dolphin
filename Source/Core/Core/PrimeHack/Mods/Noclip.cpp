@@ -371,6 +371,16 @@ bool Noclip::init_mod(Game game, Region region) {
       add_code_change(0x802724f0, 0xd0210088);
       add_code_change(0x802724f4, 0xd0410098);
       add_code_change(0x802724f8, 0x48089419);
+    } else if (region == Region::NTSC_J) {
+      noclip_code_mp1_gc(0x80454858, 0x80599100, 0x80054db4);
+
+      add_code_change(0x80274268, 0x60000000);
+      add_code_change(0x80274278, 0x60000000);
+      add_code_change(0x80274280, 0x60000000);
+      add_code_change(0x802742a8, 0xd0010078);
+      add_code_change(0x802742ac, 0xd0210088);
+      add_code_change(0x802742b0, 0xd0410098);
+      add_code_change(0x802742b4, 0x48089530);
     }
     break;
   case Game::PRIME_1_GCN_R1:

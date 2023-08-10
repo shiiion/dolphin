@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Core/PrimeHack/PrimeMod.h"
-#include <VideoCommon/OnScreenDisplay.h>
 
 namespace prime {
   class RestoreDashing : public PrimeMod {

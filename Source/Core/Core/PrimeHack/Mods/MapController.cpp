@@ -156,6 +156,13 @@ void MapController::init_mod_mp1_gc(Game game, Region region) {
       add_code_change(0x800999a8, 0x38600026);
       add_code_change(0x800999b8, 0x38600028);
       add_code_change(0x800999c8, 0x38600029);
+    } else { // region == Region::NTSC_J
+      add_code_change(0x80097fd4, vmc_update_rotation);
+      add_code_change(0x8009b8fc, vmc_rotate_map);
+      add_code_change(0x8009aa5c, 0x38600027);
+      add_code_change(0x8009aa6c, 0x38600026);
+      add_code_change(0x8009aa7c, 0x38600028);
+      add_code_change(0x8009aa8c, 0x38600029);
     }
   } else if (game == Game::PRIME_1_GCN_R1) {
     add_code_change(0x80097400, vmc_update_rotation);
@@ -189,6 +196,13 @@ void MapController::init_mod_mp1(Region region) {
     add_code_change(0x80026388, 0x3880002c);
     add_code_change(0x800263a4, 0x3880002d);
     add_code_change(0x800263c0, 0x3880002e);
+  } else { // region == Region::NTSC-J
+    add_code_change(0x80029208, vmc_update_rotation);
+    add_code_change(0x80025ab8, vmc_rotate_map);
+    add_code_change(0x80026350, 0x3880002c);
+    add_code_change(0x80026388, 0x3880002b);
+    add_code_change(0x800263a4, 0x3880002e);
+    add_code_change(0x800263c0, 0x3880002d);
   }
 }
 
@@ -213,6 +227,13 @@ void MapController::init_mod_mp2_gc(Region region) {
     add_code_change(0x8008d790, 0x3880002b);
     add_code_change(0x8008d7ac, 0x3880002e);
     add_code_change(0x8008d7c8, 0x3880002d);
+  } else { // region == Region::NTSC-J
+    add_code_change(0x80089af8, vmc_update_rotation);
+    add_code_change(0x8008f824, vmc_rotate_map);
+    add_code_change(0x8008e814, 0x3880002c);
+    add_code_change(0x8008e82c, 0x3880002b);
+    add_code_change(0x8008e848, 0x3880002e);
+    add_code_change(0x8008e864, 0x3880002d);
   }
 }
 
@@ -237,6 +258,13 @@ void MapController::init_mod_mp2(Region region) {
     add_code_change(0x80029dd8, 0x38a0002c);
     add_code_change(0x80029df8, 0x38a0002d);
     add_code_change(0x80029e18, 0x38a0002e);
+  } else { // region == Region::NTSC-J
+    add_code_change(0x8002e8d0, vmc_update_rotation);
+    add_code_change(0x800293d0, vmc_rotate_map);
+    add_code_change(0x80029d48, 0x38a0002c);
+    add_code_change(0x80029d68, 0x38a0002b);
+    add_code_change(0x80029d88, 0x38a0002e);
+    add_code_change(0x80029da8, 0x38a0002d);
   }
 }
 

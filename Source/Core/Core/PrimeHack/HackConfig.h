@@ -104,4 +104,5 @@ void SetMotd(std::string const& motd);
 std::string GetMotd();
 
 bool UsingRealWiimote();
+std::string GetLanguage();
 }

@@ -122,6 +122,10 @@ void HackManager::run_active_mods() {
       active_game = Game::PRIME_1_GCN;
       active_region = Region::PAL;
     }
+    else if (region_code == FOURCC('G', 'M', '8', 'J')) {
+      active_game = Game::PRIME_1_GCN;
+      active_region = Region::NTSC_J;
+    }
     else if (region_code == FOURCC('G', '2', 'M', 'E')) {
       active_game = Game::PRIME_2_GCN;
       active_region = Region::NTSC_U;
@@ -193,22 +197,24 @@ void HackManager::run_active_mods() {
 void HackManager::update_mod_states() {
   set_mod_enabled("auto_efb", UseMPAutoEFB());
   set_mod_enabled("cut_beam_fx_mp1", GetEnableSecondaryGunFX());
+  set_mod_enabled("jp_to_eng", GetLanguage() != "ja");
 
   if (Config::Get(Config::MAIN_ENABLE_CHEATS)) {
     set_mod_enabled("noclip", Config::Get(Config::PRIMEHACK_NOCLIP));
     set_mod_enabled("invulnerability", Config::Get(Config::PRIMEHACK_INVULNERABILITY));
     set_mod_enabled("skip_cutscene", Config::Get(Config::PRIMEHACK_SKIPPABLE_CUTSCENES));
     set_mod_enabled("restore_dashing", Config::Get(Config::PRIMEHACK_RESTORE_SCANDASH));
+    set_mod_enabled("restore_bsj_mp2", Config::Get(Config::PRIMEHACK_RESTORE_BSJ_MP2));
     set_mod_enabled("friend_vouchers_cheat", Config::Get(Config::PRIMEHACK_FRIENDVOUCHERS));
     set_mod_enabled("portal_skip_mp2", Config::Get(Config::PRIMEHACK_SKIPMP2_PORTAL));
     set_mod_enabled("disable_hudmemo_popup", Config::Get(Config::PRIMEHACK_DISABLE_HUDMEMO));
     set_mod_enabled("unlock_hypermode", Config::Get(Config::PRIMEHACK_UNLOCK_HYPERMODE));
-  }
-  else {
+  } else {
     disable_mod("noclip");
     disable_mod("invulnerability");
     disable_mod("skip_cutscene");
     disable_mod("restore_dashing");
+    disable_mod("restore_bsj_mp2");
     disable_mod("friend_vouchers_cheat");
     disable_mod("portal_skip_mp2");
     disable_mod("unlock_hypermode");

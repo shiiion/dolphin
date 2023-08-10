@@ -107,7 +107,11 @@ void DisableHudMemoPopup::init_mod_mp1gc(Region region) {
     add_code_change(0x800e03c8, 0x48000018);
     add_code_change(0x800e03f0, vmc_fix_time);
     add_code_change(0x800657c4, vmc_fix_justification);
-  } else {}
+  } else { // region == Region::NTSC_J
+    add_code_change(0x800e14a0, 0x48000018);
+    add_code_change(0x800e14c8, vmc_fix_time);
+    add_code_change(0x800665d4, vmc_fix_justification);
+  }
 }
 
 void DisableHudMemoPopup::init_mod_mp1gc_r1() {
