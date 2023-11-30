@@ -393,6 +393,7 @@ void FpsControls::run_mod_mp1_gc(Region region) {
   if (read32(camera_state) != 0) {
     vec3 fwd = cplayer_xf.fwd();
     yaw = atan2f(fwd.y, fwd.x);
+    pitch = 0.f;
     return;
   }
 
@@ -487,6 +488,12 @@ void FpsControls::run_mod_mp2(Region region) {
     write32(0, cursor + 0x9c);
     write32(0, cursor + 0x15c);
 
+    LOOKUP_DYN(camera_state);
+    if (read32(camera_state) != 0) {
+      pitch = 0.f;
+      return;
+    }
+
     calculate_pitch_delta();
     // Grab the arm cannon address, go to its transform field (NOT the
     // Actor's xf @ 0x30!!)
@@ -566,6 +573,14 @@ void FpsControls::run_mod_mp2_gc(Region region) {
     return;
   }
 
+  LOOKUP_DYN(camera_state);
+  if (read32(camera_state) != 0) {
+    vec3 fwd = cplayer_xf.fwd();
+    yaw = atan2f(fwd.y, fwd.x);
+    pitch = 0.f;
+    return;
+  }
+
   LOOKUP(tweak_player_offset);
   const u32 tweak_player_address = read32(read32(GPR(13) + tweak_player_offset));
   if (mem_check(tweak_player_address)) {
@@ -581,8 +596,7 @@ void FpsControls::run_mod_mp2_gc(Region region) {
     }
   }
 
-  LOOKUP_DYN(ball_state);
-  if (read32(ball_state) == 0) {
+  if (read32(camera_state) == 0) {
     calculate_pitchyaw_delta();
     writef32(FpsControls::pitch, firstperson_pitch);
     cplayer_xf.build_rotation(yaw);
@@ -786,6 +800,12 @@ void FpsControls::run_mod_mp3(Game active_game, Region active_region) {
 
   mp3_handle_cursor(true, true);
   set_cursor_pos(0, 0);
+
+  LOOKUP_DYN(camera_manager);
+  if (read16(camera_manager) > 3) {
+    pitch = 0.f;
+    return;
+  }
 
   calculate_pitch_delta();
   // Gun damping uses its own TOC value, so screw it (I checked the binary)
