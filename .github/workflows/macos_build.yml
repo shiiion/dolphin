@@ -19,6 +19,11 @@ jobs:
         with:
           submodules: recursive
 
+      # MoltenVK's build process breaks on Python 3.12
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
       - name: Install Packages
         env:
           HOMEBREW_NO_INSTALL_CLEANUP: 1
