@@ -6,7 +6,8 @@ export MACOSX_DEPLOYMENT_TARGET=10.15
 INSTALLDIR="$HOME/deps"
 NPROCS="$(getconf _NPROCESSORS_ONLN)"
 SDL=SDL2-2.30.2
-QT=6.2.4
+QT=6.2.8
+QT_SUFFIX=-opensource
 
 mkdir deps-build
 cd deps-build
@@ -18,16 +19,16 @@ export CXXFLAGS="-I$INSTALLDIR/include -Os $CXXFLAGS"
 
 cat > SHASUMS <<EOF
 891d66ac8cae51361d3229e3336ebec1c407a8a2a063b61df14f5fdf3ab5ac31  $SDL.tar.gz
-d9924d6fd4fa5f8e24458c87f73ef3dfc1e7c9b877a5407c040d89e6736e2634  qtbase-everywhere-src-$QT.tar.xz
-17f40689c4a1706a1b7db22fa92f6ab79f7b698a89e100cab4d10e19335f8267  qttools-everywhere-src-$QT.tar.xz
-bd1aac74a892c60b2f147b6d53bb5b55ab7a6409e63097d38198933f8024fa51  qttranslations-everywhere-src-$QT.tar.xz
+718c91365fc0ab00fb37c262e30285efc7c608d1b7f2b2a3611338ba0799157b  qtbase-everywhere$QT_SUFFIX-src-$QT.tar.xz
+97326f2ce07701316fab45e76510e30f540c23527a7723b0ad98d7ffea76ba14  qttools-everywhere$QT_SUFFIX-src-$QT.tar.xz
+46191973fd688e3b9b0eac799a2e3de8fb672874c707b177cf71d8e9198ca77c  qttranslations-everywhere$QT_SUFFIX-src-$QT.tar.xz
 EOF
 
 curl -L \
 	-O "https://libsdl.org/release/$SDL.tar.gz" \
-	-O "https://download.qt.io/official_releases/qt/${QT%.*}/$QT/submodules/qtbase-everywhere-src-$QT.tar.xz" \
-	-O "https://download.qt.io/official_releases/qt/${QT%.*}/$QT/submodules/qttools-everywhere-src-$QT.tar.xz" \
-	-O "https://download.qt.io/official_releases/qt/${QT%.*}/$QT/submodules/qttranslations-everywhere-src-$QT.tar.xz" \
+	-O "https://download.qt.io/official_releases/qt/${QT%.*}/$QT/submodules/qtbase-everywhere$QT_SUFFIX-src-$QT.tar.xz" \
+	-O "https://download.qt.io/official_releases/qt/${QT%.*}/$QT/submodules/qttools-everywhere$QT_SUFFIX-src-$QT.tar.xz" \
+	-O "https://download.qt.io/official_releases/qt/${QT%.*}/$QT/submodules/qttranslations-everywhere$QT_SUFFIX-src-$QT.tar.xz" \
 
 shasum -a 256 --check SHASUMS
 
@@ -40,7 +41,7 @@ make install
 cd ..
 
 echo "Installing Qt Base..."
-tar xf "qtbase-everywhere-src-$QT.tar.xz"
+tar xf "qtbase-everywhere$QT_SUFFIX-src-$QT.tar.xz"
 cd "qtbase-everywhere-src-$QT"
 cmake -B build -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DCMAKE_PREFIX_PATH="$INSTALLDIR" -DCMAKE_INSTALL_PREFIX="$INSTALLDIR" -DCMAKE_BUILD_TYPE=Release -DFEATURE_optimize_size=ON -DFEATURE_dbus=OFF -DFEATURE_framework=OFF -DFEATURE_icu=OFF -DFEATURE_opengl=OFF -DFEATURE_printsupport=OFF -DFEATURE_sql=OFF -DFEATURE_gssapi=OFF -DFEATURE_system_png=OFF -DFEATURE_system_jpeg=OFF -DCMAKE_MESSAGE_LOG_LEVEL=STATUS
 make -C build "-j$NPROCS"
@@ -48,7 +49,7 @@ make -C build install
 cd ..
 
 echo "Installing Qt Tools..."
-tar xf "qttools-everywhere-src-$QT.tar.xz"
+tar xf "qttools-everywhere$QT_SUFFIX-src-$QT.tar.xz"
 cd "qttools-everywhere-src-$QT"
 # Linguist relies on a library in the Designer target, which takes 5-7 minutes to build on the CI
 # Avoid it by not building Linguist, since we only need the tools that come with it
@@ -70,7 +71,7 @@ make -C build install
 cd ..
 
 echo "Installing Qt Translations..."
-tar xf "qttranslations-everywhere-src-$QT.tar.xz"
+tar xf "qttranslations-everywhere$QT_SUFFIX-src-$QT.tar.xz"
 cd "qttranslations-everywhere-src-$QT"
 cmake -B build -DCMAKE_PREFIX_PATH="$INSTALLDIR" -DCMAKE_INSTALL_PREFIX="$INSTALLDIR" -DCMAKE_BUILD_TYPE=Release
 make -C build "-j$NPROCS"
