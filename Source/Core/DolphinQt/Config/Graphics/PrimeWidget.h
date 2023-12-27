@@ -44,8 +44,8 @@ private:
   GraphicsSlider* m_fov_axis;
 
   GraphicsBool* m_toggle_gc_show_crosshair;
-  QPushButton* m_select_colour;
-  QPushButton* m_reset_colour;
+  QPushButton* m_select_color;
+  QPushButton* m_reset_color;
   QColorDialog* colorpicker;
 
   GraphicsInteger* x_counter;
