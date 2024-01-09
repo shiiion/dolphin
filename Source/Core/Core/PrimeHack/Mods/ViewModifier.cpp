@@ -130,8 +130,9 @@ void ViewModifier::run_mod_mp1_gc() {
     return;
   }
 
-  // PAL added some stuff related to SFX in CActor, affects all derived
-  const u32 version_offset = (hack_mgr->get_active_region() == Region::PAL ||
+  // PAL/JP added some stuff related to SFX in CActor, affects all derived
+  const u32 version_offset = (hack_mgr->get_active_region() == Region::NTSC_J ||
+                              hack_mgr->get_active_region() == Region::PAL ||
                               hack_mgr->get_active_game() == Game::PRIME_1_GCN_R2 ? 0x10 : 0);
 
   const u32 r13 = GPR(13);
@@ -336,6 +337,9 @@ void ViewModifier::init_mod_mp1_gc(Region region) {
   } else if (region == Region::PAL) {
     add_code_change(0x80320424, 0x38600001, "culling");
     add_code_change(0x80320424 + 0x4, 0x4e800020, "culling");
+  } else if (region == Region::NTSC_J) {
+    add_code_change(0x803222f8, 0x38600001, "culling");
+    add_code_change(0x803222f8 + 0x4, 0x4e800020, "culling");
   }
 }
 

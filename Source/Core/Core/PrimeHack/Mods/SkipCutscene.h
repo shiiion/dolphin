@@ -22,6 +22,8 @@ public:
         add_return_one(0x801d5528);
       } else if (region == Region::PAL) {
         add_return_one(0x801c6640);
+      } else if (region == Region::NTSC_J) {
+        add_return_one(0x801c7a50);
       }
       break;
     case Game::PRIME_1_GCN_R1:

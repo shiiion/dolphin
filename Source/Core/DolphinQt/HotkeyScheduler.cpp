@@ -604,6 +604,15 @@ void HotkeyScheduler::Run()
 
         OSD::AddMessage(StringFromFormat("Restore Dashing: %s", new_value ? "Enabled" : "Disabled"));
       }
+
+      if (IsHotkey(HK_RESTORE_BSJ_MP2))
+      {
+        const bool new_value = !Config::Get(Config::PRIMEHACK_RESTORE_BSJ_MP2);
+        Config::SetBaseOrCurrent(Config::PRIMEHACK_RESTORE_BSJ_MP2, new_value);
+
+        OSD::AddMessage(
+            StringFromFormat("Restore BSJ: %s", new_value ? "Enabled" : "Disabled"));
+      }
     }
 
     if (IsHotkey(HK_MOTION_LOCK))

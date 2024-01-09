@@ -145,6 +145,7 @@ bool IsSettingSaveable(const Config::Location& config_location)
       &Config::PRIMEHACK_SKIPMP2_PORTAL.GetLocation(),
       &Config::PRIMEHACK_SKIPPABLE_CUTSCENES.GetLocation(),
       &Config::PRIMEHACK_RESTORE_SCANDASH.GetLocation(),
+      &Config::PRIMEHACK_RESTORE_BSJ_MP2.GetLocation(),
       &Config::PRIMEHACK_FRIENDVOUCHERS.GetLocation(),
       &Config::PRIMEHACK_DISABLE_HUDMEMO.GetLocation(),
       &Config::PRIMEHACK_UNLOCK_HYPERMODE.GetLocation(),

@@ -393,6 +393,7 @@ void FpsControls::run_mod_mp1_gc(Region region) {
   if (read32(camera_state) != 0) {
     vec3 fwd = cplayer_xf.fwd();
     yaw = atan2f(fwd.y, fwd.x);
+    pitch = 0.f;
     return;
   }
 
@@ -487,6 +488,12 @@ void FpsControls::run_mod_mp2(Region region) {
     write32(0, cursor + 0x9c);
     write32(0, cursor + 0x15c);
 
+    LOOKUP_DYN(camera_state);
+    if (read32(camera_state) != 0) {
+      pitch = 0.f;
+      return;
+    }
+
     calculate_pitch_delta();
     // Grab the arm cannon address, go to its transform field (NOT the
     // Actor's xf @ 0x30!!)
@@ -566,6 +573,14 @@ void FpsControls::run_mod_mp2_gc(Region region) {
     return;
   }
 
+  LOOKUP_DYN(camera_state);
+  if (read32(camera_state) != 0) {
+    vec3 fwd = cplayer_xf.fwd();
+    yaw = atan2f(fwd.y, fwd.x);
+    pitch = 0.f;
+    return;
+  }
+
   LOOKUP(tweak_player_offset);
   const u32 tweak_player_address = read32(read32(GPR(13) + tweak_player_offset));
   if (mem_check(tweak_player_address)) {
@@ -581,8 +596,7 @@ void FpsControls::run_mod_mp2_gc(Region region) {
     }
   }
 
-  LOOKUP_DYN(ball_state);
-  if (read32(ball_state) == 0) {
+  if (read32(camera_state) == 0) {
     calculate_pitchyaw_delta();
     writef32(FpsControls::pitch, firstperson_pitch);
     cplayer_xf.build_rotation(yaw);
@@ -786,6 +800,12 @@ void FpsControls::run_mod_mp3(Game active_game, Region active_region) {
 
   mp3_handle_cursor(true, true);
   set_cursor_pos(0, 0);
+
+  LOOKUP_DYN(camera_manager);
+  if (read16(camera_manager) > 3) {
+    pitch = 0.f;
+    return;
+  }
 
   calculate_pitch_delta();
   // Gun damping uses its own TOC value, so screw it (I checked the binary)
@@ -1243,6 +1263,7 @@ void FpsControls::add_strafe_code_mp1_100(Game revision) {
 
 void FpsControls::add_strafe_code_mp1_102(Region region) {
   const bool is_ntsc = region == Region::NTSC_U;
+  const bool is_pal = region == Region::PAL;
   // calculate side movement @ 80471c00
   // stwu r1, 0x18(r1)
   // mfspr r0, LR
@@ -1300,12 +1321,12 @@ void FpsControls::add_strafe_code_mp1_102(Region region) {
   // mtspr LR, r0
   // addi r1, r1, -0x18
   // blr
-  u32 inject_base = is_ntsc ? 0x805b0c00 : 0x80471c00;
+  u32 inject_base = is_ntsc ? 0x805b0c00 : (is_pal ? 0x80471c00 : 0x80599000);
 
   add_code_change(inject_base + 0x00, 0x94210018);
   add_code_change(inject_base + 0x04, 0x7c0802a6);
   add_code_change(inject_base + 0x08, 0x9001001c);
-  add_code_change(inject_base + 0x0c, is_ntsc ? 0x80ada138 : 0x80ada190);
+  add_code_change(inject_base + 0x0c, is_ntsc ? 0x80ada138 : (is_pal ? 0x80ada190 : 0x80ada168));
   add_code_change(inject_base + 0x10, 0x809d02c0);
   add_code_change(inject_base + 0x14, 0x2c040002);
   add_code_change(inject_base + 0x18, 0x38800004);
@@ -1322,11 +1343,11 @@ void FpsControls::add_strafe_code_mp1_102(Region region) {
   add_code_change(inject_base + 0x44, 0xc00300a4);
   add_code_change(inject_base + 0x48, 0xd0010010);
   add_code_change(inject_base + 0x4c, 0xec210032);
-  add_code_change(inject_base + 0x50, is_ntsc ? 0xc002be70 : 0xc002be80);
+  add_code_change(inject_base + 0x50, is_ntsc ? 0xc002be70 : (is_pal ? 0xc002be80 : 0xc002bfa0));
   add_code_change(inject_base + 0x54, 0xfc1e0040);
-  add_code_change(inject_base + 0x58, is_ntsc ? 0xc002bdd0 : 0xc002bea8);
+  add_code_change(inject_base + 0x58, is_ntsc ? 0xc002bdd0 : (is_pal ? 0xc002bea8 : 0xc002bfc8));
   add_code_change(inject_base + 0x5c, 0x40810008);
-  add_code_change(inject_base + 0x60, is_ntsc ? 0xc002be80 : 0xc002be60);
+  add_code_change(inject_base + 0x60, is_ntsc ? 0xc002be80 : (is_pal ? 0xc002be60 : 0xc002bf80));
   add_code_change(inject_base + 0x64, 0xec000072);
   add_code_change(inject_base + 0x68, 0xc0610010);
   add_code_change(inject_base + 0x6c, 0xec630828);
@@ -1337,18 +1358,18 @@ void FpsControls::add_strafe_code_mp1_102(Region region) {
   add_code_change(inject_base + 0x80, 0x38610004);
   add_code_change(inject_base + 0x84, 0x389d0034);
   add_code_change(inject_base + 0x88, 0x38bd0148);
-  add_code_change(inject_base + 0x8c, is_ntsc ? 0x4bd627e9 : 0x4be89b69);
+  add_code_change(inject_base + 0x8c, is_ntsc ? 0x4bd627e9 : (is_pal ? 0x4be89b69 : 0x4bd6463d));
   add_code_change(inject_base + 0x90, 0xc0010018);
   add_code_change(inject_base + 0x94, 0xc0210004);
   add_code_change(inject_base + 0x98, 0xec000828);
   add_code_change(inject_base + 0x9c, 0xc0210010);
   add_code_change(inject_base + 0xa0, 0xec000824);
-  add_code_change(inject_base + 0xa4, is_ntsc ? 0xc022bdd0 : 0xc022bea8);
+  add_code_change(inject_base + 0xa4, is_ntsc ? 0xc022bdd0 : (is_pal ? 0xc022bea8 : 0xc022bfc8));
   add_code_change(inject_base + 0xa8, 0xfc000840);
   add_code_change(inject_base + 0xac, 0x4080000c);
   add_code_change(inject_base + 0xb0, 0xfc000890);
   add_code_change(inject_base + 0xb4, 0x48000014);
-  add_code_change(inject_base + 0xb8, is_ntsc ? 0xc022be80 : 0xc022be60);
+  add_code_change(inject_base + 0xb8, is_ntsc ? 0xc022be80 : (is_pal ? 0xc022be60 : 0xc022bf80));
   add_code_change(inject_base + 0xbc, 0xfc000840);
   add_code_change(inject_base + 0xc0, 0x40810008);
   add_code_change(inject_base + 0xc4, 0xfc000890);
@@ -1375,19 +1396,19 @@ void FpsControls::add_strafe_code_mp1_102(Region region) {
   // stfs f0, 0x14(r1)
   // stfs f0, 0x18(r1)
   // addi r4, r1, 0x10
-  inject_base = is_ntsc ? 0x80287f50 : 0x802749a8;
+  inject_base = is_ntsc ? 0x80287f50 : (is_pal ? 0x802749a8 : 0x80276764);
 
-  add_code_change(inject_base + 0x00, is_ntsc ? 0xc022be70 : 0xc022be80);
-  add_code_change(inject_base + 0x04, is_ntsc ? 0xc002bc94 : 0xc002bf24);
+  add_code_change(inject_base + 0x00, is_ntsc ? 0xc022be70 : (is_pal ? 0xc022be80 : 0xc022bfa0));
+  add_code_change(inject_base + 0x04, is_ntsc ? 0xc002bc94 : (is_pal ? 0xc002bf24 : 0xc002c044));
   add_code_change(inject_base + 0x08, 0xec3e0828);
   add_code_change(inject_base + 0x0c, 0xfc200a10);
   add_code_change(inject_base + 0x10, 0xfc010040);
   add_code_change(inject_base + 0x14, 0x4081002c);
-  add_code_change(inject_base + 0x18, is_ntsc ? 0x48328c99 : 0x481fd241);
-  add_code_change(inject_base + 0x1c, is_ntsc ? 0x4bd938a9 : 0x4bda74e1);
+  add_code_change(inject_base + 0x18, is_ntsc ? 0x48328c99 : (is_pal ? 0x481fd241 : 0x48322885));
+  add_code_change(inject_base + 0x1c, is_ntsc ? 0x4bd938a9 : (is_pal ? 0x4bda74e1 : 0x4bda5a2d));
   add_code_change(inject_base + 0x20, 0x7c651b78);
   add_code_change(inject_base + 0x24, 0x7fa3eb78);
-  add_code_change(inject_base + 0x28, is_ntsc ? 0xc002be70 : 0xc002be80);
+  add_code_change(inject_base + 0x28, is_ntsc ? 0xc002be70 : (is_pal ? 0xc002be80 : 0xc002bfa0));
   add_code_change(inject_base + 0x2c, 0xd0210010);
   add_code_change(inject_base + 0x30, 0xd0010014);
   add_code_change(inject_base + 0x34, 0xd0010018);
@@ -1402,7 +1423,7 @@ void FpsControls::add_strafe_code_mp1_102(Region region) {
     add_code_change(0x80287a08, 0x60000000);
     add_code_change(0x80287b48, 0x60000000);
     add_code_change(0x80287c14, 0x60000000);
-  } else {
+  } else if (is_pal) {
     add_code_change(0x802743c4, 0x4bfffc71); // jump/address updated
     add_code_change(0x8027406c, 0x4800000c); // updated following addresses
     add_code_change(0x80274780, 0x60000000);
@@ -1410,9 +1431,17 @@ void FpsControls::add_strafe_code_mp1_102(Region region) {
     add_code_change(0x80274460, 0x60000000);
     add_code_change(0x802745a0, 0x60000000);
     add_code_change(0x8027466c, 0x60000000);
+  } else {
+    add_code_change(0x80276180, 0x4bfffc71);  // jump/address updated
+    add_code_change(0x80275e28, 0x4800000c);  // updated following addresses
+    add_code_change(0x8027653c, 0x60000000);
+    add_code_change(0x80276580, 0x60000000);
+    add_code_change(0x8027621c, 0x60000000);
+    add_code_change(0x8027635c, 0x60000000);
+    add_code_change(0x80276428, 0x60000000);
   }
 
-  // Clamp current xy velocity NTSC @ 80287c30 | PAL @ 80274688
+  // Clamp current xy velocity NTSC @ 80287c30 | PAL @ 80274688 | JP @ 80276444
   // lfs f1, -0x7ec0(r2) = 0.1
   // fmuls f0, f30, f30
   // fcmpo cr0, f0, f1
@@ -1446,7 +1475,7 @@ void FpsControls::add_strafe_code_mp1_102(Region region) {
   // fmuls f2, f3, f2
   // stfs f2, 0x110(r29)
   // b 0xc0
-  inject_base = is_ntsc ? 0x80287c30 : 0x80274688;
+  inject_base = is_ntsc ? 0x80287c30 : (is_pal ? 0x80274688 : 0x80276444);
 
   add_code_change(inject_base + 0x00, 0xc0228140);
   add_code_change(inject_base + 0x04, 0xec1e07b2);
@@ -1461,7 +1490,7 @@ void FpsControls::add_strafe_code_mp1_102(Region region) {
   add_code_change(inject_base + 0x28, 0xec21007a);
   add_code_change(inject_base + 0x2c, 0xfc200834);
   add_code_change(inject_base + 0x30, 0xec200830);
-  add_code_change(inject_base + 0x34, is_ntsc ? 0x3862df00 : 0x3862de80);
+  add_code_change(inject_base + 0x34, is_ntsc ? 0x3862df00 : (is_pal ? 0x3862de80 : 0x3862e2e0));
   add_code_change(inject_base + 0x38, 0x5400103a);
   add_code_change(inject_base + 0x3c, 0x7c601a14);
   add_code_change(inject_base + 0x40, 0xc0030000);
@@ -1483,8 +1512,8 @@ void FpsControls::add_strafe_code_mp1_102(Region region) {
   add_code_change(inject_base + 0x80, 0x480000c0);
 
   // No change needed
-  // max speed values table NTSC @ 805b2de0 | PAL @ 80471ce0
-  inject_base = is_ntsc ? 0x805b2de0 : 0x80471ce0;
+  // max speed values table NTSC @ 805b2de0 | PAL @ 80471ce0 | JP @ 805990e0
+  inject_base = is_ntsc ? 0x805b2de0 : (is_pal ? 0x80471ce0 : 0x805990e0);
   add_code_change(inject_base + 0x00, 0x41480000);
   add_code_change(inject_base + 0x04, 0x41480000);
   add_code_change(inject_base + 0x08, 0x41480000);
@@ -1625,6 +1654,27 @@ void FpsControls::init_mod_mp1_gc(Region region) {
     add_code_change(0x80017888, 0x4e800020, "show_crosshair"); // blr
 
     add_strafe_code_mp1_102(Region::PAL);
+  } else if (region == Region::NTSC_J) {
+    // add_code_change(0x8000fe3c, 0x48000048);
+    add_code_change(0x800e3268, 0x38810044); // output cannon bob only for viewbob
+    add_code_change(0x8000ed50, 0x60000000);
+    // add_code_change(0x80017b80, 0x4e800020);
+    add_code_change(0x80015548, 0x4e800020);
+    add_code_change(0x8000ef54, 0x60000000);
+    add_code_change(0x80010010, 0x4800022c);
+    // Grapple point yaw fix
+    add_code_change(0x80170e24, 0x7fa3eb78);
+    add_code_change(0x80170e28, 0x38810064); // 6c-8 = 64
+    add_code_change(0x80170e2c, 0x4bee3f85); // bl 80054db0
+
+    // Show crosshair but don't consider pressing R button
+    add_code_change(0x80017b80, 0x3b000001, "show_crosshair"); // li r24, 1
+    add_code_change(0x80017b84, 0x8afd09d4, "show_crosshair"); // lbz r23, 0x9d4(r29)
+    add_code_change(0x80017b88, 0x53173672, "show_crosshair"); // rlwimi r23, r24, 6, 25, 25 (00000001)
+    add_code_change(0x80017b8c, 0x9afd09d4, "show_crosshair"); // stb r23, 0x9d4(r29)
+    add_code_change(0x80017b90, 0x4e800020, "show_crosshair"); // blr
+
+    add_strafe_code_mp1_102(Region::NTSC_J);
   } else {}
 }
 
@@ -1734,6 +1784,9 @@ void FpsControls::init_mod_mp2(Region region) {
     add_code_change(0x8006fb94, 0x60000000, "visor_menu");
 
     add_beam_change_code_mp2(0x8018c0d4);
+
+    // Steps over bounds checking on the reticle
+    add_code_change(0x80018528, 0x48000144);
   } else {}
   has_beams = true;
 }
@@ -1766,8 +1819,9 @@ void FpsControls::init_mod_mp2_gc(Region region) {
     u32 null_players_vmc = gen_vmcall(null_players_vmc_idx, 0);
     add_code_change(0x80042994, null_players_vmc);
   } else if (region == Region::NTSC_J) {
-    // TODO: Enable arm cannon bobbing for JP
-    add_code_change(0x801b1e6c, 0x48000050);
+    //add_code_change(0x801b1e6c, 0x48000050);
+    add_code_change(0x800bdacc, 0x38810044);  // output cannon bob only for viewbob
+
     add_code_change(0x801b0d10, 0x60000000);
     add_code_change(0x80013414, 0x4e800020);
     add_code_change(0x801b0f18, 0x60000000);
