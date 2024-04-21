@@ -27,6 +27,6 @@ int32_t GenericMouse::GetDeltaVerticalAxis() const
   return dy;
 }
 
-GenericMouse* g_mouse_input;
+std::unique_ptr<GenericMouse> g_mouse_input;
 
 }  // namespace prime

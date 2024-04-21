@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <memory>
 
 extern int win_w, win_h;
 
@@ -32,6 +33,6 @@ public:
   void LockCursorToGameWindow() override {}
 };
 
-extern GenericMouse* g_mouse_input;
+extern std::unique_ptr<GenericMouse> g_mouse_input;
 
 }  // namespace prime

@@ -30,7 +30,7 @@ void InitMouse(IDirectInput8* const idi8)
       mo_device->SetProperty(DIPROP_AXISMODE, &dipdw.diph);
       auto mouse_input = new DInputMouse();
       mouse_input->Init(mo_device);
-      g_mouse_input = mouse_input;
+      g_mouse_input.reset(mouse_input);
       return;
     }
   }

@@ -17,7 +17,7 @@ namespace prime
 
 bool InitQuartzInputMouse()
 {
-  g_mouse_input = new QuartzInputMouse();
+  g_mouse_input.reset(new QuartzInputMouse());
   return true;
 }
 
