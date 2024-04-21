@@ -20,6 +20,7 @@ export CXXFLAGS="-I$INSTALLDIR/include -Os $CXXFLAGS"
 cat > SHASUMS <<EOF
 891d66ac8cae51361d3229e3336ebec1c407a8a2a063b61df14f5fdf3ab5ac31  $SDL.tar.gz
 718c91365fc0ab00fb37c262e30285efc7c608d1b7f2b2a3611338ba0799157b  qtbase-everywhere$QT_SUFFIX-src-$QT.tar.xz
+9ddb0859697de5832f91b85fa20cd9c90d3174c035e9e4b05393969819fd37ec  qtsvg-everywhere$QT_SUFFIX-src-$QT.tar.xz
 97326f2ce07701316fab45e76510e30f540c23527a7723b0ad98d7ffea76ba14  qttools-everywhere$QT_SUFFIX-src-$QT.tar.xz
 46191973fd688e3b9b0eac799a2e3de8fb672874c707b177cf71d8e9198ca77c  qttranslations-everywhere$QT_SUFFIX-src-$QT.tar.xz
 EOF
@@ -27,6 +28,7 @@ EOF
 curl -L \
 	-O "https://libsdl.org/release/$SDL.tar.gz" \
 	-O "https://download.qt.io/archive/qt/${QT%.*}/$QT/submodules/qtbase-everywhere$QT_SUFFIX-src-$QT.tar.xz" \
+	-O "https://download.qt.io/archive/qt/${QT%.*}/$QT/submodules/qtsvg-everywhere$QT_SUFFIX-src-$QT.tar.xz" \
 	-O "https://download.qt.io/archive/qt/${QT%.*}/$QT/submodules/qttools-everywhere$QT_SUFFIX-src-$QT.tar.xz" \
 	-O "https://download.qt.io/archive/qt/${QT%.*}/$QT/submodules/qttranslations-everywhere$QT_SUFFIX-src-$QT.tar.xz" \
 
@@ -44,6 +46,14 @@ echo "Installing Qt Base..."
 tar xf "qtbase-everywhere$QT_SUFFIX-src-$QT.tar.xz"
 cd "qtbase-everywhere-src-$QT"
 cmake -B build -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DCMAKE_PREFIX_PATH="$INSTALLDIR" -DCMAKE_INSTALL_PREFIX="$INSTALLDIR" -DCMAKE_BUILD_TYPE=Release -DFEATURE_optimize_size=ON -DFEATURE_dbus=OFF -DFEATURE_framework=OFF -DFEATURE_icu=OFF -DFEATURE_opengl=OFF -DFEATURE_printsupport=OFF -DFEATURE_sql=OFF -DFEATURE_gssapi=OFF -DFEATURE_system_png=OFF -DFEATURE_system_jpeg=OFF -DCMAKE_MESSAGE_LOG_LEVEL=STATUS
+make -C build "-j$NPROCS"
+make -C build install
+cd ..
+
+echo "Installing Qt SVG..."
+tar xf "qtsvg-everywhere$QT_SUFFIX-src-$QT.tar.xz"
+cd "qtsvg-everywhere-src-$QT"
+cmake -B build -DCMAKE_PREFIX_PATH="$INSTALLDIR" -DCMAKE_INSTALL_PREFIX="$INSTALLDIR" -DCMAKE_BUILD_TYPE=Release
 make -C build "-j$NPROCS"
 make -C build install
 cd ..
