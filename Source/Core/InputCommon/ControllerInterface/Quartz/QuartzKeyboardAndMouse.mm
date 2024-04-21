@@ -19,7 +19,9 @@
   NSView* _view;
   NSWindow* _window;
   NSRect _frame;
+  std::atomic<bool> _is_key;
   std::mutex _mtx;
+  std::vector<std::pair<void(*)(void*, bool), void*>> _key_callbacks;
 }
 
 - (NSRect)calcFrame
@@ -35,7 +37,12 @@
     _view = view;
     _window = [view window];
     _frame = [self calcFrame];
+    _is_key.store([_window isKeyWindow], std::memory_order_relaxed);
     [_window addObserver:self forKeyPath:@"frame" options:0 context:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(keyWindowDidChange:)
+                                                 name:NSWindowDidBecomeKeyNotification
+                                               object:nil];
   }
   return self;
 }
@@ -44,6 +51,38 @@
 {
   std::lock_guard<std::mutex> guard(_mtx);
   return _frame;
+}
+
+- (bool)isKeyWindow
+{
+  return _is_key.load(std::memory_order_relaxed);
+}
+
+- (void)addKeyWindowChangeCallback:(void(*)(void*, bool))callback ctx:(void*)ctx;
+{
+  std::lock_guard<std::mutex> guard(_mtx);
+  _key_callbacks.push_back(std::make_pair(callback, ctx));
+}
+
+- (void)removeKeyWindowChangeCallback:(void*)ctx
+{
+  std::lock_guard<std::mutex> guard(_mtx);
+  _key_callbacks.erase(std::remove_if(_key_callbacks.begin(), _key_callbacks.end(),
+                                      [ctx](auto& entry){ return entry.second == ctx; }),
+                       _key_callbacks.end());
+}
+
+- (void)keyWindowDidChange:(id)window
+{
+  bool key = [_window isKeyWindow];
+  bool changed = key != _is_key.load(std::memory_order_relaxed);
+  _is_key.store(key, std::memory_order_relaxed);
+  if (changed)
+  {
+    std::lock_guard<std::mutex> guard(_mtx);
+    for (const auto& callback : _key_callbacks)
+      callback.first(callback.second, key);
+  }
 }
 
 - (void)observeValueForKeyPath:(NSString*)keyPath
@@ -62,6 +101,7 @@
 - (void)dealloc
 {
   [_window removeObserver:self forKeyPath:@"frame"];
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 @end
@@ -209,7 +249,7 @@ KeyboardAndMouse::KeyboardAndMouse(void* view)
     MainThreadInitialization(view);
   else
     dispatch_sync(dispatch_get_main_queue(), [this, view] { MainThreadInitialization(view); });
-  prime::InitQuartzInputMouse();
+  prime::InitQuartzInputMouse(m_window_pos_observer);
 
   // cursor, with a hax for-loop
   for (unsigned int i = 0; i < 4; ++i)

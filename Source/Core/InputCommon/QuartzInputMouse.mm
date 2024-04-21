@@ -15,24 +15,34 @@ int win_w = 0, win_h = 0;
 namespace prime
 {
 
-bool InitQuartzInputMouse()
+bool InitQuartzInputMouse(DolWindowPositionObserver* window)
 {
-  g_mouse_input.reset(new QuartzInputMouse());
+  g_mouse_input.reset(new QuartzInputMouse(window));
   return true;
 }
 
-QuartzInputMouse::QuartzInputMouse()
+QuartzInputMouse::QuartzInputMouse(DolWindowPositionObserver* window)
 {
+  m_window = window;
   m_event_callback = ^NSEvent*(NSEvent* event) {
     InputCallback(event);
     return event;
   };
+  void (*key_callback)(void*, bool) = [](void* ctx, bool key){
+    if (key)
+      return;
+    QuartzInputMouse* me = static_cast<QuartzInputMouse*>(ctx);
+    std::lock_guard<std::mutex> lock(me->m_mtx);
+    me->UnlockCursor();
+  };
+  [m_window addKeyWindowChangeCallback:key_callback ctx:this];
 }
 
 QuartzInputMouse::~QuartzInputMouse()
 {
-  if (m_monitor)
-    [NSEvent removeMonitor:m_monitor];
+  [m_window removeKeyWindowChangeCallback:this];
+  if (void* monitor = m_monitor.load(std::memory_order_relaxed))
+    [NSEvent removeMonitor:(__bridge id)monitor];
 }
 
 void QuartzInputMouse::InputCallback(NSEvent* event)
@@ -50,8 +60,13 @@ void QuartzInputMouse::UpdateInput()
 
 void QuartzInputMouse::LockCursorToGameWindow()
 {
-  bool wants_locked = Host_RendererHasFocus() && cursor_locked;
-  bool is_locked = m_monitor;
+  bool wants_locked = Host_RendererHasFocus() && cursor_locked && [m_window isKeyWindow];
+  bool is_locked = m_monitor.load(std::memory_order_relaxed);
+  if (wants_locked == is_locked)
+    return;
+  std::lock_guard<std::mutex> lock(m_mtx);
+  wants_locked = Host_RendererHasFocus() && cursor_locked && [m_window isKeyWindow];
+  is_locked = m_monitor.load(std::memory_order_relaxed);
   if (wants_locked == is_locked)
     return;
   if (wants_locked)
@@ -62,17 +77,26 @@ void QuartzInputMouse::LockCursorToGameWindow()
     // Clear any accumulated movement
     thread_dx.store(0, std::memory_order_relaxed);
     thread_dy.store(0, std::memory_order_relaxed);
-    m_monitor = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskMouseMoved
-                                                      handler:m_event_callback];
+    id monitor = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskMouseMoved
+                                                       handler:m_event_callback];
+    m_monitor.store((__bridge void*)monitor, std::memory_order_relaxed);
   }
   else
   {
-    CGAssociateMouseAndMouseCursorPosition(true);
-    [NSCursor unhide];
-    [NSEvent removeMonitor:m_monitor];
-    m_monitor = nullptr;
+    UnlockCursor();
     cursor_locked = false;
   }
+}
+
+void QuartzInputMouse::UnlockCursor()
+{
+  void* monitor = m_monitor.load(std::memory_order_relaxed);
+  if (!monitor)
+    return;
+  CGAssociateMouseAndMouseCursorPosition(true);
+  [NSCursor unhide];
+  [NSEvent removeMonitor:(__bridge id)monitor];
+  m_monitor.store(nullptr, std::memory_order_relaxed);
 }
 
 }
