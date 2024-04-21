@@ -209,7 +209,7 @@ KeyboardAndMouse::KeyboardAndMouse(void* view)
     MainThreadInitialization(view);
   else
     dispatch_sync(dispatch_get_main_queue(), [this, view] { MainThreadInitialization(view); });
-  prime::InitQuartzInputMouse(&m_windowid);
+  prime::InitQuartzInputMouse();
 
   // cursor, with a hax for-loop
   for (unsigned int i = 0; i < 4; ++i)

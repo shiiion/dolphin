@@ -10,6 +10,7 @@ namespace prime
 class GenericMouse
 {
 public:
+  virtual ~GenericMouse() = default;
   // Platform dependant implementations are made virtual
   virtual void UpdateInput() = 0;
   virtual void LockCursorToGameWindow() = 0;

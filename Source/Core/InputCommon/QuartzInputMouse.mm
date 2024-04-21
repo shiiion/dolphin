@@ -1,94 +1,78 @@
 #include "QuartzInputMouse.h"
 #include "Core/Host.h"
+#include <Cocoa/Cocoa.h>
 
 /**
- * This interface works by centering the cursor within the window
- * ever time the `UpdateInput` method is called. It then calculates
- * the delta based on how far the mouse has moved from the center of
- * the screen before it is re-centered.
+ * This interface works by registering an event monitor and updating deltas on mouse moves.
  */
 
+#if ! __has_feature(objc_arc)
+#error "Compile this with -fobjc-arc"
+#endif
 
 int win_w = 0, win_h = 0;
 
 namespace prime
 {
 
-bool InitQuartzInputMouse(uint32_t* windowid)
+bool InitQuartzInputMouse()
 {
-  g_mouse_input = new QuartzInputMouse(windowid);
+  g_mouse_input = new QuartzInputMouse();
   return true;
 }
 
-QuartzInputMouse::QuartzInputMouse(uint32_t* windowid)
+QuartzInputMouse::QuartzInputMouse()
 {
-  m_windowid = windowid;
-  center = current_loc = getWindowCenter();
+  m_event_callback = ^NSEvent*(NSEvent* event) {
+    InputCallback(event);
+    return event;
+  };
+}
+
+QuartzInputMouse::~QuartzInputMouse()
+{
+  if (m_monitor)
+    [NSEvent removeMonitor:m_monitor];
+}
+
+void QuartzInputMouse::InputCallback(NSEvent* event)
+{
+  thread_dx.fetch_add([event deltaX], std::memory_order_relaxed);
+  thread_dy.fetch_add([event deltaY], std::memory_order_relaxed);
 }
 
 void QuartzInputMouse::UpdateInput()
 {
-  event = CGEventCreate(nil);
-  current_loc = CGEventGetLocation(event);
-  CFRelease(event);
-  center = getWindowCenter();
-  if (Host_RendererHasFocus() && cursor_locked)
-  {
-    this->dx += current_loc.x - center.x;
-    this->dy += current_loc.y - center.y;
-  }
+  this->dx += thread_dx.exchange(0, std::memory_order_relaxed);
+  this->dy += thread_dy.exchange(0, std::memory_order_relaxed);
   LockCursorToGameWindow();
 }
 
 void QuartzInputMouse::LockCursorToGameWindow()
 {
-  if (Host_RendererHasFocus() && cursor_locked)
+  bool wants_locked = Host_RendererHasFocus() && cursor_locked;
+  bool is_locked = m_monitor;
+  if (wants_locked == is_locked)
+    return;
+  if (wants_locked)
   {
-    // Hack to avoid short bit of input suppression after warp
-    // Credit/explanation: https://stackoverflow.com/a/17559012/7341382
-      CGWarpMouseCursorPosition(center);
-      CGAssociateMouseAndMouseCursorPosition(true);
-      CGDisplayHideCursor(CGMainDisplayID());
+    // Disable cursor movement
+    CGAssociateMouseAndMouseCursorPosition(false);
+    [NSCursor hide];
+    // Clear any accumulated movement
+    thread_dx.store(0, std::memory_order_relaxed);
+    thread_dy.store(0, std::memory_order_relaxed);
+    m_monitor = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskMouseMoved
+                                                      handler:m_event_callback];
   }
   else
   {
-    cursor_locked = false;
-    Host_RendererUpdateCursor(false);
     CGAssociateMouseAndMouseCursorPosition(true);
-    CGDisplayShowCursor(CGMainDisplayID());
+    [NSCursor unhide];
+    [NSEvent removeMonitor:m_monitor];
+    m_monitor = nullptr;
+    cursor_locked = false;
   }
-}
-
-CGRect QuartzInputMouse::getBounds()
-{
-  CGRect bounds = CGRectZero;
-  CGWindowID windowid[1] = {*m_windowid};
-  
-  CFArrayRef windowArray = CFArrayCreate(nullptr, (const void**)windowid, 1, nullptr);
-  CFArrayRef windowDescriptions = CGWindowListCreateDescriptionFromArray(windowArray);
-  CFDictionaryRef windowDescription =
-      static_cast<CFDictionaryRef>(CFArrayGetValueAtIndex(windowDescriptions, 0));
-
-  if (CFDictionaryContainsKey(windowDescription, kCGWindowBounds))
-  {
-    CFDictionaryRef boundsDictionary =
-        static_cast<CFDictionaryRef>(CFDictionaryGetValue(windowDescription, kCGWindowBounds));
-
-    if (boundsDictionary != nullptr)
-      CGRectMakeWithDictionaryRepresentation(boundsDictionary, &bounds);
-  }
-
-  CFRelease(windowDescriptions);
-  CFRelease(windowArray);
-  return bounds;
-}
-
-CGPoint QuartzInputMouse::getWindowCenter()
-{
-  const auto bounds = getBounds();
-  const double x = bounds.origin.x + (bounds.size.width / 2);
-  const double y = bounds.origin.y + (bounds.size.height / 2);
-  return CGPointMake(x, y);
 }
 
 }

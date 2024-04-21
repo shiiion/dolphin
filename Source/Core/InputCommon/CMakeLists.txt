@@ -122,11 +122,6 @@ elseif(APPLE)
   target_sources(inputcommon PRIVATE
     QuartzInputMouse.h
     QuartzInputMouse.mm
-    ControllerInterface/OSX/OSX.h
-    ControllerInterface/OSX/OSX.mm
-    ControllerInterface/OSX/OSXJoystick.h
-    ControllerInterface/OSX/OSXJoystick.mm
-    ControllerInterface/OSX/RunLoopStopper.h
     ControllerInterface/Quartz/Quartz.h
     ControllerInterface/Quartz/Quartz.mm
     ControllerInterface/Quartz/QuartzKeyboardAndMouse.h

@@ -1,24 +1,33 @@
 #include <ApplicationServices/ApplicationServices.h>
 #include "GenericMouse.h"
+#include "ControllerInterface/Quartz/QuartzKeyboardAndMouse.h"
+
+#ifdef __OBJC__
+@class NSEvent;
+#else
+class NSEvent
+typedef void* id;
+#endif
 
 namespace prime
 {
 
-bool InitQuartzInputMouse(uint32_t* windowid);
+bool InitQuartzInputMouse();
 
 class QuartzInputMouse: public GenericMouse
 {
 public:
-  explicit QuartzInputMouse(uint32_t* windowid);
+  explicit QuartzInputMouse();
+  ~QuartzInputMouse();
+  void InputCallback(NSEvent* event);
   void UpdateInput() override;
   void LockCursorToGameWindow() override;
 
 private:
-  CGPoint current_loc, center;
-  CGEventRef event{};
-  uint32_t* m_windowid;
-  CGRect getBounds();
-  CGPoint getWindowCenter();
+  NSEvent*(^m_event_callback)(NSEvent*);
+  id m_monitor = nullptr;
+  std::atomic<int32_t> thread_dx;
+  std::atomic<int32_t> thread_dy;
 };
 
 }
