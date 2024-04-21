@@ -15,12 +15,12 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
       # MoltenVK's build process breaks on Python 3.12
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -36,7 +36,7 @@ jobs:
 
       - name: Cache Dependencies
         id: cache-deps
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/deps
           key: macOS deps ${{ hashFiles('.github/workflows/scripts/macos/build-dependencies.sh') }}
@@ -47,7 +47,7 @@ jobs:
 
       - name: Cache MoltenVK
         id: cache-moltenvk
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/moltenvk
           key: macOS MoltenVK ${{ hashFiles('Externals/MoltenVK') }}
@@ -77,7 +77,7 @@ jobs:
         run: echo "timestamp=$(date -u "+%Y-%m-%d-%H;%M;%S")" >> $GITHUB_OUTPUT
 
       - name: Cache ccache cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: .ccache
           key: macOS ccache ${{ steps.ccache_cache_timestamp.outputs.timestamp }}
@@ -159,7 +159,7 @@ jobs:
           echo "name=$APPNAME" >> "$GITHUB_OUTPUT"
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.create-artifact.outputs.name }}
           path: "*.tar.gz"
