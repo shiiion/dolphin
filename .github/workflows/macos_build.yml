@@ -5,7 +5,7 @@ on: [push, pull_request]
 jobs:
   build_macos:
     name: macOS Build
-    runs-on: macos-11.0
+    runs-on: macos-14
     env:
       CCACHE_BASEDIR: ${{ github.workspace }}
       CCACHE_DIR: ${{ github.workspace }}/.ccache
