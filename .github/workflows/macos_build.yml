@@ -85,31 +85,34 @@ jobs:
 
       - name: Generate CMake Files
         run: |
+          COMMON_ARGS=(
+            -DCMAKE_PREFIX_PATH="$HOME/deps;$HOME/moltenvk"
+            -DCMAKE_BUILD_TYPE=Release
+            -DUSE_BUNDLED_MOLTENVK=OFF
+            -DMACOS_CODE_SIGNING=OFF
+            -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+            -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON
+            -DUSE_SYSTEM_LIBS=OFF
+            -DUSE_SYSTEM_BZIP2=ON
+            -DUSE_SYSTEM_CURL=ON
+            -DUSE_SYSTEM_ICONV=ON
+            -DUSE_SYSTEM_LIBLZMA=ON
+            -DUSE_SYSTEM_SDL2=ON
+          )
+
           cmake -DCMAKE_OSX_ARCHITECTURES=x86_64 \
                 -DCMAKE_SYSTEM_PROCESSOR=x86_64 \
                 -DCMAKE_SYSTEM_NAME=Darwin \
                 -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 \
-                -DCMAKE_PREFIX_PATH="$HOME/deps;$HOME/moltenvk" \
-                -DCMAKE_BUILD_TYPE=Release \
-                -DUSE_BUNDLED_MOLTENVK=OFF \
-                -DMACOS_CODE_SIGNING=OFF \
-                -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
-                -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-                -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-                -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON \
+                "${COMMON_ARGS[@]}" \
                 -B build .
           cmake -DCMAKE_OSX_ARCHITECTURES=arm64 \
                 -DCMAKE_SYSTEM_PROCESSOR=arm64 \
                 -DCMAKE_SYSTEM_NAME=Darwin \
                 -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 \
-                -DCMAKE_PREFIX_PATH="$HOME/deps;$HOME/moltenvk" \
-                -DCMAKE_BUILD_TYPE=Release \
-                -DUSE_BUNDLED_MOLTENVK=OFF \
-                -DMACOS_CODE_SIGNING=OFF \
-                -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
-                -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-                -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-                -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON \
+                "${COMMON_ARGS[@]}" \
                 -B build-arm .
 
       - name: Build Dolphin (x86_64)
