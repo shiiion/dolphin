@@ -14,14 +14,6 @@
 #include "InputCommon/ControllerInterface/ControllerInterface.h"
 #include "InputCommon/QuartzInputMouse.h"
 
-/// Helper class to get window position data from threads other than the main thread
-@interface DolWindowPositionObserver : NSObject
-
-- (instancetype)initWithView:(NSView*)view;
-@property(readonly) NSRect frame;
-
-@end
-
 @implementation DolWindowPositionObserver
 {
   NSView* _view;

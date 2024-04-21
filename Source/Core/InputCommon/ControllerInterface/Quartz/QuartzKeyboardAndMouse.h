@@ -9,7 +9,13 @@
 #include "InputCommon/ControllerInterface/CoreDevice.h"
 
 #ifdef __OBJC__
-@class DolWindowPositionObserver;
+/// Helper class to get window position data from threads other than the main thread
+@interface DolWindowPositionObserver : NSObject
+
+- (instancetype)initWithView:(NSView*)view;
+@property(readonly) NSRect frame;
+
+@end
 #else
 class DolWindowPositionObserver;
 #endif
