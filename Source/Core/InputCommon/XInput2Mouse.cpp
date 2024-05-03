@@ -33,7 +33,7 @@ bool InitXInput2Mouse(void* const hwnd)
   current_master = &all_masters[0];
   if (current_master->use == XIMasterPointer)
   {
-    g_mouse_input.reset(XInput2Mouse((Window)hwnd, xi_opcode, current_master->deviceid));
+    g_mouse_input.reset(new XInput2Mouse((Window)hwnd, xi_opcode, current_master->deviceid));
   }
 
   XCloseDisplay(dpy);
