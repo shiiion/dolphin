@@ -65,9 +65,10 @@ jobs:
           git apply ../Externals/MoltenVK/patches/*.patch
           ./fetchDependencies --macos
           make macos
-          chmod 755 Package/Release/MoltenVK/dylib/macOS/libMoltenVK.dylib
+          ls -l Package/Release/MoltenVK/dynamic/*
+          chmod 755 Package/Release/MoltenVK/dynamic/dylib/macOS/libMoltenVK.dylib
           mkdir -p "$HOME/moltenvk/lib/"
-          mv Package/Release/MoltenVK/dylib/macOS/libMoltenVK.dylib "$HOME/moltenvk/lib/"
+          mv Package/Release/MoltenVK/dynamic/dylib/macOS/libMoltenVK.dylib "$HOME/moltenvk/lib/"
           popd
           rm -rf mvk-build
 
