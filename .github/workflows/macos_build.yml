@@ -142,8 +142,8 @@ jobs:
           PR_NUM: ${{ github.event.pull_request.number }}
           PR_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          lipo -create build/Binaries/Dolphin.app/Contents/MacOS/Dolphin build-arm/Binaries/Dolphin.app/Contents/MacOS/Dolphin -o dolphin
-          mv dolphin build/Binaries/Dolphin.app/Contents/MacOS/Dolphin
+          lipo -create build/Binaries/DolphinQt.app/Contents/MacOS/DolphinQt build-arm/Binaries/DolphinQt.app/Contents/MacOS/DolphinQt -o dolphin
+          mv dolphin build/Binaries/DolphinQt.app/Contents/MacOS/DolphinQt
           TAG="$(git tag --points-at HEAD)"
           if [ ! -z "$TAG" ]; then
             SUFFIX="$TAG"
@@ -155,7 +155,7 @@ jobs:
             SUFFIX="sha[$(git rev-parse --short HEAD)]"
           fi
           APPNAME="PrimeHack-$SUFFIX"
-          mv build/Binaries/Dolphin.app "$APPNAME.app"
+          mv build/Binaries/DolphinQt.app "$APPNAME.app"
           tar cvzf "$APPNAME.tar.gz" "$APPNAME.app"
           echo "name=$APPNAME" >> "$GITHUB_OUTPUT"
 
