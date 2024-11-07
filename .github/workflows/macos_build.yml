@@ -94,7 +94,6 @@ jobs:
             -DUSE_SYSTEM_BZIP2=ON
             -DUSE_SYSTEM_CURL=ON
             -DUSE_SYSTEM_ICONV=ON
-            -DUSE_SYSTEM_LIBLZMA=ON
             -DUSE_SYSTEM_SDL2=ON
             -GNinja
           )
