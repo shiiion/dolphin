@@ -5,8 +5,8 @@ set -e
 export MACOSX_DEPLOYMENT_TARGET=10.15
 INSTALLDIR="$HOME/deps"
 NPROCS="$(getconf _NPROCESSORS_ONLN)"
-SDL=SDL2-2.30.2
-QT=6.2.8
+SDL=SDL2-2.30.9
+QT=6.2.10
 QT_SUFFIX=-opensource
 
 mkdir deps-build
@@ -18,11 +18,11 @@ export CFLAGS="-I$INSTALLDIR/include -Os $CFLAGS"
 export CXXFLAGS="-I$INSTALLDIR/include -Os $CXXFLAGS"
 
 cat > SHASUMS <<EOF
-891d66ac8cae51361d3229e3336ebec1c407a8a2a063b61df14f5fdf3ab5ac31  $SDL.tar.gz
-718c91365fc0ab00fb37c262e30285efc7c608d1b7f2b2a3611338ba0799157b  qtbase-everywhere$QT_SUFFIX-src-$QT.tar.xz
-9ddb0859697de5832f91b85fa20cd9c90d3174c035e9e4b05393969819fd37ec  qtsvg-everywhere$QT_SUFFIX-src-$QT.tar.xz
-97326f2ce07701316fab45e76510e30f540c23527a7723b0ad98d7ffea76ba14  qttools-everywhere$QT_SUFFIX-src-$QT.tar.xz
-46191973fd688e3b9b0eac799a2e3de8fb672874c707b177cf71d8e9198ca77c  qttranslations-everywhere$QT_SUFFIX-src-$QT.tar.xz
+24b574f71c87a763f50704bbb630cbe38298d544a1f890f099a4696b1d6beba4  $SDL.tar.gz
+efbeff5ad6f4d46e82734a681909892401688432fd7ef02c63d2083304d8265c  qtbase-everywhere$QT_SUFFIX-src-$QT.tar.xz
+5e04e4b7699d837c52641310ca386373801a24e8924de7ffcc4b84890431eb38  qtsvg-everywhere$QT_SUFFIX-src-$QT.tar.xz
+62809b242ebcb0e65ac6738f76d005d24c352a8b813128fa3772906ca50cf980  qttools-everywhere$QT_SUFFIX-src-$QT.tar.xz
+57e7cb80d31c32ccbb00bbd7da170970b9effb992970aaf687d4524117aca41e  qttranslations-everywhere$QT_SUFFIX-src-$QT.tar.xz
 EOF
 
 curl -L \
