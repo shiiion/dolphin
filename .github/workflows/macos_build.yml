@@ -24,9 +24,9 @@ jobs:
           HOMEBREW_NO_INSTALL_CLEANUP: 1
           HOMEBREW_NO_ANALYTICS: 1
         run: |
-          if ! brew install ccache; then
+          if ! brew install ccache ninja; then
             brew update
-            brew install ccache
+            brew install ccache ninja
           fi
 
       - name: Cache Dependencies
@@ -96,6 +96,7 @@ jobs:
             -DUSE_SYSTEM_ICONV=ON
             -DUSE_SYSTEM_LIBLZMA=ON
             -DUSE_SYSTEM_SDL2=ON
+            -GNinja
           )
 
           cmake -DCMAKE_OSX_ARCHITECTURES=x86_64 \
@@ -117,7 +118,7 @@ jobs:
           ccache -p
           ccache -s
           ccache -z
-          make -j$(getconf _NPROCESSORS_ONLN) dolphin-emu
+          ninja dolphin-emu
           ccache -s
 
       - name: Build Dolphin (arm64)
@@ -126,7 +127,7 @@ jobs:
           ccache -p
           ccache -s
           ccache -z
-          make -j$(getconf _NPROCESSORS_ONLN) dolphin-emu
+          ninja dolphin-emu
           ccache -s
 
       - name: Prepare Build Artifacts
