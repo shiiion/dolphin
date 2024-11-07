@@ -152,11 +152,11 @@ jobs:
           fi
           APPNAME="PrimeHack-$SUFFIX"
           mv build/Binaries/DolphinQt.app "$APPNAME.app"
-          tar cvzf "$APPNAME.tar.gz" "$APPNAME.app"
+          tar --options xz:compression-level=9 -cvJf "$APPNAME.tar.xz" "$APPNAME.app"
           echo "name=$APPNAME" >> "$GITHUB_OUTPUT"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.create-artifact.outputs.name }}
-          path: "*.tar.gz"
+          path: "*.tar.xz"
