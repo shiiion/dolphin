@@ -98,6 +98,11 @@ void PrimeMod::update_original_instructions() {
     original_instructions.emplace_back(addr, readi(addr));
   }
   pending_change_backups.clear();
+  for (auto [addr, inst] : original_instructions) {
+    INFO_LOG_FMT(ACTIONREPLAY,
+                 "Saved original instruction @ 0x{:08x} with value 0x{:08x}",
+                 addr, inst);
+   }
 }
 
 u32 PrimeMod::lookup_address(std::string_view name) {
