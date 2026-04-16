@@ -85,13 +85,8 @@ void GeneralPane::OnEmulationStateChanged(Core::State state)
   const bool running = state != Core::State::Uninitialized;
 
   m_checkbox_dualcore->setEnabled(!running);
-<<<<<<< HEAD
-  m_checkbox_cheats->setEnabled(!running && !hardcore);
-  m_checkbox_load_games_into_memory->setEnabled(!running);
-=======
   m_checkbox_cheats->setEnabled(!running);
->>>>>>> e01ec6bb22 (Rebase to 2503)
-  m_checkbox_primehack->setEnabled(!running);
+  m_checkbox_load_games_into_memory->setEnabled(!running);
   m_checkbox_override_region_settings->setEnabled(!running);
 #ifdef USE_DISCORD_PRESENCE
   m_checkbox_discord_presence->setEnabled(!running);
@@ -156,10 +151,6 @@ void GeneralPane::CreateBasic()
          "<br><br>This may improve performance with slow or high-latency storage."
          "<br>System memory requirements will be much higher with this setting enabled."
          "<br><br><dolphin_emphasis>If unsure, leave this unchecked.</dolphin_emphasis>"));
-
-  m_checkbox_primehack = new ConfigBool(tr("Toggle PrimeHack Controls"), Config::PRIMEHACK_ENABLE);
-  m_checkbox_primehack->setToolTip(QString::fromStdString("Toggle PrimeHack controls on or off. PrimeHack GFX will still work."));
-  basic_group_layout->addWidget(m_checkbox_primehack);
 
   m_checkbox_override_region_settings =
       new ConfigBool(tr("Allow Mismatched Region Settings"), Config::MAIN_OVERRIDE_REGION_SETTINGS);

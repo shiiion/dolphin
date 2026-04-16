@@ -71,7 +71,7 @@ void PrimeHackEmuGC::CreateMainLayout()
 
   layout->addLayout(groupbox1, 0, 0);
 
-  controller_box = CreateGroupBox(tr("Camera Control"), Pad::GetGroup(
+  controller_box = CreateGroupBox(tr("Camera (Controller)"), Pad::GetGroup(
     GetPort(), PadGroup::ControlStick));
 
   controller_box->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);

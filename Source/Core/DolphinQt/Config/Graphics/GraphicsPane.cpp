@@ -62,7 +62,7 @@ void GraphicsPane::CreateMainLayout()
   tab_widget->addTab(wrapped_enhancements, tr("Enhancements"));
   tab_widget->addTab(wrapped_hacks, tr("Hacks"));
   tab_widget->addTab(wrapped_advanced, tr("Advanced"));
-  tab_widget->addTab(wrapped_prime, tr("PrimeHack GFX"));
+  tab_widget->addTab(wrapped_prime, tr("PrimeHack"));
 }
 
 void GraphicsPane::OnBackendChanged(const QString& backend_name)

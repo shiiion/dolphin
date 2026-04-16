@@ -329,7 +329,7 @@ Wiimote::Wiimote(const unsigned int index) : m_index(index), m_bt_device_index(i
                         {SIDEWAYS_OPTION, nullptr, nullptr, _trans("Sideways Wii Remote")}, false);
 
   // Adding PrimeHack Buttons
-  groups.emplace_back(m_primehack_beams = new ControllerEmu::ControlGroup(_trans("PrimeHack")));
+  groups.emplace_back(m_primehack_beams = new ControllerEmu::ControlGroup(_trans("PrimeHack"), ControllerEmu::GroupType::Beams));
   for (const char* prime_button : prime_beams)
   {
     const std::string& ui_name = prime_button;
@@ -375,7 +375,7 @@ Wiimote::Wiimote(const unsigned int index) : m_index(index), m_bt_device_index(i
     &m_primehack_scalesens, {"Scale Cursor Sensitivity by Window Size", nullptr, nullptr, _trans("Scale Cursor Sensitivity by Window Size")}, false);
 
   m_primehack_camera->AddSetting(
-    &m_primehack_movereticle, {"Control Reticle When Locked-On", nullptr, nullptr, _trans("Control Reticle When Locked-On")}, false);
+    &m_primehack_movereticle, {"Control Crosshair When Locked-On", nullptr, nullptr, _trans("Control Crosshair When Locked-On")}, false);
   m_primehack_camera->AddSetting(
     &m_primehack_remap_map_controls,
     {"Rotate Map with Mouse", nullptr, nullptr, _trans("Rotate Map with Mouse")}, true);
@@ -817,8 +817,119 @@ void Wiimote::LoadDefaults(const ControllerInterface& ciface)
 {
   EmulatedController::LoadDefaults(ciface);
 
+#ifdef ANDROID
+  // Rumble
+  m_rumble->SetControlExpression(0, "`Android/0/Device Sensors:Motor 0`");
+
+  // Motion Source
+  m_imu_accelerometer->SetControlExpression(0, "`Android/0/Device Sensors:Accel Up`");
+  m_imu_accelerometer->SetControlExpression(1, "`Android/0/Device Sensors:Accel Down`");
+  m_imu_accelerometer->SetControlExpression(2, "`Android/0/Device Sensors:Accel Left`");
+  m_imu_accelerometer->SetControlExpression(3, "`Android/0/Device Sensors:Accel Right`");
+  m_imu_accelerometer->SetControlExpression(4, "`Android/0/Device Sensors:Accel Forward`");
+  m_imu_accelerometer->SetControlExpression(5, "`Android/0/Device Sensors:Accel Backward`");
+  m_imu_gyroscope->SetControlExpression(0, "`Android/0/Device Sensors:Gyro Pitch Up`");
+  m_imu_gyroscope->SetControlExpression(1, "`Android/0/Device Sensors:Gyro Pitch Down`");
+  m_imu_gyroscope->SetControlExpression(2, "`Android/0/Device Sensors:Gyro Roll Left`");
+  m_imu_gyroscope->SetControlExpression(3, "`Android/0/Device Sensors:Gyro Roll Right`");
+  m_imu_gyroscope->SetControlExpression(4, "`Android/0/Device Sensors:Gyro Yaw Left`");
+  m_imu_gyroscope->SetControlExpression(5, "`Android/0/Device Sensors:Gyro Yaw Right`");
+#else
+// Buttons
+#if defined HAVE_X11 && HAVE_X11
+  // A
+  m_buttons->SetControlExpression(0, "`Click 1`");
+  // B
+  m_buttons->SetControlExpression(1, "`Click 3`");
+#elif defined(__APPLE__)
+  // A
+  m_buttons->SetControlExpression(0, "`Left Click`");
+  // B
+  m_buttons->SetControlExpression(1, "`Right Click`");
+#else
+  // A
+  m_buttons->SetControlExpression(0, "`Click 0`");
+  // B
+  m_buttons->SetControlExpression(1, "`Click 1`");
+#endif
+  // 1 2 - +
+  m_buttons->SetControlExpression(2, "`1`");
+  m_buttons->SetControlExpression(3, "`2`");
+  m_buttons->SetControlExpression(4, "Q");
+  m_buttons->SetControlExpression(5, "E");
+
 #ifdef _WIN32
-  m_buttons->SetControlExpression(0, "`Click 0` | RETURN"); // Fire
+  m_buttons->SetControlExpression(6, "RETURN");  // Home
+#else
+  // Home
+  m_buttons->SetControlExpression(6, "Return");
+#endif
+
+  // Shake
+  for (int i = 0; i < 3; ++i)
+#ifdef __APPLE__
+    m_shake->SetControlExpression(i, "`Middle Click`");
+#else
+    m_shake->SetControlExpression(i, "`Click 2`");
+#endif
+
+  // Pointing (IR)
+  m_ir->SetControlExpression(0, "`Cursor Y-`");
+  m_ir->SetControlExpression(1, "`Cursor Y+`");
+  m_ir->SetControlExpression(2, "`Cursor X-`");
+  m_ir->SetControlExpression(3, "`Cursor X+`");
+
+// DPad
+#ifdef _WIN32
+  m_dpad->SetControlExpression(0, "UP");     // Up
+  m_dpad->SetControlExpression(1, "DOWN");   // Down
+  m_dpad->SetControlExpression(2, "LEFT");   // Left
+  m_dpad->SetControlExpression(3, "RIGHT");  // Right
+#elif __APPLE__
+  m_dpad->SetControlExpression(0, "`Up Arrow`");     // Up
+  m_dpad->SetControlExpression(1, "`Down Arrow`");   // Down
+  m_dpad->SetControlExpression(2, "`Left Arrow`");   // Left
+  m_dpad->SetControlExpression(3, "`Right Arrow`");  // Right
+#else
+  m_dpad->SetControlExpression(0, "Up");     // Up
+  m_dpad->SetControlExpression(1, "Down");   // Down
+  m_dpad->SetControlExpression(2, "Left");   // Left
+  m_dpad->SetControlExpression(3, "Right");  // Right
+#endif
+
+  // Motion Source
+  m_imu_accelerometer->SetControlExpression(0, "`Accel Up`");
+  m_imu_accelerometer->SetControlExpression(1, "`Accel Down`");
+  m_imu_accelerometer->SetControlExpression(2, "`Accel Left`");
+  m_imu_accelerometer->SetControlExpression(3, "`Accel Right`");
+  m_imu_accelerometer->SetControlExpression(4, "`Accel Forward`");
+  m_imu_accelerometer->SetControlExpression(5, "`Accel Backward`");
+  m_imu_gyroscope->SetControlExpression(0, "`Gyro Pitch Up`");
+  m_imu_gyroscope->SetControlExpression(1, "`Gyro Pitch Down`");
+  m_imu_gyroscope->SetControlExpression(2, "`Gyro Roll Left`");
+  m_imu_gyroscope->SetControlExpression(3, "`Gyro Roll Right`");
+  m_imu_gyroscope->SetControlExpression(4, "`Gyro Yaw Left`");
+  m_imu_gyroscope->SetControlExpression(5, "`Gyro Yaw Right`");
+  for (int i = 0; i < 4; ++i)
+  {
+    m_ir_passthrough->SetControlExpression(i * 3 + 0, fmt::format("`IR Object {} X`", i + 1));
+    m_ir_passthrough->SetControlExpression(i * 3 + 1, fmt::format("`IR Object {} Y`", i + 1));
+    m_ir_passthrough->SetControlExpression(i * 3 + 2, fmt::format("`IR Object {} Size`", i + 1));
+  }
+#endif
+
+  // Enable Nunchuk:
+  constexpr ExtensionNumber DEFAULT_EXT = ExtensionNumber::NUNCHUK;
+  m_attachments->SetSelectedAttachment(DEFAULT_EXT);
+  m_attachments->GetAttachmentList()[DEFAULT_EXT]->LoadDefaults();
+}
+
+void Wiimote::LoadPrimeHackDefaults(const ControllerInterface& ciface)
+{
+  EmulatedController::LoadDefaults(ciface);
+
+#ifdef _WIN32
+  m_buttons->SetControlExpression(0, "`Click 0` | RETURN"); // Fire/Accept/Bomb
   m_buttons->SetControlExpression(1, "SPACE"); // Jump
   m_buttons->SetControlExpression(2, "TAB"); // Map
   m_buttons->SetControlExpression(3, "GRAVE"); // Pause Menu

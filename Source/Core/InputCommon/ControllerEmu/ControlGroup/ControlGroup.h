@@ -52,7 +52,8 @@ enum class GroupType
   IMUCursor,
   IRPassthrough,
   PrimeHackMode,
-  PrimeHackAltProfile
+  PrimeHackAltProfile,
+  Beams
 };
 
 class ControlGroup

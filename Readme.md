@@ -1,12 +1,13 @@
-# Dolphin - A GameCube and Wii Emulator
+# PrimeHack
 
-[Homepage](https://dolphin-emu.org/) | [Project Site](https://github.com/dolphin-emu/dolphin) | [Buildbot](https://dolphin.ci/) | [Forums](https://forums.dolphin-emu.org/) | [Wiki](https://wiki.dolphin-emu.org/) | [GitHub Wiki](https://github.com/dolphin-emu/dolphin/wiki) | [Issue Tracker](https://bugs.dolphin-emu.org/projects/emulator/issues) | [Coding Style](https://github.com/dolphin-emu/dolphin/blob/master/Contributing.md) | [Transifex Page](https://app.transifex.com/dolphinemu/dolphin-emu/dashboard/) | [Analytics](https://mon.dolphin-emu.org/)
+[Discord](https://discord.gg/Gc2HcPH)
 
-Dolphin is an emulator for running GameCube and Wii games on Windows,
-Linux, macOS, and recent Android devices. It's licensed under the terms
+PrimeHack is a Dolphin Emulator fork for the Metroid Prime-series games available for Windows,
+Linux, macOS, and Android\*. It's licensed under the terms
 of the GNU General Public License, version 2 or later (GPLv2+).
+_\*The Android build is not officially developed or built and is provided by the community._
 
-Please read the [FAQ](https://dolphin-emu.org/docs/faq/) before using Dolphin.
+Please read the [wiki](https://github.com/shiiion/dolphin/wiki) before using PrimeHack.
 
 ## System Requirements
 
@@ -34,13 +35,13 @@ Please read the [FAQ](https://dolphin-emu.org/docs/faq/) before using Dolphin.
     * A graphics processor that supports OpenGL ES 3.0 or higher. Performance varies heavily with [driver quality](https://dolphin-emu.org/blog/2013/09/26/dolphin-emulator-and-opengl-drivers-hall-fameshame/).
     * A graphics processor that supports standard desktop OpenGL features is recommended for best performance.
 
-Dolphin can only be installed on devices that satisfy the above requirements. Attempting to install on an unsupported device will fail and display an error message.
+PrimeHack can only be installed on devices that satisfy the above requirements. Attempting to install on an unsupported device will fail and display an error message.
 
 ## Building for Windows
 
-Use the solution file `Source/dolphin-emu.sln` to build Dolphin on Windows.
-Dolphin targets the latest MSVC shipped with Visual Studio or Build Tools.
-Other compilers might be able to build Dolphin on Windows but have not been
+Use the solution file `Source/dolphin-emu.sln` to build PrimeHack on Windows.
+PrimeHack targets the latest MSVC shipped with Visual Studio or Build Tools.
+Other compilers might be able to build PrimeHack on Windows but have not been
 tested and are not recommended to be used. Git and latest Windows SDK must be
 installed when building.
 
@@ -49,15 +50,15 @@ Make sure to pull submodules before building:
 git submodule update --init --recursive
 ```
 
-The "Release" solution configuration includes performance optimizations for the best user experience but complicates debugging Dolphin.
-The "Debug" solution configuration is significantly slower, more verbose and less permissive but makes debugging Dolphin easier.
+The "Release" solution configuration includes performance optimizations for the best user experience but complicates debugging PrimeHack.
+The "Debug" solution configuration is significantly slower, more verbose and less permissive but makes debugging PrimeHack easier.
 
 ## Building for Linux and macOS
 
-Dolphin requires [CMake](https://cmake.org/) for systems other than Windows. 
+PrimeHack requires [CMake](https://cmake.org/) for systems other than Windows. 
 You need a recent version of GCC or Clang with decent c++20 support. CMake will
 inform you if your compiler is too old.
-Many libraries are bundled with Dolphin and used if they're not installed on 
+Many libraries are bundled with PrimeHack and used if they're not installed on 
 your system. CMake will inform you if a bundled library is used or if you need
 to install any missing packages yourself. You may refer to the [wiki](https://github.com/dolphin-emu/dolphin/wiki/Building-for-Linux) for more information.
 
@@ -112,7 +113,7 @@ Useful for development as root access is not required.
 ### Linux Portable Build Steps:
 
 Can be stored on external storage and used on different Linux systems.
-Or useful for having multiple distinct Dolphin setups for testing/development/TAS.
+Or useful for having multiple distinct PrimeHack setups for testing/development/TAS.
 
 1. `mkdir Build`
 2. `cd Build`
@@ -133,26 +134,26 @@ git submodule update --init --recursive
 
 If using Android Studio, import the Gradle project located in `./Source/Android`.
 
-Android apps are compiled using a build system called Gradle. Dolphin's native component,
+Android apps are compiled using a build system called Gradle. PrimeHack's native component,
 however, is compiled using CMake. The Gradle script will attempt to run a CMake build
 automatically while building the Java code.
 
 ## Uninstalling
 
 On Windows, simply remove the extracted directory, unless it was installed with the NSIS installer,
-in which case you can uninstall Dolphin like any other Windows application.
+in which case you can uninstall PrimeHack like any other Windows application.
 
 Linux users can run `cat install_manifest.txt | xargs -d '\n' rm` as root from the build directory
-to uninstall Dolphin from their system.
+to uninstall PrimeHack from their system.
 
-macOS users can simply delete Dolphin.app to uninstall it.
+macOS users can simply delete PrimeHack.app to uninstall it.
 
-Additionally, you'll want to remove the global user directory if you don't plan on reinstalling Dolphin.
+Additionally, you'll want to remove the global user directory if you don't plan on reinstalling PrimeHack.
 
 ## Command Line Usage
 
 ```
-Usage: Dolphin.exe [options]... [FILE]...
+Usage: PrimeHack.exe [options]... [FILE]...
 
 Options:
   --version             show program's version number and exit
@@ -170,7 +171,7 @@ Options:
                         Load the initial save state
   -d, --debugger        Show the debugger pane and additional View menu options
   -l, --logger          Open the logger
-  -b, --batch           Run Dolphin without the user interface (Requires
+  -b, --batch           Run PrimeHack without the user interface (Requires
                         --exec or --nand-title)
   -c, --confirm         Set Confirm on Stop
   -v VIDEO_BACKEND, --video_backend=VIDEO_BACKEND

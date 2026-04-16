@@ -74,7 +74,7 @@
 #include "InputCommon/InputConfig.h"
 
 MappingWindow::MappingWindow(QWidget* parent, Type type, int port_num)
-    : QDialog(parent), m_port(port_num)
+    : QDialog(parent), m_mapping_type(type), m_port(port_num)
 {
   setWindowTitle(tr("Port %1").arg(port_num + 1));
 
@@ -225,7 +225,11 @@ void MappingWindow::ConnectWidgets()
   connect(m_devices_combo, &QComboBox::currentIndexChanged, this, &MappingWindow::OnSelectDevice);
 
   connect(m_reset_clear, &QPushButton::clicked, this, &MappingWindow::OnClearFieldsPressed);
-  connect(m_reset_default, &QPushButton::clicked, this, &MappingWindow::OnDefaultFieldsPressed);
+  if (m_mapping_type == Type::MAPPING_GCPAD_METROID || m_mapping_type == Type::MAPPING_WIIMOTE_METROID) {
+    connect(m_reset_default, &QPushButton::clicked, this, &MappingWindow::OnDefaultFieldsPrimeHackPressed);
+  } else {
+    connect(m_reset_default, &QPushButton::clicked, this, &MappingWindow::OnDefaultFieldsPressed);
+  }
   connect(m_profiles_save, &QPushButton::clicked, this, &MappingWindow::OnSaveProfilePressed);
   connect(m_profiles_load, &QPushButton::clicked, this, &MappingWindow::OnLoadProfilePressed);
   connect(m_profiles_delete, &QAction::triggered, this, &MappingWindow::OnDeleteProfilePressed);
@@ -476,11 +480,12 @@ void MappingWindow::SetMappingType(MappingWindow::Type type)
     AddWidget(tr("GameCube Controller"), widget);
     m_primehack_tab =
       AddWidget(PRIMEHACK_TAB_NAME, new PrimeHackEmuGC(this));
+    m_tab_widget->setTabEnabled(m_tab_widget->indexOf(m_primehack_tab), Config::Get(Config::PRIMEHACK_ENABLE));
 
     break;
   case Type::MAPPING_GCPAD_METROID:
     widget = new GCPadEmuMetroid(this);
-    setWindowTitle(tr("GameCube Controller (Metroid) at Port %1").arg(GetPort() + 1));
+    setWindowTitle(tr("PrimeHack [GameCube] (Port %1)").arg(GetPort() + 1));
     AddWidget(tr("General"), widget);
 
     break;
@@ -518,7 +523,7 @@ void MappingWindow::SetMappingType(MappingWindow::Type type)
   }
   case Type::MAPPING_WIIMOTE_METROID:
   {
-    setWindowTitle(tr("Wii Remote (Metroid) %1").arg(GetPort() + 1));
+    setWindowTitle(tr("PrimeHack [Wii] (Port %1)").arg(GetPort() + 1));
 
     auto* extension = new WiimoteEmuExtension(this);
 
@@ -637,6 +642,17 @@ void MappingWindow::OnDefaultFieldsPressed()
   emit Save();
 }
 
+void MappingWindow::OnDefaultFieldsPrimeHackPressed()
+{
+  m_controller->LoadPrimeHackDefaults(g_controller_interface);
+  m_controller->UpdateReferences(g_controller_interface);
+  m_controller->GetConfig()->GenerateControllerTextures();
+
+  const auto lock = GetController()->GetStateLock();
+  emit ConfigChanged();
+  emit Save();
+}
+
 void MappingWindow::OnClearFieldsPressed()
 {
   // Loading an empty inifile section clears everything.
@@ -673,6 +689,7 @@ void MappingWindow::ShowExtensionMotionTabs(bool show)
 
     m_tab_widget->addTab(m_primehack_tab, PRIMEHACK_TAB_NAME);
   }
+  m_tab_widget->setTabEnabled(m_tab_widget->indexOf(m_primehack_tab), Config::Get(Config::PRIMEHACK_ENABLE));
 }
 
 void MappingWindow::ActivateExtensionTab()

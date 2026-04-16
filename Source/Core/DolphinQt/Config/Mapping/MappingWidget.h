@@ -13,6 +13,7 @@ class MappingWindow;
 class QFormLayout;
 class QPushButton;
 class QGroupBox;
+class QLabel;
 
 namespace ControllerEmu
 {
@@ -60,4 +61,5 @@ protected:
 private:
   MappingWindow* m_parent;
   MappingButton* m_previous_mapping_button = nullptr;
+  QLabel* beam_change_warning;
 };

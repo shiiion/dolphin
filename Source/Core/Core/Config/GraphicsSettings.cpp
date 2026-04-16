@@ -220,17 +220,18 @@ const Info<bool> LOCKCAMERA_IN_PUZZLES{{System::GFX, "PrimeHack Misc", "Lock Cam
 const Info<bool> DISABLE_BLOOM{{System::GFX, "PrimeHack Misc", "DisableBloom"}, false};
 const Info<bool> REDUCE_BLOOM{{System::GFX, "PrimeHack Misc", "ReduceBloom"}, true};
 const Info<int> BLOOM_INTENSITY{{System::GFX, "PrimeHack Misc", "BloomIntensity"}, 100};
-const Info<int> FOV{{System::GFX, "PrimeHack Misc", "Field of View"}, 60};
-const Info<bool> TOGGLE_ARM_REPOSITION{{System::GFX, "PrimeHack Misc", "ToggleArmRePosition"}, true};
 const Info<bool> TOGGLE_CULLING{{System::GFX, "PrimeHack Misc", "ToggleCulling"}, false};
 const Info<bool> ENABLE_SECONDARY_GUNFX{{System::GFX, "PrimeHack Misc", "EnableSecondaryGunFX"}, false};
 const Info<bool> GC_SHOW_CROSSHAIR{ {System::GFX, "PrimeHack Misc", "GC_ShowCrosshair"}, false };
 const Info<int> GC_CROSSHAIR_COLOR_RGBA{ {System::GFX, "PrimeHack Misc", "GC_Crosshair_Color_RGBA"}, 0x4b7ea331 };
 const Info<bool> AUTO_FOG_TOGGLE_MP3{{System::GFX, "PrimeHack Misc", "Auto_Fog_Toggle_MP3"}, true};
 
+const Info<bool> TOGGLE_ARM_REPOSITION{{System::GFX, "PrimeHack Misc", "ToggleArmRePosition"}, true};
+const Info<bool> FOV_ENABLE{{System::GFX, "PrimeHack Misc", "FOV_Toggle"}, false};
+const Info<int> FOV{{System::GFX, "PrimeHack Misc", "Field of View"}, 60};
 const Info<int> ARMPOSITION_MODE{{System::GFX, "PrimeHack Misc", "ArmPosition_Mode"}, 0};
-const Info<int> ARMPOSITION_LEFTRIGHT{{System::GFX, "PrimeHack Misc", "ArmPosition_LEFTRIGHT"}, 25};
 const Info<int> ARMPOSITION_UPDOWN{{System::GFX, "PrimeHack Misc", "ArmPosition_UPDOWN"}, -30};
+const Info<int> ARMPOSITION_LEFTRIGHT{{System::GFX, "PrimeHack Misc", "ArmPosition_LEFTRIGHT"}, 25};
 const Info<int> ARMPOSITION_FORWARDBACK{{System::GFX, "PrimeHack Misc", "ArmPosition_FORWARDBACK"}, -35};
 
 }  // namespace Config

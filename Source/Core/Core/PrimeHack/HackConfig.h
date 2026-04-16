@@ -61,7 +61,7 @@ float GetCursorSensitivity();
 void SetCursorSensitivity(float sensitivity);
 bool ScaleCursorSensitivity();
 void SetScaleCursorSensitivity(bool scale);
-float GetFov();
+float GetFov(Game game);
 bool InvertedY();
 void SetInvertedY(bool inverted);
 bool InvertedX();

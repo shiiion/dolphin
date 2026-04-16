@@ -74,7 +74,7 @@ void PrimeHackEmuWii::CreateMainLayout()
   m_morphball_combobox->setToolTip(tr("Set the controller profile to use\nwhen in Morph Ball and Map."));
   m_morphball_combobox->setEditable(false);
   QFormLayout* misc_box_layout = static_cast<QFormLayout*>(misc_box->layout());
-  misc_box_layout->addRow(tr("Morphball & Map Profile"), m_morphball_combobox);
+  misc_box_layout->addRow(tr("Morph Ball & Map Profile"), m_morphball_combobox);
 
   PopulateMorphBallProfiles();
 
@@ -101,7 +101,7 @@ void PrimeHackEmuWii::CreateMainLayout()
 
   groupbox2->addWidget(camera, 0, Qt::AlignTop);
 
-  controller_box = CreateGroupBox(tr("Camera Control"), Wiimote::GetWiimoteGroup(
+  controller_box = CreateGroupBox(tr("Camera (Controller)"), Wiimote::GetWiimoteGroup(
     GetPort(), WiimoteEmu::WiimoteGroup::ControlStick));
 
   controller_box->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -116,7 +116,7 @@ void PrimeHackEmuWii::CreateMainLayout()
 
 void PrimeHackEmuWii::OnMorphControlSelectionChanged()
 {
-  //Called as soon as our selection is changed to update the controller preset for Morphball mode.
+  //Called as soon as our selection is changed to update the controller preset for Morph Ball mode.
   auto* morph_group = static_cast<ControllerEmu::PrimeHackAltProfile*>(
     Wiimote::GetWiimoteGroup(GetPort(), WiimoteEmu::WiimoteGroup::AltProfileControls));
 

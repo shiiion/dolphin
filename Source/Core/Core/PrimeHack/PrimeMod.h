@@ -9,6 +9,8 @@
 #include "Core/Core.h"
 #include "Core/PowerPC/PowerPC.h"
 
+#include "Common/Assembler/GekkoAssembler.h"
+
 namespace prime {
 struct CodeChange {
   uint32_t address, var;
@@ -72,6 +74,7 @@ public:
   // Gets the corresponding list of code changes to apply per-frame
   const std::vector<CodeChange>& get_changes_to_apply() const;
   void add_code_change(u32 addr, u32 code, std::string_view group = "");
+  void add_asm_patch(std::string_view patch);
   void set_code_change(u32 address, u32 var);
   void update_original_instructions();
   std::vector<CodeChange>& get_code_changes() { return code_changes; }

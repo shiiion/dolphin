@@ -1,5 +1,9 @@
 #include "Core/PrimeHack/Mods/Noclip.h"
 #include "Core/PrimeHack/PrimeUtils.h"
+#include <VideoCommon/OnScreenDisplay.h>
+
+#include <fmt/format.h>
+#include <Common/Logging/log.h>
 
 namespace prime
 {
@@ -578,6 +582,10 @@ void Noclip::noclip_code_mp3(u32 cplayer_address, u32 start_point, u32 return_lo
 }
 
 void Noclip::on_state_change(ModState old_state) {
+  if (mod_state() != old_state) {
+    OSD::AddMessage(StringFromFormat("Noclip: %s", mod_state() == ModState::ENABLED ? "Enabled" : "Disabled"));
+    INFO_LOG_FMT(CORE, "State changed to {}", (int) mod_state());
+  }
   LOOKUP_DYN(player);
   if (player == 0) {
     return;

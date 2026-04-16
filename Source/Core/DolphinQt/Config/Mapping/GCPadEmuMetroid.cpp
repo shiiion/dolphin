@@ -44,19 +44,19 @@ void GCPadEmuMetroid::CreateMainLayout()
 
   auto* groupbox0 = new QVBoxLayout();
 
-  auto* gamecube_buttons = CreateGroupBox(tr("GameCube Buttons"),
+  auto* gamecube_buttons = CreateGroupBox(tr("Face Buttons"),
     Pad::GetGroup(GetPort(), PadGroup::Buttons));
 
-  gamecube_buttons->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+  gamecube_buttons->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   groupbox0->addWidget(gamecube_buttons);
 
-  auto* trigger_buttons = CreateGroupBox(tr("GameCube Triggers"),
+  auto* trigger_buttons = CreateGroupBox(tr("Triggers"),
     Pad::GetGroup(GetPort(), PadGroup::Triggers));
 
-  trigger_buttons->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+  trigger_buttons->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   groupbox0->addWidget(trigger_buttons);
 
-  auto* gamecube_options = CreateGroupBox(tr("GameCube Controller Properties"),
+  auto* gamecube_options = CreateGroupBox(tr("Properties"),
     Pad::GetGroup(GetPort(), PadGroup::Options));
 
   gamecube_options->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -132,7 +132,7 @@ void GCPadEmuMetroid::CreateMainLayout()
       Pad::GetGroup(GetPort(), PadGroup::Camera));
   groupbox3->addWidget(camera_options, 0, Qt::AlignTop);
 
-  camera_control = CreateGroupBox(tr("Camera Control"), Pad::GetGroup(
+  camera_control = CreateGroupBox(tr("Camera (Controller)"), Pad::GetGroup(
     GetPort(), PadGroup::ControlStick));
   camera_control->setEnabled(ce_modes->GetSelectedDevice() == 1);
   groupbox3->addWidget(camera_control, 1);

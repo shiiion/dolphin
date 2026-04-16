@@ -159,7 +159,7 @@ void WiimoteEmuMetroid::CreateMainLayout()
       GetPort(), WiimoteEmu::WiimoteGroup::Visors));
   groupbox1->addWidget(visor_box);
 
-  auto* morphball_control_box = CreateGroupBox(tr("Morphball & Map Profile"), Wiimote::GetWiimoteGroup(GetPort(), WiimoteEmu::WiimoteGroup::AltProfileControls));
+  auto* morphball_control_box = CreateGroupBox(tr("Morphball Profile"), Wiimote::GetWiimoteGroup(GetPort(), WiimoteEmu::WiimoteGroup::AltProfileControls));
   groupbox1->addWidget(morphball_control_box);
   m_morphball_combobox = (morphball_control_box->findChild<QComboBox*>(tr("ProfileList")));
   m_morphball_combobox->setToolTip(tr("Set the controller profile to use\nwhen in Morph Ball and Map."));
@@ -180,7 +180,7 @@ void WiimoteEmuMetroid::CreateMainLayout()
     Wiimote::GetWiimoteGroup(GetPort(), WiimoteEmu::WiimoteGroup::Misc));
   groupbox2->addWidget(misc_box, 0, Qt::AlignTop);
 
-  auto* movement_stick = CreateGroupBox(tr("Movement Stick"), Wiimote::GetNunchukGroup(
+  auto* movement_stick = CreateGroupBox(tr("Movement"), Wiimote::GetNunchukGroup(
     GetPort(), WiimoteEmu::NunchukGroup::Stick));
 
   movement_stick->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -214,7 +214,7 @@ void WiimoteEmuMetroid::CreateMainLayout()
       Wiimote::GetWiimoteGroup(GetPort(), WiimoteEmu::WiimoteGroup::Camera));
   groupbox3->addWidget(camera_options, 0, Qt::AlignTop);
 
-  camera_control = CreateGroupBox(tr("Camera Control"), Wiimote::GetWiimoteGroup(
+  camera_control = CreateGroupBox(tr("Camera (Controller)"), Wiimote::GetWiimoteGroup(
     GetPort(), WiimoteEmu::WiimoteGroup::ControlStick));
   camera_control->setEnabled(ce_modes->GetSelectedDevice() == 1);
   groupbox3->addWidget(camera_control, 1);

@@ -158,6 +158,11 @@ void EmulatedController::LoadDefaults(const ControllerInterface& ciface)
   }
 }
 
+void EmulatedController::LoadPrimeHackDefaults(const ControllerInterface& ciface)
+{
+  LoadDefaults(ciface);
+}
+
 void ControlGroupContainer::SetInputOverrideFunction(InputOverrideFunction override_func)
 {
   m_input_override_function = std::move(override_func);

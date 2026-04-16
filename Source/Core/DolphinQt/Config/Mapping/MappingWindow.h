@@ -84,6 +84,7 @@ private:
   void ConnectWidgets();
 
   QWidget* AddWidget(const QString& name, QWidget* widget);
+  std::pair<QWidget*, int> AddWidgetGetIndex(const QString& name, QWidget* widget);
 
   void RefreshDevices();
 
@@ -99,6 +100,7 @@ private:
   void UpdateDeviceList();
 
   void OnDefaultFieldsPressed();
+  void OnDefaultFieldsPrimeHackPressed();
   void OnClearFieldsPressed();
   void OnSelectDevice(int index);
 

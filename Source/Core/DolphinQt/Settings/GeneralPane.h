@@ -51,7 +51,6 @@ private:
   ConfigBool* m_checkbox_load_games_into_memory;
   ConfigBool* m_checkbox_override_region_settings;
   ConfigBool* m_checkbox_auto_disc_change;
-  ConfigBool* m_checkbox_primehack;
 #ifdef USE_DISCORD_PRESENCE
   ToolTipCheckBox* m_checkbox_discord_presence;
 #endif

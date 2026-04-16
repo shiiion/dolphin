@@ -22,6 +22,7 @@ public:
   void on_state_change(ModState old_state) override {}
 
 private:
+  static float get_fov();
   void adjust_viewmodel(float fov, u32 arm_address, u32 znear_address, u32 znear_value);
   void adjust_fov_mp3(float fov, u16 camera_id);
   static void on_camera_change(PowerPC::PowerPCState&, PowerPC::MMU&, u32);

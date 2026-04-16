@@ -46,42 +46,27 @@ void PrimeWidget::CreateWidgets()
   auto* main_layout = new QVBoxLayout;
 
   // Graphics
-  auto* graphics_box = new QGroupBox(tr("Graphics"));
+  auto* graphics_box = new QGroupBox(tr("General"));
   auto* graphics_layout = new QGridLayout();
 
   graphics_box->setLayout(graphics_layout);
 
   m_motions_lock =
-      new ConfigBool(tr("Lock Camera in Motion Puzzles"), Config::LOCKCAMERA_IN_PUZZLES);
+      new ConfigBool(tr("Lock Camera for Motion Puzzles"), Config::LOCKCAMERA_IN_PUZZLES);
   m_toggle_arm_position =
-      new ConfigBool(tr("Toggle Viewmodel Adjustment"), Config::TOGGLE_ARM_REPOSITION);
+      new ConfigBool(tr("Enable Viewmodel Adjustments"), Config::TOGGLE_ARM_REPOSITION);
   m_toggle_culling = new ConfigBool(tr("Disable Culling"), Config::TOGGLE_CULLING);
   m_toggle_secondaryFX =
-      new ConfigBool(tr("Enable GCN Gun Effects"), Config::ENABLE_SECONDARY_GUNFX);
+      new ConfigBool(tr("Enable GCN Arm Cannon Effects"), Config::ENABLE_SECONDARY_GUNFX);
   m_toggle_gc_show_crosshair =
-      new ConfigBool(tr("Show GCN Crosshair"), Config::GC_SHOW_CROSSHAIR);
+      new ConfigBool(tr("Enable GCN Crosshair"), Config::GC_SHOW_CROSSHAIR);
   m_autofogtoggle_mp3 =
-      new ConfigBool(tr("Disable Fog in Scan Visor [Prime 3]"), Config::AUTO_FOG_TOGGLE_MP3);
+      new ConfigBool(tr("Disable Fog for Scan Visor [MP3]"), Config::AUTO_FOG_TOGGLE_MP3);
 
   graphics_layout->addWidget(m_motions_lock, 1, 0);
   graphics_layout->addWidget(m_toggle_secondaryFX, 2, 0);
-  graphics_layout->addWidget(m_toggle_arm_position, 3, 0);
-  graphics_layout->addWidget(m_toggle_culling, 4, 0);
-  graphics_layout->addWidget(m_autofogtoggle_mp3, 5, 0);
-
-  m_fov_axis = new ConfigSlider(1, 170, Config::FOV);
-  m_fov_axis->setMaximumWidth(200);
-  m_fov_axis->setMinimum(1);
-  m_fov_axis->setMaximum(170);
-  m_fov_axis->setPageStep(1);
-
-  fov_counter = new ConfigInteger(1, 170, Config::FOV);
-  fov_counter->setMaximumWidth(50);
-
-  graphics_layout->addItem(new QSpacerItem(1, 5), 5, 0);
-  graphics_layout->addWidget(new QLabel(tr("Field of View")), 6, 0);
-  graphics_layout->addWidget(m_fov_axis, 6, 1);
-  graphics_layout->addWidget(fov_counter, 6, 2);
+  graphics_layout->addWidget(m_toggle_culling, 3, 0);
+  graphics_layout->addWidget(m_autofogtoggle_mp3, 4, 0);
 
   // Bloom
   auto* bloom_box = new QGroupBox(tr("Bloom"));
@@ -89,31 +74,34 @@ void PrimeWidget::CreateWidgets()
 
   bloom_box->setLayout(bloom_layout);
 
-  m_disable_bloom = new ConfigBool(tr("Disable Bloom [Prime 1, 2]"), Config::DISABLE_BLOOM);
-  m_reduce_bloom = new ConfigBool(tr("Reduce Bloom Offset [Prime 3]"), Config::REDUCE_BLOOM);
-  bloom_intensity_val = new ConfigInteger(0, 100, Config::BLOOM_INTENSITY);
-  bloom_intensity_val->setMaximumWidth(50);
+  m_disable_bloom = new ConfigBool(tr("Disable Bloom [MP1/MP2]"), Config::DISABLE_BLOOM);
+  m_reduce_bloom = new ConfigBool(tr("Reduce Bloom Offset [MP3]"), Config::REDUCE_BLOOM);
+  m_bloom_intensity_val = new ConfigInteger(0, 100, Config::BLOOM_INTENSITY);
+  m_bloom_intensity_val->setMaximumWidth(50);
   m_bloom_intensity = new ConfigSlider(0, 100, Config::BLOOM_INTENSITY);
   m_bloom_intensity->setMaximumWidth(200);
   m_bloom_intensity->setMinimum(0);
   m_bloom_intensity->setMaximum(100);
   m_bloom_intensity->setPageStep(1);
+  
+  m_bloom_intensity->setEnabled(Config::Get(Config::REDUCE_BLOOM));
+  m_bloom_intensity_val->setEnabled(Config::Get(Config::REDUCE_BLOOM));
 
   bloom_layout->addWidget(m_disable_bloom, 1, 0);
   bloom_layout->addWidget(m_reduce_bloom, 2, 0);
-  bloom_layout->addWidget(new QLabel(tr("Bloom Intensity [Prime 3]")), 3, 0);
+  bloom_layout->addWidget(new QLabel(tr("Bloom Intensity")), 3, 0);
   bloom_layout->addWidget(m_bloom_intensity, 3, 1);
-  bloom_layout->addWidget(bloom_intensity_val, 3, 2);
+  bloom_layout->addWidget(m_bloom_intensity_val, 3, 2);
 
   // Crosshair Color
-  auto* crosshair_color_box = new QGroupBox(tr("GCN Crosshair Color"));
+  auto* crosshair_color_box = new QGroupBox(tr("Crosshair"));
   auto* crosshair_color_layout = new QHBoxLayout();
 
   crosshair_color_box->setLayout(crosshair_color_layout);
 
   colorpicker = new QColorDialog();
-  m_select_colour = new QPushButton(tr("Select Colour"));
-  m_reset_colour = new QPushButton(tr("Reset Colour"));
+  m_select_colour = new QPushButton(tr("Select Color"));
+  m_reset_colour = new QPushButton(tr("Reset Color"));
   m_reset_colour->setMaximumWidth(100);
 
   crosshair_color_layout->addWidget(m_toggle_gc_show_crosshair);
@@ -121,16 +109,39 @@ void PrimeWidget::CreateWidgets()
   crosshair_color_layout->addWidget(m_reset_colour);
   crosshair_color_layout->addWidget(m_select_colour);
 
+  // FOV
+  auto* fov_box = new QGroupBox(tr("FOV"));
+  auto* fov_layout = new QGridLayout();
+  fov_box->setLayout(fov_layout);
+
+  m_fov_toggle = new ConfigBool(tr("Enable Field of View Adjustment"), Config::FOV_ENABLE);
+
+  m_fov_axis = new ConfigSlider(1, 170, Config::FOV);
+  m_fov_axis->setMaximumWidth(200);
+  m_fov_axis->setMinimum(1);
+  m_fov_axis->setMaximum(170);
+  m_fov_axis->setPageStep(1);
+
+  m_fov_counter = new ConfigInteger(1, 170, Config::FOV);
+  m_fov_counter->setMaximumWidth(50);
+  m_fov_counter->setEnabled(Config::Get(Config::FOV_ENABLE));
+  m_fov_axis->setEnabled(Config::Get(Config::FOV_ENABLE));
+
+  fov_layout->addWidget(m_fov_toggle, 0, 0);
+  fov_layout->addWidget(new QLabel(tr("Field of View")), 1, 0);
+  fov_layout->addWidget(m_fov_axis, 1, 1);
+  fov_layout->addWidget(m_fov_counter, 1, 2);
+
   // Viewmodel Position
-  auto* viewmodel_box = new QGroupBox(tr("Viewmodel Position"));
+  auto* viewmodel_box = new QGroupBox(tr("Viewmodel"));
   auto* viewmodel_layout = new QGridLayout();
 
   viewmodel_box->setLayout(viewmodel_layout);
 
   m_auto_arm_position =
-      new ConfigRadioInt(tr("Automatic Viewmodel Adjustment"), Config::ARMPOSITION_MODE, 0);
+      new ConfigRadioInt(tr("Automatic Adjustment"), Config::ARMPOSITION_MODE, 0);
   m_manual_arm_position =
-      new ConfigRadioInt(tr("Manual Viewmodel Adjustment"), Config::ARMPOSITION_MODE, 1);
+      new ConfigRadioInt(tr("Manual Adjustment"), Config::ARMPOSITION_MODE, 1);
 
   m_x_axis = new ConfigSlider(-50, 50, Config::ARMPOSITION_LEFTRIGHT);
   m_z_axis = new ConfigSlider(-50, 50, Config::ARMPOSITION_FORWARDBACK);
@@ -159,25 +170,27 @@ void PrimeWidget::CreateWidgets()
   m_y_axis->setMinimum(-50);
   m_y_axis->setMaximum(50);
   m_y_axis->setPageStep(1);
-
-  viewmodel_layout->addWidget(m_auto_arm_position, 0, 0);
-  viewmodel_layout->addWidget(m_manual_arm_position, 0, 1);
-
-  viewmodel_layout->addWidget(new QLabel(tr("Left/Right")), 3, 0);
-  viewmodel_layout->addWidget(new QLabel(tr("Forwards/Backwards")), 4, 0);
-  viewmodel_layout->addWidget(new QLabel(tr("Up/Down")), 5, 0);
-
-  viewmodel_layout->addWidget(m_x_axis, 3, 1);
-  viewmodel_layout->addWidget(m_z_axis, 4, 1);
-  viewmodel_layout->addWidget(m_y_axis, 5, 1);
-
-  viewmodel_layout->addWidget(x_counter, 3, 2);
-  viewmodel_layout->addWidget(z_counter, 4, 2);
-  viewmodel_layout->addWidget(y_counter, 5, 2);
+  
+  viewmodel_layout->addWidget(m_toggle_arm_position, 0, 0);
+  viewmodel_layout->addWidget(m_auto_arm_position, 1, 0);
+  viewmodel_layout->addWidget(m_manual_arm_position, 1, 1);
+  
+  viewmodel_layout->addWidget(new QLabel(tr("Up/Down")), 4, 0);
+  viewmodel_layout->addWidget(new QLabel(tr("Left/Right")), 5, 0);
+  viewmodel_layout->addWidget(new QLabel(tr("Forwards/Backwards")), 6, 0);
+  
+  viewmodel_layout->addWidget(m_y_axis, 4, 1);
+  viewmodel_layout->addWidget(m_x_axis, 5, 1);
+  viewmodel_layout->addWidget(m_z_axis, 6, 1);
+  
+  viewmodel_layout->addWidget(y_counter, 4, 2);
+  viewmodel_layout->addWidget(x_counter, 5, 2);
+  viewmodel_layout->addWidget(z_counter, 6, 2);
 
   main_layout->addWidget(graphics_box);
   main_layout->addWidget(bloom_box);
   main_layout->addWidget(crosshair_color_box);
+  main_layout->addWidget(fov_box);
   main_layout->addWidget(viewmodel_box);
   main_layout->addStretch();
 
@@ -202,6 +215,14 @@ void PrimeWidget::ToggleShowCrosshair(bool mode)
 
 void PrimeWidget::ConnectWidgets()
 {
+  connect(m_fov_toggle, &ConfigBool::clicked, this, [=](bool checked) {
+    m_fov_counter->setEnabled(checked);
+    m_fov_axis->setEnabled(checked);
+  });
+  connect(m_reduce_bloom, &ConfigBool::clicked, this, [=](bool checked) {
+    m_bloom_intensity->setEnabled(checked);
+    m_bloom_intensity_val->setEnabled(checked);
+  });
   connect(m_toggle_gc_show_crosshair, &ConfigBool::clicked, this,
           [=](bool checked) { PrimeWidget::ToggleShowCrosshair(checked); });
   connect(m_auto_arm_position, &QRadioButton::clicked, this,
@@ -220,7 +241,7 @@ void PrimeWidget::ConnectWidgets()
     }
     else
     {
-      if (prime::GetFov() > 94)
+      if (prime::GetFov(prime::Game::PRIME_1) > 94)
       {
         m_toggle_culling->setEnabled(false);
         m_toggle_culling->setChecked(true);
@@ -230,7 +251,7 @@ void PrimeWidget::ConnectWidgets()
 
   connect(m_select_colour, &QPushButton::clicked, this, [=]() {
     QColor c = colorpicker->getColor(QColor::fromRgba(0x4b7ea331), this,
-                                     tr("Select a cursor colour"), QColorDialog::ShowAlphaChannel);
+                                     tr("Select a cursor color"), QColorDialog::ShowAlphaChannel);
 
     int r, g, b, a;
     c.getRgb(&r, &g, &b, &a);
@@ -261,8 +282,8 @@ void PrimeWidget::AddDescriptions()
                  "recommended value is 65, 0 will effectively disable bloom.\n\n"
                  "Source: TheHatedGravity and dreamsyntax.");
   static const char TR_TOGGLE_ARM_POSITION[] =
-      QT_TR_NOOP("Toggles repositioning of Samus's arms in the viewmodel. Repositioning her arms "
-                 "is visually beneficial for high Field Of Views.");
+      QT_TR_NOOP("Allows for adjustments for the position of Samus' arms, recommended for a higher"
+                  "than normal FOV.");
   static const char TR_TOGGLE_CULL[] =
       QT_TR_NOOP("Disables graphical culling. This allows for Field of Views above 101 in Metroid "
                  "Prime 1 and Metroid Prime 2, and above 94 in Metroid Prime 3.\n\n"
@@ -280,6 +301,9 @@ void PrimeWidget::AddDescriptions()
       QT_TR_NOOP("Modifies the arm position on the Z axis. This is back and forward.");
   static const char TR_MOTION_LOCK[] =
       QT_TR_NOOP("Automatically locks the camera in all motion puzzles and buttons.");
+  static const char TR_FOV_TOGGLE[] =
+      QT_TR_NOOP("Enables FOV adjustments, disabling will cause games to revert to their original\n"
+                 "values when this setting is disabled.");
   static const char TR_FOV[] =
       QT_TR_NOOP("Modifies the Field of View. The Prime games are not designed to go beyond 101 "
                  "FOV (94 in Prime 3), so if you do PrimeHack has to "
@@ -290,12 +314,14 @@ void PrimeWidget::AddDescriptions()
       QT_TR_NOOP("Hack fix which toggles fog off only when in scan visor.\n\n"
                  "Fixes Prime 3 issue where menu background is filled with the fog color.\n\n"
                  "By Timdeuces.");
+  static const char TR_GC_SHOW_CROSSHAIR[] =
+      QT_TR_NOOP("Forces the lock-on crosshair as the persistent crosshair.");
 
   m_motions_lock->SetDescription(tr(TR_MOTION_LOCK));
   m_toggle_secondaryFX->SetDescription(tr(TR_GUNEFFECTS));
   m_disable_bloom->SetDescription(tr(TR_DISABLE_BLOOM));
   m_reduce_bloom->SetDescription(tr(TR_REDUCE_BLOOM));
-  bloom_intensity_val->SetDescription(tr(TR_BLOOM_INTENSITY));
+  m_bloom_intensity_val->SetDescription(tr(TR_BLOOM_INTENSITY));
   m_toggle_culling->SetDescription(tr(TR_TOGGLE_CULL));
   m_toggle_arm_position->SetDescription(tr(TR_TOGGLE_ARM_POSITION));
   m_manual_arm_position->SetDescription(tr(TR_MANUAL_POSITION));
@@ -303,7 +329,9 @@ void PrimeWidget::AddDescriptions()
   m_x_axis->SetDescription(tr(TR_X_AXIS));
   m_x_axis->SetDescription(tr(TR_Y_AXIS));
   m_x_axis->SetDescription(tr(TR_Z_AXIS));
+  m_fov_toggle->SetDescription(tr(TR_FOV_TOGGLE));
   m_fov_axis->SetDescription(tr(TR_FOV));
-  fov_counter->SetDescription(tr(TR_FOV));
+  m_fov_counter->SetDescription(tr(TR_FOV));
   m_autofogtoggle_mp3->SetDescription(tr(TR_AUTOFOG));
+  m_toggle_gc_show_crosshair->SetDescription(tr(TR_GC_SHOW_CROSSHAIR));
 }

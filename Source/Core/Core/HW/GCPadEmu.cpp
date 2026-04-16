@@ -253,6 +253,72 @@ void GCPad::LoadDefaults(const ControllerInterface& ciface)
 
   // Triforce Coin
   m_triforce->SetControlExpression(2, "pulse(`Android/0/Device Sensors:Accel Down` > 15, 0.1)");
+#else
+  // Buttons: A, B, X, Y, Z
+  m_buttons->SetControlExpression(0, "`X`");
+  m_buttons->SetControlExpression(1, "`Z`");
+  m_buttons->SetControlExpression(2, "`C`");
+  m_buttons->SetControlExpression(3, "`S`");
+  m_buttons->SetControlExpression(4, "`D`");
+#ifdef _WIN32
+  m_buttons->SetControlExpression(5, "`RETURN`");  // Start
+#else
+  // OS X/Linux
+  // Start
+  m_buttons->SetControlExpression(5, "`Return`");
+#endif
+
+  // D-Pad
+  m_dpad->SetControlExpression(0, "`T`");  // Up
+  m_dpad->SetControlExpression(1, "`G`");  // Down
+  m_dpad->SetControlExpression(2, "`F`");  // Left
+  m_dpad->SetControlExpression(3, "`H`");  // Right
+
+  // C Stick
+  m_c_stick->SetControlExpression(0, "`I`");  // Up
+  m_c_stick->SetControlExpression(1, "`K`");  // Down
+  m_c_stick->SetControlExpression(2, "`J`");  // Left
+  m_c_stick->SetControlExpression(3, "`L`");  // Right
+  // Modifier
+  m_c_stick->SetControlExpression(4, "`Ctrl`");
+
+  // Control Stick
+#ifdef _WIN32
+  m_main_stick->SetControlExpression(0, "`UP`");     // Up
+  m_main_stick->SetControlExpression(1, "`DOWN`");   // Down
+  m_main_stick->SetControlExpression(2, "`LEFT`");   // Left
+  m_main_stick->SetControlExpression(3, "`RIGHT`");  // Right
+#elif __APPLE__
+  m_main_stick->SetControlExpression(0, "`Up Arrow`");     // Up
+  m_main_stick->SetControlExpression(1, "`Down Arrow`");   // Down
+  m_main_stick->SetControlExpression(2, "`Left Arrow`");   // Left
+  m_main_stick->SetControlExpression(3, "`Right Arrow`");  // Right
+#else
+  m_main_stick->SetControlExpression(0, "`Up`");     // Up
+  m_main_stick->SetControlExpression(1, "`Down`");   // Down
+  m_main_stick->SetControlExpression(2, "`Left`");   // Left
+  m_main_stick->SetControlExpression(3, "`Right`");  // Right
+#endif
+  // Modifier
+  m_main_stick->SetControlExpression(4, "`Shift`");
+
+  // Because our defaults use keyboard input, set calibration shapes to squares.
+  m_c_stick->SetCalibrationFromGate(ControllerEmu::SquareStickGate(1.0));
+  m_main_stick->SetCalibrationFromGate(ControllerEmu::SquareStickGate(1.0));
+
+  // Triggers
+  m_triggers->SetControlExpression(0, "`Q`");  // L
+  m_triggers->SetControlExpression(1, "`W`");  // R
+#endif
+}
+
+void GCPad::LoadPrimeHackDefaults(const ControllerInterface& ciface)
+{
+  EmulatedController::LoadDefaults(ciface);
+
+#ifdef ANDROID
+  // Rumble
+  m_rumble->SetControlExpression(0, "`Android/0/Device Sensors:Motor 0`");
 #elif defined(_WIN32)
   m_buttons->SetControlExpression(0, "`Click 0` | RETURN"); // A
   m_buttons->SetControlExpression(1, "SPACE");  // B
@@ -345,7 +411,8 @@ void GCPad::ChangeUIPrimeHack(bool useMetroidUI)
     m_dpad->controls[i]->display_alt = useMetroidUI;
   }
 
-  m_triggers->controls[0]->ui_name = useMetroidUI ? "Lock-On" : _trans("L");
+  // Controls both instances in UI for analog feedback and bind text
+  m_triggers->controls[0]->ui_name = useMetroidUI ? "L" : _trans("L");
   m_triggers->controls[0]->display_alt = useMetroidUI;
 
   using_metroid_ui = useMetroidUI;

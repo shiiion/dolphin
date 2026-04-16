@@ -2,6 +2,7 @@
 
 #include "Core/PowerPC/MMU.h"
 #include "Core/PowerPC/PowerPC.h"
+#include "Core/PrimeHack/Mods/AssemblyPatches.h"
 #include "Core/PrimeHack/Mods/ContextSensitiveControls.h"
 #include "Core/PrimeHack/PrimeUtils.h"
 #include "Core/System.h"
@@ -9,6 +10,7 @@
 #include "Common/Timer.h"
 
 #include <cmath>
+
 
 namespace prime {
 namespace {
@@ -29,7 +31,9 @@ constexpr u32 ORBIT_STATE_GRAPPLE = 5;
 #define RIDLEY_STR(r) (r == Region::NTSC_J ? L"メタリドリー" : L"Meta Ridley")
 #define RIDLEY_STR_LEN(r) (r == Region::NTSC_J ? 6 : 11)
 }
-
+u32 byteswap(u8 const* addr) {
+  return (addr[0] << 24) | (addr[1] << 16) | (addr[2] << 8) | (addr[3]);
+}
 bool FpsControls::is_string_ridley(Region active_region, u32 string_base) {
   if (string_base == 0) {
     return false;
@@ -326,11 +330,11 @@ void FpsControls::run_mod_mp1(Region region) {
           set_code_group_state("beam_change", ModState::DISABLED);
         }
 
-        handle_reticle(*active_guard, cursor + 0x9c, cursor + 0x15c, region, GetFov());
+        handle_reticle(*active_guard, cursor + 0x9c, cursor + 0x15c, region, GetFov(Game::PRIME_1));
         menu_open = true;
       }
     } else if (HandleReticleLockOn()) {  // If we handle menus, this doesn't need to be ran
-      handle_reticle(*active_guard, cursor + 0x9c, cursor + 0x15c, region, GetFov());
+      handle_reticle(*active_guard, cursor + 0x9c, cursor + 0x15c, region, GetFov(Game::PRIME_1));
     }
   } else {
     if (menu_open) {
@@ -475,11 +479,11 @@ void FpsControls::run_mod_mp2(Region region) {
           set_code_group_state("beam_change", ModState::DISABLED);
         }
 
-        handle_reticle(*active_guard, cursor + 0x9c, cursor + 0x15c, region, GetFov());
+        handle_reticle(*active_guard, cursor + 0x9c, cursor + 0x15c, region, GetFov(Game::PRIME_2));
         menu_open = true;
       }
     } else if (HandleReticleLockOn()) {
-      handle_reticle(*active_guard, cursor + 0x9c, cursor + 0x15c, region, GetFov());
+      handle_reticle(*active_guard, cursor + 0x9c, cursor + 0x15c, region, GetFov(Game::PRIME_2));
     }
   } else {
     if (menu_open) {
@@ -710,7 +714,7 @@ void FpsControls::run_mod_mp3(Game active_game, Region active_region) {
       write32(0, cursor + 0x9c);
       write32(0, cursor + 0x15c);
     } else if (for_reticle) {
-      handle_reticle(*active_guard, cursor + 0x9c, cursor + 0x15c, active_region, GetFov());
+      handle_reticle(*active_guard, cursor + 0x9c, cursor + 0x15c, active_region, GetFov(Game::PRIME_3));
     } else {
       handle_cursor(*active_guard, cursor + 0x9c, cursor + 0x15c, active_region);
     }
@@ -1609,6 +1613,28 @@ void FpsControls::init_mod_mp1(Region region) {
 
 void FpsControls::init_mod_mp1_gc(Region region) {
   if (region == Region::NTSC_U) {
+    LOOKUP(state_manager);
+    add_asm_patch(fmt::format(fmt::runtime(spring_ball_template),
+      fmt::arg("hook_start", 0x800f8d28),
+      fmt::arg("hook_buffer", 0x805b0000),
+      fmt::arg("get_digital_input_param_stub", "li r3, 19\n"),
+      fmt::arg("get_digital_input", 0x8000c874),
+      fmt::arg("player_movement_state", 0x258),
+      fmt::arg("get_player_state_stub",
+        fmt::format("lis r3, 0x{:04x}\nori r3, r3, 0x{:04x}\nlwz r3, 0x8b8(r3)\nlwz r3, 0(r3)\n",
+                    state_manager >> 16, state_manager & 0xffff)),
+      fmt::arg("bomb_pup_id", 0x6),
+      fmt::arg("has_power_up", 0x80091AC0),
+      fmt::arg("transform_off", 0x34),
+      fmt::arg("bomb_jump", 0x802853ec),
+      fmt::arg("hook_return", 0x800f8d30)
+      ));
+
+    add_asm_patch(fmt::format(fmt::runtime(door_override_template),
+      fmt::arg("vt_hook", 0x803DFD40),
+      fmt::arg("hook_buffer", 0x805b0300),
+      fmt::arg("state_manager", state_manager)
+      ));
     //add_code_change(0x8000f63c, 0x48000048);
     add_code_change(0x800ea15c, 0x38810044); // output cannon bob only for viewbob
     add_code_change(0x8000e538, 0x60000000);
@@ -1632,6 +1658,22 @@ void FpsControls::init_mod_mp1_gc(Region region) {
 
     add_strafe_code_mp1_100(Game::PRIME_1_GCN);
   } else if (region == Region::PAL) {
+    LOOKUP(state_manager);
+    add_asm_patch(fmt::format(fmt::runtime(spring_ball_template),
+      fmt::arg("hook_start", 0x800f0a60),
+      fmt::arg("hook_buffer", 0x80471e00),
+      fmt::arg("get_digital_input_param_stub", "li r3, 19\n"),
+      fmt::arg("get_digital_input", 0x8000cdec),
+      fmt::arg("player_movement_state", 0x268),
+      fmt::arg("get_player_state_stub",
+        fmt::format("lis r3, 0x{:04x}\nori r3, r3, 0x{:04x}\nlwz r3, 0x8b8(r3)\nlwz r3, 0(r3)\n",
+                    state_manager >> 16, state_manager & 0xffff)),
+      fmt::arg("bomb_pup_id", 0x6),
+      fmt::arg("has_power_up", 0x80091e24),
+      fmt::arg("transform_off", 0x34),
+      fmt::arg("bomb_jump", 0x80272788),
+      fmt::arg("hook_return", 0x800f0a68)
+      ));
     //add_code_change(0x8000fb4c, 0x48000048);
     add_code_change(0x800e2190, 0x38810044); // output cannon bob only for viewbob
     add_code_change(0x8000ea60, 0x60000000);
@@ -1656,6 +1698,22 @@ void FpsControls::init_mod_mp1_gc(Region region) {
 }
 
 void FpsControls::init_mod_mp1_gc_r1() {
+  LOOKUP(state_manager);
+  add_asm_patch(fmt::format(fmt::runtime(spring_ball_template),
+    fmt::arg("hook_start", 0x800f8da4),
+    fmt::arg("hook_buffer", 0x805afe00),
+    fmt::arg("get_digital_input_param_stub", "li r3, 19\n"),
+    fmt::arg("get_digital_input", 0x8000c8f0),
+    fmt::arg("player_movement_state", 0x258),
+    fmt::arg("get_player_state_stub",
+      fmt::format("lis r3, 0x{:04x}\nori r3, r3, 0x{:04x}\nlwz r3, 0x8b8(r3)\nlwz r3, 0(r3)\n",
+                  state_manager >> 16, state_manager & 0xffff)),
+    fmt::arg("bomb_pup_id", 0x6),
+    fmt::arg("has_power_up", 0x80091b3c),
+    fmt::arg("transform_off", 0x34),
+    fmt::arg("bomb_jump", 0x80285468),
+    fmt::arg("hook_return", 0x800f8dac)
+    ));
   //add_code_change(0x8000f6b8, 0x48000048);
   add_code_change(0x800ea1d8, 0x38810044); // output cannon bob only for viewbob
 
@@ -1681,6 +1739,22 @@ void FpsControls::init_mod_mp1_gc_r1() {
 }
 
 void FpsControls::init_mod_mp1_gc_r2() {
+  LOOKUP(state_manager);
+  add_asm_patch(fmt::format(fmt::runtime(spring_ball_template),
+    fmt::arg("hook_start", 0x800f92ac),
+    fmt::arg("hook_buffer", 0x805b0e00),
+    fmt::arg("get_digital_input_param_stub", "li r3, 19\n"),
+    fmt::arg("get_digital_input", 0x8000cb30),
+    fmt::arg("player_movement_state", 0x268),
+    fmt::arg("get_player_state_stub",
+      fmt::format("lis r3, 0x{:04x}\nori r3, r3, 0x{:04x}\nlwz r3, 0x8b8(r3)\nlwz r3, 0(r3)\n",
+                  state_manager >> 16, state_manager & 0xffff)),
+    fmt::arg("bomb_pup_id", 0x6),
+    fmt::arg("has_power_up", 0x80092044),
+    fmt::arg("transform_off", 0x34),
+    fmt::arg("bomb_jump", 0x80285d78),
+    fmt::arg("hook_return", 0x800f92b4)
+    ));
   //add_code_change(0x8000f8f8, 0x48000048);
   add_code_change(0x800ea6e0, 0x38810044); // output cannon bob only for viewbob
 
@@ -1746,6 +1820,7 @@ void FpsControls::init_mod_mp2(Region region) {
     // Steps over bounds checking on the reticle
     add_code_change(0x80018528, 0x48000144);
   } else if (region == Region::NTSC_J) {
+    // Pendign support
     add_code_change(0x8008c944, 0xc0430184);
     add_code_change(0x8008c998, 0x60000000);
     add_code_change(0x80147578, 0x60000000);
@@ -1767,6 +1842,21 @@ void FpsControls::init_mod_mp2(Region region) {
 
 void FpsControls::init_mod_mp2_gc(Region region) {
   if (region == Region::NTSC_U) {
+    add_asm_patch(fmt::format(fmt::runtime(spring_ball_template),
+      fmt::arg("hook_start", 0x800ce864),
+      fmt::arg("hook_buffer", 0x80420000),
+      fmt::arg("get_digital_input_param_stub",
+        "lwz r3, 8(r1)\nlwz r3, 0(r3)\naddi r3, r3, 0x13d0\nmr r5, r4\nli r4, 0x18\nli r6, 0\n"),
+      fmt::arg("get_digital_input", 0x80009c84),
+      fmt::arg("player_movement_state", 0x2d0),
+      fmt::arg("get_player_state_stub",
+        "lwz r3, 8(r1)\nlwz r3, 0(r3)\nlwz r3, 0x1314(r3)\n"),
+      fmt::arg("bomb_pup_id", 0x12),
+      fmt::arg("has_power_up", 0x80085480),
+      fmt::arg("transform_off", 0x24),
+      fmt::arg("bomb_jump", 0x80186838),
+      fmt::arg("hook_return", 0x800ce86c)
+      ));
     //add_code_change(0x801b00b4, 0x48000050);
     add_code_change(0x800bcd44, 0x38810044); // output cannon bob only for viewbob
 
@@ -1793,6 +1883,7 @@ void FpsControls::init_mod_mp2_gc(Region region) {
     u32 null_players_vmc = gen_vmcall(null_players_vmc_idx, 0);
     add_code_change(0x80042994, null_players_vmc);
   } else if (region == Region::NTSC_J) {
+    // Pending support
     // TODO: Enable arm cannon bobbing for JP
     add_code_change(0x801b1e6c, 0x48000050);
     add_code_change(0x801b0d10, 0x60000000);
@@ -1815,6 +1906,21 @@ void FpsControls::init_mod_mp2_gc(Region region) {
 
     add_code_change(0x80061fc0, 0xc022d400);
   } else if (region == Region::PAL) {
+    add_asm_patch(fmt::format(fmt::runtime(spring_ball_template),
+      fmt::arg("hook_start", 0x800ce93c),
+      fmt::arg("hook_buffer", 0x80421000),
+      fmt::arg("get_digital_input_param_stub",
+        "lwz r3, 8(r1)\nlwz r3, 0(r3)\naddi r3, r3, 0x13d0\nmr r5, r4\nli r4, 0x18\nli r6, 0\n"),
+      fmt::arg("get_digital_input", 0x80009cc8),
+      fmt::arg("player_movement_state", 0x2d0),
+      fmt::arg("get_player_state_stub",
+        "lwz r3, 8(r1)\nlwz r3, 0(r3)\nlwz r3, 0x1314(r3)\n"),
+      fmt::arg("bomb_pup_id", 0x12),
+      fmt::arg("has_power_up", 0x800855bc),
+      fmt::arg("transform_off", 0x24),
+      fmt::arg("bomb_jump", 0x80186b1c),
+      fmt::arg("hook_return", 0x800ce944)
+      ));
     //add_code_change(0x801b03c0, 0x48000050);
     add_code_change(0x800bcdd0, 0x38810044); // output cannon bob only for viewbob
 

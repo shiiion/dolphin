@@ -15,6 +15,7 @@
 #include <QScreen>
 #include <QTimer>
 #include <QToolButton>
+#include <QStandardItemModel>
 #include <QVBoxLayout>
 #include <QVariant>
 
@@ -56,6 +57,14 @@ WiimoteControllersWidget::WiimoteControllersWidget(QWidget* parent) : QWidget(pa
   connect(&Settings::Instance(), &Settings::EmulationStateChanged, this,
           [this](Core::State state) { LoadSettings(state); });
   LoadSettings(Core::GetState(Core::System::GetInstance()));
+
+  connect(&Settings::Instance(), &Settings::EnablePrimeChanged, this,
+          [this](bool en) {
+            for (size_t i = 0; i < m_wiimote_boxes.size(); i++)
+            {
+              static_cast<QStandardItemModel*>(m_wiimote_boxes[i]->model())->item(3)->setEnabled(en);
+            }
+          });
 
   m_bluetooth_adapter_refresh_thread.Reset("Bluetooth Adapter Refresh Thread");
   StartBluetoothAdapterRefresh();
@@ -261,8 +270,10 @@ void WiimoteControllersWidget::CreateLayout()
     auto* wm_box = m_wiimote_boxes[i] = new QComboBox();
     auto* wm_button = m_wiimote_buttons[i] = new NonDefaultQPushButton(tr("Configure"));
 
-    for (const auto& item : {tr("None"), tr("Emulated Wii Remote"), tr("Real Wii Remote"), tr("Metroid (Wii Remote)")})
+    for (const auto& item : {tr("None"), tr("Emulated Wii Remote"), tr("Real Wii Remote"), tr("PrimeHack")})
       wm_box->addItem(item);
+
+    static_cast<QStandardItemModel*>(wm_box->model())->item(3)->setEnabled(Settings::Instance().GetPrimeEnabled());
 
     int wm_row = m_wiimote_layout->rowCount();
     m_wiimote_layout->addWidget(wm_label, wm_row, 1);

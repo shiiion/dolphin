@@ -5,6 +5,7 @@
 
 #include "Common/BitUtils.h"
 #include "Common/Logging/Log.h"
+#include "Common/Swap.h"
 #include "Core/PowerPC/MMU.h"
 #include "Core/System.h"
 
@@ -86,6 +87,18 @@ void PrimeMod::add_code_change(u32 addr, u32 code, std::string_view group) {
   pending_change_backups.emplace_back(addr);
   code_changes.emplace_back(addr, code);
   current_active_changes.emplace_back(addr, code);
+}
+
+void PrimeMod::add_asm_patch(std::string_view asm_patch) {
+    using namespace Common::GekkoAssembler;
+    auto result = Assemble(asm_patch, 0);
+    ASSERT(!IsFailure(result));
+    std::vector<CodeBlock> const& code_changes_blocks = GetT(result);
+    for (auto const& block : code_changes_blocks) {
+      for (u32 i = 0; i < block.instructions.size(); i += 4) {
+        add_code_change(block.block_address + i, Common::swap32(&block.instructions[i]));
+      }
+    }
 }
 
 void PrimeMod::set_code_change(u32 address, u32 var) {

@@ -8,8 +8,10 @@
 #include "Core/ConfigManager.h"
 #include "Core/Config/MainSettings.h"
 #include "Common/Config/Config.h"
+#include "DolphinQt/Config/CheatWarningWidget.h"
 
-PrimeCheatsWidget::PrimeCheatsWidget()
+PrimeCheatsWidget::PrimeCheatsWidget(std::string game_id, bool restart_required)
+  : m_game_id(game_id), m_restart_required(restart_required)
 {
   CreateWidgets();
   OnLoadConfig();
@@ -19,7 +21,7 @@ PrimeCheatsWidget::PrimeCheatsWidget()
 
 void PrimeCheatsWidget::CreateWidgets()
 {
-  auto* group_box = new QGroupBox(tr("Cheats"));
+  auto* group_box = new QGroupBox(QStringLiteral(""));
   auto* main_layout = new QVBoxLayout;
   auto* layout = new QVBoxLayout;
 
@@ -27,21 +29,24 @@ void PrimeCheatsWidget::CreateWidgets()
 
   m_checkbox_noclip = new QCheckBox(tr("Noclip"));
   m_checkbox_invulnerability = new QCheckBox(tr("Invulnerability"));
-  m_checkbox_skipcutscenes = new QCheckBox(tr("Skippable Cutscenes"));
   m_checkbox_scandash = new QCheckBox(tr("Restore Scan Dash"));
-  m_checkbox_skipportalmp2 = new QCheckBox(tr("Skip MP2 Portal Cutscene"));
-  m_checkbox_friendvouchers = new QCheckBox(tr("Remove Friend Vouchers Requirement (Trilogy Only)"));
-  m_checkbox_hudmemo = new QCheckBox(tr("Disable Hud Popup on Pickup Acquire"));
-  m_checkbox_hypermode = new QCheckBox(tr("Unlock Hypermode Difficulty"));
+  m_checkbox_hudmemo = new QCheckBox(tr("Disable Pickup Notifications"));
+  // Merge?
+  m_checkbox_skipcutscenes = new QCheckBox(tr("Skippable Cutscenes"));
+  m_checkbox_skipportalmp2 = new QCheckBox(tr("Skip MP2 Portal Cutscenes"));
+  m_checkbox_hypermode = new QCheckBox(tr("Unlock Hypermode (Hard) Difficulty"));
+  m_checkbox_friendvouchers = new QCheckBox(tr("Bypass Friend Vouchers (Trilogy Only)"));
+  m_warning = new CheatWarningWidget(m_game_id, m_restart_required, this);
 
+  layout->addWidget(m_warning);
   layout->addWidget(m_checkbox_noclip);
   layout->addWidget(m_checkbox_invulnerability);
-  layout->addWidget(m_checkbox_skipcutscenes);
   layout->addWidget(m_checkbox_scandash);
-  layout->addWidget(m_checkbox_skipportalmp2);
-  layout->addWidget(m_checkbox_friendvouchers);
   layout->addWidget(m_checkbox_hudmemo);
+  layout->addWidget(m_checkbox_skipcutscenes);
+  layout->addWidget(m_checkbox_skipportalmp2);
   layout->addWidget(m_checkbox_hypermode);
+  layout->addWidget(m_checkbox_friendvouchers);
 
   main_layout->addWidget(group_box);
   main_layout->addStretch();
@@ -59,6 +64,7 @@ void PrimeCheatsWidget::ConnectWidgets()
   connect(m_checkbox_friendvouchers, &QCheckBox::toggled, this, &PrimeCheatsWidget::OnSaveConfig);
   connect(m_checkbox_hudmemo, &QCheckBox::toggled, this, &PrimeCheatsWidget::OnSaveConfig);
   connect(m_checkbox_hypermode, &QCheckBox::toggled, this, &PrimeCheatsWidget::OnSaveConfig);
+  connect(m_warning, &CheatWarningWidget::OpenCheatEnableSettings, this, &PrimeCheatsWidget::OpenGeneralSettings);
 }
 
 void PrimeCheatsWidget::OnSaveConfig()
@@ -103,7 +109,7 @@ void PrimeCheatsWidget::AddDescriptions()
   static const char TR_HUDMEMO[] =
     QT_TR_NOOP("Removes the item pickup screen and explanation screen for powerups.");
   static const char TR_HYPERMODE[] =
-    QT_TR_NOOP("Unlock Hypermode Difficulty.");
+    QT_TR_NOOP("Unlock Hypermode (Hard) Difficulty.");
 
   m_checkbox_noclip->setToolTip(tr(TR_NOCLIP));
   m_checkbox_invulnerability->setToolTip(tr(TR_INVULNERABILITY));

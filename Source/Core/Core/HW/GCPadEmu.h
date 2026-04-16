@@ -59,6 +59,7 @@ public:
   ControllerEmu::ControlGroup* GetGroup(PadGroup group);
 
   void LoadDefaults(const ControllerInterface& ciface) override;
+  void LoadPrimeHackDefaults(const ControllerInterface& ciface) override;
 
   void ChangeUIPrimeHack(bool useMetroidUI);
 

@@ -157,13 +157,12 @@ private:
   void AddShowRegionsMenu(QMenu* view_menu);
 
   void AddOptionsMenu();
+  void AddPrimeHackMenu();
   void AddToolsMenu();
   void AddHelpMenu();
   void AddMovieMenu();
   void AddJITMenu();
   void AddSymbolsMenu();
-  void AddModLoaderMenu();
-  void AddPrimeHackMenu();
 
   void UpdateStateSlotMenu();
 

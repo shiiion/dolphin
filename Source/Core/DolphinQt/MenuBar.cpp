@@ -87,6 +87,7 @@ MenuBar::MenuBar(QWidget* parent) : QMenuBar(parent)
   s_menu_bar = this;
 
   AddFileMenu();
+  AddPrimeHackMenu();
   AddEmulationMenu();
   AddMovieMenu();
   AddOptionsMenu();
@@ -95,8 +96,6 @@ MenuBar::MenuBar(QWidget* parent) : QMenuBar(parent)
   AddJITMenu();
   AddSymbolsMenu();
   AddHelpMenu();
-  AddModLoaderMenu();
-  AddPrimeHackMenu();
 
   connect(&Settings::Instance(), &Settings::EmulationStateChanged, this,
           [=, this](Core::State state) { OnEmulationStateChanged(state); });
@@ -698,9 +697,10 @@ void MenuBar::AddHelpMenu()
   help_menu->addAction(tr("&About"), this, &MenuBar::ShowAboutDialog);
 }
 
-void MenuBar::AddModLoaderMenu() {
-  QMenu* mod_loader_menu = addMenu(tr("Mod &Loader"));
+void MenuBar::AddPrimeHackMenu() {
+  QMenu* primehack_menu = addMenu(tr("PrimeHack"));
 
+  QMenu* mod_loader_menu = primehack_menu->addMenu(tr("Mod Loader"));
   QAction* load_mod = mod_loader_menu->addAction(tr("Load Mod"));
   connect(load_mod, &QAction::triggered, this, [this]() {
     QString path = QFileDialog::getOpenFileName(this, tr("Select MMD file to load"), QString(),
@@ -719,16 +719,12 @@ void MenuBar::AddModLoaderMenu() {
       prime::ResumeMod();
     }
   });
-}
 
-void MenuBar::AddPrimeHackMenu() {
-  QMenu* primehack_menu = addMenu(tr("PrimeHack"));
-
-  primehack_menu->addAction(tr("&Discord"), this,
-    []() { QDesktopServices::openUrl(QUrl(QStringLiteral("https://discord.gg/ZbeKZxDb6W"))); });
-
-  primehack_menu->addAction(tr("&Wiki / Help"), this,
+  QMenu* help_menu = primehack_menu->addMenu(tr("Help"));
+  help_menu->addAction(tr("&Wiki"),
     []() { QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/shiiion/dolphin/wiki"))); });
+  help_menu->addAction(tr("&Discord"),
+    []() { QDesktopServices::openUrl(QUrl(QStringLiteral("https://discord.gg/ZbeKZxDb6W"))); });
 }
 
 void MenuBar::AddGameListTypeSection(QMenu* view_menu)

@@ -72,6 +72,11 @@ void ViewModifier::adjust_viewmodel(float fov, u32 arm_address, u32 znear_addres
   writef32(up, arm_address + 0x8);
 }
 
+// Check current title to get default FOV based on config
+float ViewModifier::get_fov() {
+  return GetFov(hack_mgr->get_active_game());
+}
+
 void ViewModifier::run_mod_mp1() {
   LOOKUP(static_fov_fp);
   LOOKUP(static_fov_tp);
@@ -97,13 +102,13 @@ void ViewModifier::run_mod_mp1() {
     return;
   }
 
-  const float fov = std::min(GetFov(), 170.f);
+  const float fov = std::min(get_fov(), 170.f);
   writef32(fov, camera + 0x164);
   writef32(fov, static_fov_fp);
   writef32(fov, static_fov_tp);
 
   adjust_viewmodel(fov, gun_pos, camera + 0x168, 0x3d200000);
-  set_code_group_state("culling", (GetCulling() || GetFov() > 101.f) ? ModState::ENABLED : ModState::DISABLED);
+  set_code_group_state("culling", (GetCulling() || get_fov() > 101.f) ? ModState::ENABLED : ModState::DISABLED);
 
   DevInfo("camera", "%08X", camera);
 }
@@ -138,7 +143,7 @@ void ViewModifier::run_mod_mp1_gc() {
                               hack_mgr->get_active_game() == Game::PRIME_1_GCN_R2 ? 0x10 : 0);
 
   const u32 r13 = Core::System::GetInstance().GetPPCState().gpr[13];
-  const float fov = std::min(GetFov(), 170.f);
+  const float fov = std::min(get_fov(), 170.f);
   writef32(fov, camera + 0x15c + version_offset);
   writef32(fov, r13 + fov_fp_offset);
   writef32(fov, r13 + fov_tp_offset);
@@ -146,7 +151,7 @@ void ViewModifier::run_mod_mp1_gc() {
   adjust_viewmodel(fov, gun_pos, camera + 0x160 + version_offset,
     0x3d200000);
 
-  set_code_group_state("culling", (GetCulling() || GetFov() > 101.f) ? ModState::ENABLED : ModState::DISABLED);
+  set_code_group_state("culling", (GetCulling() || get_fov() > 101.f) ? ModState::ENABLED : ModState::DISABLED);
   DevInfo("camera", "%08X", camera);
 }
 
@@ -174,12 +179,12 @@ void ViewModifier::run_mod_mp2() {
   }
   const u32 camera = read32(object_list + ((camera_id & 0x3ff) << 3) + 4);
 
-  const float fov = std::min(GetFov(), 170.f);
+  const float fov = std::min(get_fov(), 170.f);
   writef32(fov, camera + 0x1e8);
 
   adjust_viewmodel(fov, read32(read32(tweakgun)) + 0x4c, camera + 0x1c4, 0x3d200000);
 
-  set_code_group_state("culling", (GetCulling() || GetFov() > 101.f) ? ModState::ENABLED : ModState::DISABLED);
+  set_code_group_state("culling", (GetCulling() || get_fov() > 101.f) ? ModState::ENABLED : ModState::DISABLED);
   DevInfo("camera", "%08X", camera);
 }
 
@@ -211,11 +216,11 @@ void ViewModifier::run_mod_mp2_gc() {
   }
 
   const u32 camera = read32(object_list + ((camera_id & 0x3ff) << 3) + 4);
-  const float fov = std::min(GetFov(), 170.f);
+  const float fov = std::min(get_fov(), 170.f);
   writef32(fov, camera + 0x1f0);
   adjust_viewmodel(fov, read32(read32(Core::System::GetInstance().GetPPCState().gpr[13] + tweakgun_offset)) + 0x50, camera + 0x1cc, 0x3d200000);
 
-  set_code_group_state("culling", (GetCulling() || GetFov() > 101.f) ? ModState::ENABLED : ModState::DISABLED);
+  set_code_group_state("culling", (GetCulling() || get_fov() > 101.f) ? ModState::ENABLED : ModState::DISABLED);
   DevInfo("camera", "%08X", camera);
 }
 
@@ -227,7 +232,7 @@ void ViewModifier::on_camera_change(PowerPC::PowerPCState& ppc_state, PowerPC::M
 
   Core::CPUThreadGuard guard(Core::System::GetInstance());
   mod->set_temporary_cpu_guard(&guard);
-  mod->adjust_fov_mp3(std::min(GetFov(), 170.f), static_cast<u16>(ppc_state.gpr[0]));
+  mod->adjust_fov_mp3(std::min(get_fov(), 170.f), static_cast<u16>(ppc_state.gpr[0]));
   mod->set_temporary_cpu_guard(nullptr);
 }
 
@@ -272,10 +277,10 @@ void ViewModifier::run_mod_mp3() {
     return;
   }
 
-  adjust_fov_mp3(std::min(GetFov(), 170.f), camera_id);
+  adjust_fov_mp3(std::min(get_fov(), 170.f), camera_id);
   // Thirdperson camera force update
   if ((camera_id & 0x7ff) != 4) {
-    adjust_fov_mp3(std::min(GetFov(), 170.f), 4);
+    adjust_fov_mp3(std::min(get_fov(), 170.f), 4);
   }
 
   // best guess on the name here
@@ -283,10 +288,10 @@ void ViewModifier::run_mod_mp3() {
   if (!mem_check(perspective_info)) {
     return;
   }
-  const float fov = std::min(GetFov(), 170.f);
+  const float fov = std::min(get_fov(), 170.f);
   adjust_viewmodel(fov, read32(read32(tweakgun)) + 0xe0, perspective_info + 0x8c, 0x3dcccccd);
 
-  set_code_group_state("culling", (GetCulling() || GetFov() > 94.f) ? ModState::ENABLED : ModState::DISABLED);
+  set_code_group_state("culling", (GetCulling() || get_fov() > 94.f) ? ModState::ENABLED : ModState::DISABLED);
 
   const u32 camera = read32(object_list + ((camera_id & 0x7ff) << 3) + 4);
   DevInfo("camera", "%08X", camera);

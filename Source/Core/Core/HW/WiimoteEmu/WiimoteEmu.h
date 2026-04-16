@@ -156,6 +156,7 @@ public:
   InputConfig* GetConfig() const override;
 
   void LoadDefaults(const ControllerInterface& ciface) override;
+  void LoadPrimeHackDefaults(const ControllerInterface& ciface) override;
 
   ControllerEmu::ControlGroup* GetWiimoteGroup(WiimoteGroup group) const;
   ControllerEmu::ControlGroup* GetNunchukGroup(NunchukGroup group) const;

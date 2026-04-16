@@ -8,6 +8,7 @@
 #include <QGroupBox>
 #include <QLabel>
 #include <QPushButton>
+#include <QStandardItemModel>
 #include <QVBoxLayout>
 
 #include <optional>
@@ -37,7 +38,7 @@ static constexpr std::array s_gc_types = {
     SIDeviceName{SerialInterface::SIDEVICE_GC_CONTROLLER, _trans("Standard Controller")},
     SIDeviceName{SerialInterface::SIDEVICE_WIIU_ADAPTER,
                  _trans("GameCube Controller Adapter (USB)")},
-    SIDeviceName{SerialInterface::SIDEVICE_GC_METROID, _trans("Metroid Controller")},
+    SIDeviceName{SerialInterface::SIDEVICE_GC_METROID, _trans("PrimeHack")},
     SIDeviceName{SerialInterface::SIDEVICE_GC_STEERING, _trans("Steering Wheel")},
     SIDeviceName{SerialInterface::SIDEVICE_DANCEMAT, _trans("Dance Mat")},
     SIDeviceName{SerialInterface::SIDEVICE_GC_TARUKONGA, _trans("DK Bongos")},
@@ -93,6 +94,7 @@ void GamecubeControllersWidget::CreateLayout()
     {
       gc_box->addItem(tr(item.second));
     }
+    static_cast<QStandardItemModel*>(gc_box->model())->item(*ToGCMenuIndex(SerialInterface::SIDevices::SIDEVICE_GC_METROID))->setEnabled(Settings::Instance().GetPrimeEnabled());
 
     int controller_row = m_gc_layout->rowCount();
     m_gc_layout->addWidget(gc_label, controller_row, 0);
@@ -118,6 +120,14 @@ void GamecubeControllersWidget::ConnectWidgets()
     });
     connect(m_gc_buttons[i], &QPushButton::clicked, this, [this, i] { OnGCPadConfigure(i); });
   }
+
+  connect(&Settings::Instance(), &Settings::EnablePrimeChanged, this,
+          [this](bool en) {
+            for (size_t i = 0; i < m_gc_controller_boxes.size(); i++)
+            {
+              static_cast<QStandardItemModel*>(m_gc_controller_boxes[i]->model())->item(*ToGCMenuIndex(SerialInterface::SIDevices::SIDEVICE_GC_METROID))->setEnabled(en);
+            }
+          });
 }
 
 void GamecubeControllersWidget::OnGCTypeChanged(size_t index)

@@ -29,8 +29,11 @@
 #include "Core/AchievementManager.h"
 #include "Core/Config/GraphicsSettings.h"
 #include "Core/Config/MainSettings.h"
+#include "Core/Config/WiimoteSettings.h"
 #include "Core/ConfigManager.h"
 #include "Core/Core.h"
+#include "Core/HW/SI/SI_Device.h"
+#include "Core/HW/Wiimote.h"
 #include "Core/IOS/IOS.h"
 #include "Core/NetPlayClient.h"
 #include "Core/NetPlayServer.h"
@@ -680,11 +683,19 @@ bool Settings::GetPrimeEnabled() const
 
 void Settings::SetPrimeEnabled(bool enabled)
 {
-  if (Config::Get(Config::PRIMEHACK_ENABLE) != enabled)
-  {
-    Config::SetBaseOrCurrent(Config::PRIMEHACK_ENABLE, enabled);
-    emit EnablePrimeChanged(enabled);
+  for (int i = 0; i < 4; i++) {
+    auto gc_device = Config::Get(Config::GetInfoForSIDevice(i));
+    if (gc_device == SerialInterface::SIDevices::SIDEVICE_GC_METROID) {
+      Config::SetBaseOrCurrent(Config::GetInfoForSIDevice(i),
+       SerialInterface::SIDevices::SIDEVICE_GC_CONTROLLER);
+    }
+    auto wm_device = Config::Get(Config::GetInfoForWiimoteSource(i));
+    if (wm_device == WiimoteSource::Metroid) {
+      Config::SetBaseOrCurrent(Config::GetInfoForWiimoteSource(i),
+       WiimoteSource::Emulated);
+    }
   }
+  emit EnablePrimeChanged(enabled);
 }
 
 void Settings::SetDebugModeEnabled(bool enabled)

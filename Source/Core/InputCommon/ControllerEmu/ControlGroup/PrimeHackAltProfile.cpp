@@ -8,7 +8,7 @@ namespace ControllerEmu
   {
   }
 
-    // Returns the MorphBall Profile
+    // Returns the Morph Ball Profile
   const std::string& PrimeHackAltProfile::GetAltProfileName() const
   {
     return m_selection_value;

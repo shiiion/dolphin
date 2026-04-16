@@ -210,7 +210,7 @@ void UpdateDiscordPresence(int party_size, SecretType type, const std::string& s
   if (s_using_custom_client)
     UpdateClientID(DEFAULT_CLIENT_ID);
 
-  const std::string& title = "v" + Common::GetScmRevStr() + " (Dolphin Emulator Fork)";
+  const std::string& title = "v" + Common::GetScmRevStr();
 
   DiscordRichPresence discord_presence = {};
   discord_presence.largeImageKey = "primehack_logo";

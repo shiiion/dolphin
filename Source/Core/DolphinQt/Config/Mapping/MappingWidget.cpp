@@ -19,6 +19,7 @@
 #include "DolphinQt/Config/Mapping/MappingIndicator.h"
 #include "DolphinQt/Config/Mapping/MappingNumeric.h"
 #include "DolphinQt/Config/Mapping/MappingWindow.h"
+#include "DolphinQt/QtUtils/QtUtils.h"
 
 #include "InputCommon/ControllerEmu/Control/Control.h"
 #include "InputCommon/ControllerEmu/ControlGroup/ControlGroup.h"
@@ -30,6 +31,8 @@
 
 MappingWidget::MappingWidget(MappingWindow* parent) : m_parent(parent)
 {
+  beam_change_warning = new QLabel();
+  beam_change_warning->setText(tr("Beams stack in MP3 and cannot be changed."));
   connect(parent, &MappingWindow::Update, this, &MappingWidget::Update);
   connect(parent, &MappingWindow::Save, this, &MappingWidget::SaveSettings);
   connect(parent, &MappingWindow::ConfigChanged, this, &MappingWidget::ConfigChanged);
@@ -107,7 +110,7 @@ QGroupBox* MappingWidget::CreateGroupBox(const QString& name, ControllerEmu::Con
     m_morph_profiles_combo = new QComboBox();
     m_morph_profiles_combo->setObjectName(tr("ProfileList"));
 
-    //PrimeHack Morphball Controls Layout added to default group layout.
+    //PrimeHack Morph Ball Controls Layout added to default group layout.
     form_layout->addRow(m_morph_profiles_layout);
 
     m_morph_profiles_combo->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
@@ -116,6 +119,13 @@ QGroupBox* MappingWidget::CreateGroupBox(const QString& name, ControllerEmu::Con
 
     m_morph_profiles_layout->addWidget(m_morph_profiles_combo);
     break;
+    
+  case ControllerEmu::GroupType::Beams: {
+    //auto* const layout = new QHBoxLayout{this};
+    form_layout->addRow(QtUtils::CreateIconWarning(this, QStyle::SP_MessageBoxWarning, beam_change_warning));
+    //form_layout->addRow(layout);
+    break;
+    }
 
   default:
     break;

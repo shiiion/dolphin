@@ -40,7 +40,7 @@
 
 RenderWidget::RenderWidget(QWidget* parent) : QWidget(parent)
 {
-  setWindowTitle(QStringLiteral("Dolphin"));
+  setWindowTitle(QStringLiteral("PrimeHack"));
   setWindowIcon(Resources::GetAppIcon());
   setWindowRole(QStringLiteral("renderer"));
   setAcceptDrops(true);

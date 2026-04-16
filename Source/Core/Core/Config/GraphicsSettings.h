@@ -198,6 +198,7 @@ extern const Info<bool> LOCKCAMERA_IN_PUZZLES;
 extern const Info<bool> DISABLE_BLOOM;
 extern const Info<bool> REDUCE_BLOOM;
 extern const Info<int> BLOOM_INTENSITY;
+extern const Info<bool> FOV_ENABLE;
 extern const Info<int> FOV;
 extern const Info<bool> TOGGLE_ARM_REPOSITION;
 extern const Info<bool> TOGGLE_CULLING;
@@ -207,8 +208,8 @@ extern const Info<int> GC_CROSSHAIR_COLOR_RGBA;
 extern const Info<bool> AUTO_FOG_TOGGLE_MP3;
 
 extern const Info<int> ARMPOSITION_MODE;
-extern const Info<int> ARMPOSITION_LEFTRIGHT;
 extern const Info<int> ARMPOSITION_UPDOWN;
+extern const Info<int> ARMPOSITION_LEFTRIGHT;
 extern const Info<int> ARMPOSITION_FORWARDBACK;
 
 }  // namespace Config

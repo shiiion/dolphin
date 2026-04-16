@@ -31,6 +31,8 @@ private:
   void OnGCTypeChanged(size_t index);
   void OnGCPadConfigure(size_t index);
 
+  void OnPrimeEnableChanged(bool ch);
+
   void CreateLayout();
   void ConnectWidgets();
 

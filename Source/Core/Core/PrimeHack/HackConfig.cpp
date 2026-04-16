@@ -22,7 +22,7 @@
 #include "Core/PrimeHack/Mods/RestoreDashing.h"
 #include "Core/PrimeHack/Mods/Invulnerability.h"
 #include "Core/PrimeHack/Mods/MapController.h"
-#include "Core/PrimeHack/Mods/Motd.h"
+#include "Core/PrimeHack/Mods/MetareePatch.h"
 #include "Core/PrimeHack/Mods/Noclip.h"
 #include "Core/PrimeHack/Mods/SkipCutscene.h"
 #include "Core/PrimeHack/Mods/SpringballButton.h"
@@ -102,16 +102,16 @@ void InitializeHack() {
   hack_mgr.add_mod("elf_mod_loader", std::make_unique<ElfModLoader>());
   hack_mgr.add_mod("unlock_hypermode", std::make_unique<UnlockHypermode>());
   hack_mgr.add_mod("map_controller", std::make_unique<MapController>());
-  hack_mgr.add_mod("motd", std::make_unique<Motd>());
   hack_mgr.add_mod("strg_patch", std::make_unique<STRGPatch>());
+  hack_mgr.add_mod("metaree_patch", std::make_unique<MetareePatch>());
 
   hack_mgr.enable_mod_without_notify("skip_cutscene");
   hack_mgr.enable_mod_without_notify("fov_modifier");
   hack_mgr.enable_mod_without_notify("bloom_modifier");
   hack_mgr.enable_mod_without_notify("bloom_intensity");
   hack_mgr.enable_mod_without_notify("map_controller");
-  hack_mgr.enable_mod_without_notify("motd");
   hack_mgr.enable_mod_without_notify("strg_patch");
+  hack_mgr.enable_mod_without_notify("metaree_patch");
 
   // Enable no PrimeHack control mods
   if (!Config::Get(Config::PRIMEHACK_ENABLE))
@@ -366,8 +366,21 @@ void SetCursorSensitivity(float sens) {
   cursor_sensitivity = sens;
 }
 
-float GetFov() {
-  return Config::Get(Config::FOV);
+// Restore default FOV based on config
+float GetFov(Game game) {
+  if (Config::Get(Config::FOV_ENABLE)) {
+    return Config::Get(Config::FOV);
+  } else {
+    switch (game) {
+    case Game::PRIME_1:
+    case Game::PRIME_1_GCN:
+    case Game::PRIME_1_GCN_R1:
+    case Game::PRIME_1_GCN_R2:
+      return 55;
+    default:
+      return 60;
+    }
+  }
 }
 
 bool InvertedY() {

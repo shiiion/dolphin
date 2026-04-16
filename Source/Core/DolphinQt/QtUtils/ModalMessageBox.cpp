@@ -61,11 +61,12 @@ static inline int ExecPrimeHackWiiTabMessage(QWidget* parent)
   msg.setWindowTitle(QString::fromStdString("PrimeHack"));
   msg.setTextFormat(Qt::RichText);
   msg.setText(QString::fromStdString(
-    "<p>Unless you have a specific reason to use the 'Emulated Wii Remote' window, "
-    "such as alternate control schemes that deal with motion inputs, we highly recommend you use the Metroid controller window instead. "
-    "Both windows will work, but the Metroid window is specialised to make configuring your controls far easier."
+    "<p>Unless you have a specific reason to use the 'Emulated Wii Remote' window "
+    "such as an alternate control scheme that use motion inputs, it is recommended that you set 'Wii Remote 1' to PrimeHack. "
+    "Both options work, but the PrimeHack window is specialised for making configuration easier."
     "</p><p>"
-    "If you would like to go to the Metroid controller window instead, press <b>Open</b>.<br>"));
+    "If you would like to go to the PrimeHack window instead, press <b>Open</b>.<br>"
+));
   msg.setStandardButtons(QMessageBox::StandardButton::Ignore);
   msg.addButton(QMessageBox::StandardButton::Open);
   msg.setDefaultButton(QMessageBox::NoButton);
@@ -81,10 +82,10 @@ static inline int ExecPrimeHackGCTabMessage(QWidget* parent)
   msg.setTextFormat(Qt::RichText);
   msg.setText(QString::fromStdString(
     "<p>Unless you have a specific reason to use the 'Standard Controller' window, "
-    " we highly recommend you use the Metroid Controller window instead. "
-    "Both windows will work, but the Metroid window is specialised to make configuring your controls far easier."
+    "it is strongly recommend to set the port to PrimeHack. "
+    "Both options work, but the PrimeHack window is specialised for making configuration easier."
     "</p><p>"
-    "If you would like to go to the Metroid controller window instead, press <b>Open</b>.<br>"));
+    "If you would like to go to the PrimeHack window instead, press <b>Open</b>.<br>"));
   msg.setStandardButtons(QMessageBox::StandardButton::Ignore);
   msg.addButton(QMessageBox::StandardButton::Open);
   msg.setDefaultButton(QMessageBox::NoButton);

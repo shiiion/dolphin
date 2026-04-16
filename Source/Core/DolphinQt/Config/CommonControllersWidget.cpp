@@ -31,11 +31,13 @@ void CommonControllersWidget::CreateLayout()
   // i18n: This is "common" as in "shared", not the opposite of "uncommon"
   m_common_box = new QGroupBox(tr("Common"));
   m_common_layout = new QVBoxLayout();
+  m_common_primehack = new QCheckBox(tr("Toggle PrimeHack Controls"));
   m_common_bg_input = new QCheckBox(tr("Background Input"));
   m_common_configure_controller_interface =
       new NonDefaultQPushButton(tr("Alternate Input Sources"));
   m_common_configure_sdl_hints = new NonDefaultQPushButton(tr("SDL Controller Settings"));
 
+  m_common_layout->addWidget(m_common_primehack);
   m_common_layout->addWidget(m_common_bg_input);
   m_common_layout->addWidget(m_common_configure_controller_interface);
   m_common_layout->addWidget(m_common_configure_sdl_hints);
@@ -51,11 +53,14 @@ void CommonControllersWidget::CreateLayout()
 
 void CommonControllersWidget::ConnectWidgets()
 {
+  connect(m_common_primehack, &QCheckBox::toggled, this, &CommonControllersWidget::SaveSettings);
   connect(m_common_bg_input, &QCheckBox::toggled, this, &CommonControllersWidget::SaveSettings);
   connect(m_common_configure_controller_interface, &QPushButton::clicked, this,
           &CommonControllersWidget::OnControllerInterfaceConfigure);
   connect(m_common_configure_sdl_hints, &QPushButton::clicked, this,
           &CommonControllersWidget::OnSDLHintConfigure);
+  connect(m_common_primehack, &QCheckBox::toggled, &Settings::Instance(),
+          &Settings::SetPrimeEnabled);
 }
 
 void CommonControllersWidget::OnControllerInterfaceConfigure()
@@ -76,11 +81,13 @@ void CommonControllersWidget::OnSDLHintConfigure()
 
 void CommonControllersWidget::LoadSettings()
 {
+  SignalBlocking(m_common_primehack)->setChecked(Config::Get(Config::PRIMEHACK_ENABLE));
   SignalBlocking(m_common_bg_input)->setChecked(Config::Get(Config::MAIN_INPUT_BACKGROUND_INPUT));
 }
 
 void CommonControllersWidget::SaveSettings()
 {
+  Config::SetBaseOrCurrent(Config::PRIMEHACK_ENABLE, m_common_primehack->isChecked());
   Config::SetBaseOrCurrent(Config::MAIN_INPUT_BACKGROUND_INPUT, m_common_bg_input->isChecked());
   Config::Save();
 }
