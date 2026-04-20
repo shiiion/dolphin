@@ -36,6 +36,7 @@ constexpr u32 gen_vmcall(const u32 call_idx, const u32 param) {
 }
 
 constexpr float kTurnrateRatio = 0.00498665500569808449206349206349f;
+constexpr float kPi = 3.141592654f;
 
 int get_beam_switch(std::array<int, 4> const& beams);
 std::tuple<int, int> get_visor_switch(std::array<std::tuple<int, int>, 4> const& visors, bool combat_visor);

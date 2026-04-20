@@ -8,7 +8,8 @@ class DisableHudMemoPopup : public PrimeMod {
 public:
   void run_mod(Game game, Region region) override;
   bool init_mod(Game game, Region region) override;
-  void on_state_change(ModState old_state) override {}
+  void on_state_change(ModState) override {}
+  GEN_NAME(DisableHudMemoPopup)
 
 private:
   void init_mod_mp1(Region region);
@@ -19,4 +20,4 @@ private:
   void init_mod_mp3(Game game, Region region);
 };
 
-}
+} // namespace prime

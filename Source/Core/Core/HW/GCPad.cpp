@@ -85,6 +85,13 @@ void ChangeUIPrimeHack(int number, bool useMetroidUI)
   gcpad->ChangeUIPrimeHack(useMetroidUI);
 }
 
+bool CheckSpringBall()
+{
+  GCPad* gcpad = static_cast<GCPad*>(s_config.GetController(0));
+
+  return gcpad->CheckSpringBallCtrl();
+}
+
 bool CheckPitchRecentre()
 {
   GCPad* gcpad = static_cast<GCPad*>(s_config.GetController(0));

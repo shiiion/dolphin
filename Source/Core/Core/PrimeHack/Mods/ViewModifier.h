@@ -19,7 +19,8 @@ class ViewModifier : public PrimeMod {
 public:
   void run_mod(Game game, Region region) override;
   bool init_mod(Game game, Region region) override;
-  void on_state_change(ModState old_state) override {}
+  void on_state_change(ModState) override {}
+  GEN_NAME(ViewModifier)
 
 private:
   static float get_fov();
@@ -43,4 +44,4 @@ private:
   void init_mod_mp3_standalone(Region region);
 };
 
-}
+} // namespace prime

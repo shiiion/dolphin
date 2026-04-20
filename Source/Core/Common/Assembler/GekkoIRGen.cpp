@@ -45,6 +45,7 @@ public:
   void OnLoaddr(std::string_view id) override;
   void OnCloseParen(ParenType type) override;
   void OnLabelDecl(std::string_view name) override;
+  void OnSymDecl(std::string_view name) override;
   void OnNumericLabelDecl(std::string_view name, u32 num) override;
   void OnVarDecl(std::string_view name) override;
   void PostParseAction() override;
@@ -96,6 +97,7 @@ private:
   IRBlock* m_active_block;
   GekkoInstruction m_build_inst;
   u64* m_active_var;
+  u32* m_active_label;
   size_t m_operand_scan_begin;
 
   // Ordered top-to-bottom, stores (label number, address)
@@ -199,6 +201,12 @@ void GekkoIRPlugin::OnDirectivePost(GekkoDirective directive)
 
   case GekkoDirective::Asciz:
     AddStringBytes(m_string_lit, true);
+    break;
+
+  case GekkoDirective::DefSym:
+    ASSERT(m_active_label != nullptr);
+    *m_active_label = static_cast<u32>(m_eval_stack.back());
+    m_active_label = nullptr;
     break;
   }
   m_eval_stack = {};
@@ -362,6 +370,18 @@ void GekkoIRPlugin::OnLabelDecl(std::string_view name)
   }
 
   m_labels[name_str] = m_active_block->BlockEndAddress();
+}
+
+void GekkoIRPlugin::OnSymDecl(std::string_view name)
+{
+  const std::string name_str(name);
+  if (const bool inserted = m_symset.insert(name_str).second; !inserted)
+  {
+    m_owner->EmitErrorHere(fmt::format("Label/Constant {} is already defined", name));
+    return;
+  }
+
+  m_active_label = &m_labels[name_str];
 }
 
 void GekkoIRPlugin::OnNumericLabelDecl(std::string_view, u32 num)

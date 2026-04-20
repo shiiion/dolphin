@@ -34,6 +34,7 @@ bool GetMicButton(int pad_num);
 
 void ChangeUIPrimeHack(int number, bool useMetroidUI);
 
+bool CheckSpringBall();
 bool CheckPitchRecentre();
 bool PrimeUseController();
 

@@ -3,12 +3,12 @@
 #include "Core/PrimeHack/PrimeUtils.h"
 
 namespace prime {
-void AutoEFB::run_mod(Game game, Region region) {
+
+void AutoEFB::run_mod(Game game, Region) {
   if (game != Game::PRIME_2 &&
       game != Game::PRIME_3 &&
       game != Game::PRIME_3_STANDALONE &&
-      game != Game::PRIME_2_GCN)
-  {
+      game != Game::PRIME_2_GCN) {
     return;
   }
 
@@ -30,8 +30,8 @@ void AutoEFB::run_mod(Game game, Region region) {
   }
 }
 
-bool AutoEFB::init_mod(Game game, Region region) {
+bool AutoEFB::init_mod(Game, Region) {
   return true;
 }
 
-}
+} // namespace prime

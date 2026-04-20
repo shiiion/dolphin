@@ -9,7 +9,8 @@ class ContextSensitiveControls : public PrimeMod {
 public:
   void run_mod(Game game, Region region) override;
   bool init_mod(Game game, Region region) override;
-  void on_state_change(ModState old_state) override {}
+  void on_state_change(ModState) override {}
+  GEN_NAME(ContextSensitiveControls)
 
 private:
   u32 motion_vtf_address;
@@ -27,4 +28,5 @@ private:
     0x0202F7
   };
 };
-}
+
+} // namespace prime

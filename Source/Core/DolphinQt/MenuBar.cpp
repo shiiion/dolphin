@@ -700,26 +700,6 @@ void MenuBar::AddHelpMenu()
 void MenuBar::AddPrimeHackMenu() {
   QMenu* primehack_menu = addMenu(tr("PrimeHack"));
 
-  QMenu* mod_loader_menu = primehack_menu->addMenu(tr("Mod Loader"));
-  QAction* load_mod = mod_loader_menu->addAction(tr("Load Mod"));
-  connect(load_mod, &QAction::triggered, this, [this]() {
-    QString path = QFileDialog::getOpenFileName(this, tr("Select MMD file to load"), QString(),
-                                                tr("MMD file (*.mmd);; All Files (*)"));
-    prime::SetPendingModfile(path.toStdString());
-  });
-
-  mod_loader_menu->addAction(tr("CVars"), this, &MenuBar::OpenCVarsMenu);
-  QAction* suspend = mod_loader_menu->addAction(tr("Suspend Mod"));
-  suspend->setCheckable(true);
-  suspend->setChecked(false);
-  connect(suspend, &QAction::toggled, [](bool value) {
-    if (value) {
-      prime::SuspendMod();
-    } else {
-      prime::ResumeMod();
-    }
-  });
-
   QMenu* help_menu = primehack_menu->addMenu(tr("Help"));
   help_menu->addAction(tr("&Wiki"),
     []() { QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/shiiion/dolphin/wiki"))); });

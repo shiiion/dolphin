@@ -6,28 +6,29 @@
 #include "Core/System.h"
 
 namespace prime {
+
 void ViewModifier::run_mod(Game game, Region region) {
   switch (game) {
-  case Game::PRIME_1:
-    run_mod_mp1();
-    break;
-  case Game::PRIME_1_GCN:
-  case Game::PRIME_1_GCN_R1:
-  case Game::PRIME_1_GCN_R2:
-    run_mod_mp1_gc();
-    break;
-  case Game::PRIME_2:
-    run_mod_mp2();
-    break;
-  case Game::PRIME_2_GCN:
-    run_mod_mp2_gc();
-    break;
-  case Game::PRIME_3:
-  case Game::PRIME_3_STANDALONE:
-    run_mod_mp3();
-    break;
-  default:
-    break;
+    case Game::PRIME_1:
+      run_mod_mp1();
+      break;
+    case Game::PRIME_1_GCN:
+    case Game::PRIME_1_GCN_R1:
+    case Game::PRIME_1_GCN_R2:
+      run_mod_mp1_gc();
+      break;
+    case Game::PRIME_2:
+      run_mod_mp2();
+      break;
+    case Game::PRIME_2_GCN:
+      run_mod_mp2_gc();
+      break;
+    case Game::PRIME_3:
+    case Game::PRIME_3_STANDALONE:
+      run_mod_mp3();
+      break;
+    default:
+      break;
   }
 }
 
@@ -74,7 +75,7 @@ void ViewModifier::adjust_viewmodel(float fov, u32 arm_address, u32 znear_addres
 
 // Check current title to get default FOV based on config
 float ViewModifier::get_fov() {
-  return GetFov(hack_mgr->get_active_game());
+  return GetFov(GetActiveGame());
 }
 
 void ViewModifier::run_mod_mp1() {
@@ -139,8 +140,8 @@ void ViewModifier::run_mod_mp1_gc() {
   }
 
   // PAL added some stuff related to SFX in CActor, affects all derived
-  const u32 version_offset = (hack_mgr->get_active_region() == Region::PAL ||
-                              hack_mgr->get_active_game() == Game::PRIME_1_GCN_R2 ? 0x10 : 0);
+  const u32 version_offset = (GetActiveRegion() == Region::PAL ||
+                              GetActiveGame() == Game::PRIME_1_GCN_R2 ? 0x10 : 0);
 
   const u32 r13 = Core::System::GetInstance().GetPPCState().gpr[13];
   const float fov = std::min(get_fov(), 170.f);
@@ -228,7 +229,7 @@ void ViewModifier::on_camera_change(PowerPC::PowerPCState& ppc_state, PowerPC::M
   // Original inst: stw r0, 0x14(r6)
   mmu.Write_U32(ppc_state.gpr[0], 0x14 + ppc_state.gpr[6]);
 
-  ViewModifier* mod = static_cast<ViewModifier*>(GetHackManager()->get_mod("fov_modifier"));
+  ViewModifier* mod = GetMod<ViewModifier>();
 
   Core::CPUThreadGuard guard(Core::System::GetInstance());
   mod->set_temporary_cpu_guard(&guard);
@@ -299,30 +300,32 @@ void ViewModifier::run_mod_mp3() {
 
 bool ViewModifier::init_mod(Game game, Region region) {
   switch (game) {
-  case Game::PRIME_1:
-    init_mod_mp1(region);
-    break;
-  case Game::PRIME_1_GCN:
-    init_mod_mp1_gc(region);
-    break;
-  case Game::PRIME_1_GCN_R1:
-    init_mod_mp1_gc_r1();
-    break;
-  case Game::PRIME_1_GCN_R2:
-    init_mod_mp1_gc_r2();
-    break;
-  case Game::PRIME_2:
-    init_mod_mp2(region);
-    break;
-  case Game::PRIME_2_GCN:
-    init_mod_mp2_gc(region);
-    break;
-  case Game::PRIME_3:
-    init_mod_mp3(region);
-    break;
-  case Game::PRIME_3_STANDALONE:
-    init_mod_mp3_standalone(region);
-    break;
+    case Game::PRIME_1:
+      init_mod_mp1(region);
+      break;
+    case Game::PRIME_1_GCN:
+      init_mod_mp1_gc(region);
+      break;
+    case Game::PRIME_1_GCN_R1:
+      init_mod_mp1_gc_r1();
+      break;
+    case Game::PRIME_1_GCN_R2:
+      init_mod_mp1_gc_r2();
+      break;
+    case Game::PRIME_2:
+      init_mod_mp2(region);
+      break;
+    case Game::PRIME_2_GCN:
+      init_mod_mp2_gc(region);
+      break;
+    case Game::PRIME_3:
+      init_mod_mp3(region);
+      break;
+    case Game::PRIME_3_STANDALONE:
+      init_mod_mp3_standalone(region);
+      break;
+    default:
+      break;
   }
   return true;
 }
@@ -441,4 +444,5 @@ void ViewModifier::init_mod_mp3_standalone(Region region) {
     add_code_change(0x802b4fd8, on_camera_change_vmc);
   }
 }
+
 }  // namespace prime

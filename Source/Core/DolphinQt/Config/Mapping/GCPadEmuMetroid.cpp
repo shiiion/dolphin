@@ -89,6 +89,9 @@ void GCPadEmuMetroid::CreateMainLayout()
     GetPort(), PadGroup::DPad));
   groupbox1->addWidget(visor_box);
 
+  auto* springball = CreateGroupBox(tr("Spring Ball"), Pad::GetGroup(
+    GetPort(), PadGroup::Misc));
+  groupbox1->addWidget(springball);
 
   // Column 2
 

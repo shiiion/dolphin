@@ -6,7 +6,7 @@ bool CutBeamFxMP1::init_mod(Game game, Region region) {
   if (game != Game::PRIME_1) {
     return true;
   }
-  
+
   u32 gunfx_offset;
   u32 transform_ctor_offset;
   u32 advance_particles_offset;
@@ -25,7 +25,7 @@ bool CutBeamFxMP1::init_mod(Game game, Region region) {
   } else {
     return true;
   }
-  
+
   const u32 address1 = 0x80004a68;
   const u32 address2 = 0x80004968;
   add_code_change(address1, 0x9421ffa8);
@@ -85,4 +85,4 @@ bool CutBeamFxMP1::init_mod(Game game, Region region) {
   return true;
 }
 
-}
+} // namespace prime

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <concepts>
 #include <memory>
 #include <map>
 
@@ -8,35 +9,47 @@
 
 namespace prime {
 
-// Determines current running game, activates enabled modifications for said game
-class HackManager {
-public:
-  HackManager();
-  void run_active_mods(const Core::CPUThreadGuard& cpu_guard);
-  void update_mod_states();
-  void add_mod(std::string const &name, std::unique_ptr<PrimeMod> mod);
-  Game get_active_game() const { return active_game; }
-  Region get_active_region() const { return active_region; }
-  void disable_mod(std::string const &name);
-  void enable_mod(std::string const &name);
-  void disable_mod_without_notify(std::string const &name);
-  void enable_mod_without_notify(std::string const &name);
-  void set_mod_enabled(std::string const &name, bool enabled);
-  bool is_mod_active(std::string const &name);
-  void reset_mod(std::string const &name);
+template <typename T>
+concept IsMod = std::derived_from<T, PrimeMod>;
 
-  void shutdown();
+template <IsMod T>
+T* GetMod();
 
-  PrimeMod *get_mod(std::string const& name);
-
-private:
-  Game active_game;
-  Region active_region;
-  Game last_game;
-  Region last_region;
-
-  std::map<std::string, std::unique_ptr<PrimeMod>> mods;
-  std::map<std::string, ModState> mod_state_backup;
-};
-
+template <IsMod T>
+void EnableMod(bool notify = true) {
+  if (notify) {
+    GetMod<T>()->set_state(ModState::ENABLED);
+  } else {
+    GetMod<T>()->set_state_no_notify(ModState::ENABLED);
+  }
 }
+template <IsMod T>
+void DisableMod(bool notify = true) {
+  if (notify) {
+    GetMod<T>()->set_state(ModState::DISABLED);
+  } else {
+    GetMod<T>()->set_state_no_notify(ModState::DISABLED);
+  }
+}
+template <IsMod T>
+void SetModEnabled(bool enabled) {
+  if (enabled) {
+    EnableMod<T>();
+  } else {
+    DisableMod<T>();
+  }
+}
+template <IsMod T>
+bool IsModActive() {
+  return GetMod<T>()->mod_state() != ModState::DISABLED;
+}
+template <IsMod T>
+void ResetMod() {
+  return GetMod<T>()->reset_mod();
+}
+void RunActiveMods(const Core::CPUThreadGuard& cpu_guard);
+Game GetActiveGame();
+Region GetActiveRegion();
+void Shutdown();
+
+} // namespace prime

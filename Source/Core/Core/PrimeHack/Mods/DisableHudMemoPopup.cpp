@@ -8,6 +8,7 @@
 
 namespace prime {
 namespace {
+
 void hudmemo_overlay_adjust_mp1(PowerPC::PowerPCState& ppc_state, PowerPC::MMU& mmu, u32 job) {
   if (job == 0) {  // Fix time
     const u32 time_addr = ppc_state.gpr[28] + 0x30;
@@ -51,7 +52,8 @@ void restart_streamed_audio_mp3(PowerPC::PowerPCState& ppc_state, PowerPC::MMU&,
     restart_audio_signal = true;
   }
 }
-}
+
+} // namespace
 
 void DisableHudMemoPopup::run_mod(Game game, Region region) {
   if (game != Game::PRIME_3 && game != Game::PRIME_3_STANDALONE) {
@@ -75,7 +77,7 @@ void DisableHudMemoPopup::run_mod(Game game, Region region) {
 void DisableHudMemoPopup::init_mod_mp1(Region region) {
   const int hudmemo_fix_fn = Core::System::GetInstance().GetPowerPC().RegisterVmcall(hudmemo_overlay_adjust_mp1);
   if (hudmemo_fix_fn == -1) {
-    // HOW??? I SURE DO I USE THIS COOL FEATURE ENOUGH TO BE A PROBLEM :)
+    // stfu
     return;
   }
   const u32 vmc_fix_time = gen_vmcall(static_cast<u32>(hudmemo_fix_fn), 0);
@@ -161,42 +163,43 @@ void DisableHudMemoPopup::init_mod_mp3(Game game, Region region) {
 
 bool DisableHudMemoPopup::init_mod(Game game, Region region) {
   switch (game) {
-  case Game::PRIME_1:
-    init_mod_mp1(region);
-    break;
-  case Game::PRIME_1_GCN:
-    init_mod_mp1gc(region);
-    break;
-  case Game::PRIME_1_GCN_R1:
-    init_mod_mp1gc_r1();
-    break;
-  case Game::PRIME_1_GCN_R2:
-    init_mod_mp1gc_r2();
-    break;
-  case Game::PRIME_2:
-    if (region == Region::NTSC_U) {
-      add_code_change(0x801f3354, 0x48000018);
-    } else if  (region == Region::PAL) {
-      add_code_change(0x801f586c, 0x48000018);
-    } else { // region == Region::NTSC_J
-      add_code_change(0x801f2368, 0x48000018);
-    }
-    break;
-  case Game::PRIME_2_GCN:
-    if (region == Region::NTSC_U) {
-      add_code_change(0x800bb10c, 0x48000018);
-    } else if (region == Region::PAL) {
-      add_code_change(0x800bb1a0, 0x48000018);
-    } else { // region == Region::NTSC_J
-      add_code_change(0x800bbe9c, 0x48000018);
-    }
-    break;
-  case Game::PRIME_3:
-  case Game::PRIME_3_STANDALONE:
-    init_mod_mp3(game, region);
-    break;
+    case Game::PRIME_1:
+      init_mod_mp1(region);
+      break;
+    case Game::PRIME_1_GCN:
+      init_mod_mp1gc(region);
+      break;
+    case Game::PRIME_1_GCN_R1:
+      init_mod_mp1gc_r1();
+      break;
+    case Game::PRIME_1_GCN_R2:
+      init_mod_mp1gc_r2();
+      break;
+    case Game::PRIME_2:
+      if (region == Region::NTSC_U) {
+        add_code_change(0x801f3354, 0x48000018);
+      } else if  (region == Region::PAL) {
+        add_code_change(0x801f586c, 0x48000018);
+      } else { // region == Region::NTSC_J
+        add_code_change(0x801f2368, 0x48000018);
+      }
+      break;
+    case Game::PRIME_2_GCN:
+      if (region == Region::NTSC_U) {
+        add_code_change(0x800bb10c, 0x48000018);
+      } else if (region == Region::PAL) {
+        add_code_change(0x800bb1a0, 0x48000018);
+      } else { // region == Region::NTSC_J
+        add_code_change(0x800bbe9c, 0x48000018);
+      }
+      break;
+    case Game::PRIME_3:
+    case Game::PRIME_3_STANDALONE:
+      init_mod_mp3(game, region);
+      break;
   }
 
   return true;
 }
-}
+
+} // namespace prime

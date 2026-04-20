@@ -4,13 +4,15 @@
 #include <VideoCommon/OnScreenDisplay.h>
 
 namespace prime {
-  class RestoreDashing : public PrimeMod {
-  public:
-    void run_mod(Game game, Region region) override { }
-    bool init_mod(Game game, Region region) override {
-      // d0210014 d0010010 4b -> pattern to search for CPlayer::FinishSidewaysDash() for Prime 2 GC
-      // d0210024 d0010020 4b -> pattern to search for CPlayer::FinishSidewaysDash() for Prime 2 and 3 Wii
-      switch (game) {
+
+class RestoreDashing : public PrimeMod {
+public:
+  void run_mod(Game, Region) override {}
+
+  bool init_mod(Game game, Region region) override {
+    // d0210014 d0010010 4b -> pattern to search for CPlayer::FinishSidewaysDash() for Prime 2 GC
+    // d0210024 d0010020 4b -> pattern to search for CPlayer::FinishSidewaysDash() for Prime 2 and 3 Wii
+    switch (game) {
       case Game::PRIME_1:
         if (region == Region::NTSC_U) {
           // remove scan visor check
@@ -114,10 +116,16 @@ namespace prime {
           add_code_change(0x80178F50, 0x881e06d0); // CPlayer + 0x6d0 as u8
         }
         break;
-      }
-
-      return true;
+      default:
+        break;
     }
-    void on_state_change(ModState old_state) override {}
-  };
-}
+
+    return true;
+  }
+
+  void on_state_change(ModState) override {}
+
+  GEN_NAME(RestoreDashing)
+};
+
+} // namespace prime

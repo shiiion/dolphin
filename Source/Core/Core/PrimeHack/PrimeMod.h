@@ -11,11 +11,13 @@
 
 #include "Common/Assembler/GekkoAssembler.h"
 
+#define GEN_NAME(cname) std::string_view mod_name() override { return #cname; }
+
 namespace prime {
 struct CodeChange {
   uint32_t address, var;
   CodeChange() : CodeChange(0, 0) {}
-  CodeChange(uint32_t address, uint32_t var) : address(address), var(var) {}
+  CodeChange(uint32_t a, uint32_t v) : address(a), var(v) {}
 };
 
 enum class Game : int {
@@ -68,6 +70,7 @@ public:
   virtual bool init_mod(Game game, Region region) = 0;
   virtual void on_state_change(ModState old_state) = 0;
   virtual void on_reset() {}
+  virtual std::string_view mod_name() = 0;
 
   virtual bool should_apply_changes() const;
   void apply_instruction_changes(bool invalidate = true);
@@ -93,13 +96,11 @@ public:
   void set_temporary_cpu_guard(Core::CPUThreadGuard const* guard) { active_guard = guard; }
 
   static void set_address_database(const AddressDB* db_ptr) { addr_db = db_ptr; }
-  static void set_hack_manager(const HackManager* mgr_ptr) { hack_mgr = mgr_ptr; }
 
 protected:
   mutable Core::CPUThreadGuard const* active_guard = nullptr;
 
   inline static const AddressDB* addr_db = nullptr;
-  inline static const HackManager* hack_mgr = nullptr;
 
   static u32 lookup_address(std::string_view name);
   u32 lookup_dynamic_address(std::string_view name) const;

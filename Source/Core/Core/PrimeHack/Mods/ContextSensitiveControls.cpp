@@ -19,7 +19,8 @@ void ContextSensitiveControls::run_mod(Game game, Region region) {
   LOOKUP(dna_scanner_vftable);
   u32 obj_list_iterator = object_list + 4;
 
-  for (int i = 0; i < 2048; i++) {
+  constexpr int kObjectListMaxSize = 2048;
+  for (int i = 0; i < kObjectListMaxSize; i++) {
     u32 entity = read32(obj_list_iterator);
     u32 entity_flags = read32(entity + 0x38);
 
@@ -58,8 +59,7 @@ void ContextSensitiveControls::run_mod(Game game, Region region) {
             // If the id isn't ship radios
             if (radio_editor_ids.find(id) == radio_editor_ids.end()) {
               SetLockCamera(Centre);
-            }
-            else {
+            } else {
               // Aim up to face the radio properly.
               SetLockCamera(Angle45);
             }
@@ -94,57 +94,59 @@ bool ContextSensitiveControls::init_mod(Game game, Region region) {
   u32 lfs = 0xc02c0000;
 
   switch (game) {
-  case Game::PRIME_3:
-    if (region == Region::NTSC_U) {
-      // Take control of the combination locks
-      add_code_change(0x801f806c, lis);
-      add_code_change(0x801f8074, ori);
-      add_code_change(0x801f807c, lfs);
+    case Game::PRIME_3:
+      if (region == Region::NTSC_U) {
+        // Take control of the combination locks
+        add_code_change(0x801f806c, lis);
+        add_code_change(0x801f8074, ori);
+        add_code_change(0x801f807c, lfs);
 
-      // Take control of DNA scanners
-      add_code_change(0x801fa28c, lis);
-      add_code_change(0x801fa290, ori);
-      add_code_change(0x801fa294, lfs);
-    } else if (region == Region::PAL) {
-      add_code_change(0x801f7b4c, lis);
-      add_code_change(0x801f7b54, ori);
-      add_code_change(0x801f7b5c, lfs);
+        // Take control of DNA scanners
+        add_code_change(0x801fa28c, lis);
+        add_code_change(0x801fa290, ori);
+        add_code_change(0x801fa294, lfs);
+      } else if (region == Region::PAL) {
+        add_code_change(0x801f7b4c, lis);
+        add_code_change(0x801f7b54, ori);
+        add_code_change(0x801f7b5c, lfs);
 
-      add_code_change(0x801f9d6c, lis);
-      add_code_change(0x801f9d70, ori);
-      add_code_change(0x801f9d74, lfs);
-    }
-    break;
-  case Game::PRIME_3_STANDALONE:
-    if (region == Region::NTSC_U) {
-      add_code_change(0x801fb544, lis);
-      add_code_change(0x801fb54c, ori);
-      add_code_change(0x801fb554, lfs);
+        add_code_change(0x801f9d6c, lis);
+        add_code_change(0x801f9d70, ori);
+        add_code_change(0x801f9d74, lfs);
+      }
+      break;
+    case Game::PRIME_3_STANDALONE:
+      if (region == Region::NTSC_U) {
+        add_code_change(0x801fb544, lis);
+        add_code_change(0x801fb54c, ori);
+        add_code_change(0x801fb554, lfs);
 
-      add_code_change(0x801fd764, lis);
-      add_code_change(0x801fd768, ori);
-      add_code_change(0x801fd76c, lfs);
-    } else if (region == Region::NTSC_J) {
-      add_code_change(0x801fdb5c, lis);
-      add_code_change(0x801fdb64, ori);
-      add_code_change(0x801fdb6c, lfs);
+        add_code_change(0x801fd764, lis);
+        add_code_change(0x801fd768, ori);
+        add_code_change(0x801fd76c, lfs);
+      } else if (region == Region::NTSC_J) {
+        add_code_change(0x801fdb5c, lis);
+        add_code_change(0x801fdb64, ori);
+        add_code_change(0x801fdb6c, lfs);
 
-      add_code_change(0x801ffd7c, lis);
-      add_code_change(0x801ffd80, ori);
-      add_code_change(0x801ffd84, lfs);
-    } else if (region == Region::PAL) {
-      add_code_change(0x801fc5a8, lis);
-      add_code_change(0x801fc5b0, ori);
-      add_code_change(0x801fc5b8, lfs);
+        add_code_change(0x801ffd7c, lis);
+        add_code_change(0x801ffd80, ori);
+        add_code_change(0x801ffd84, lfs);
+      } else if (region == Region::PAL) {
+        add_code_change(0x801fc5a8, lis);
+        add_code_change(0x801fc5b0, ori);
+        add_code_change(0x801fc5b8, lfs);
 
-      add_code_change(0x801fe7c8, lis);
-      add_code_change(0x801fe7cc, ori);
-      add_code_change(0x801fe7d0, lfs);
-    }
-    break;
-  default:
-    break;
+        add_code_change(0x801fe7c8, lis);
+        add_code_change(0x801fe7cc, ori);
+        add_code_change(0x801fe7d0, lfs);
+      }
+      break;
+    default:
+      break;
   }
+
   return true;
 }
-}
+
+} // namespace prime

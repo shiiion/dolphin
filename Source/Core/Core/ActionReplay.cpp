@@ -1007,7 +1007,7 @@ static bool RunCodeLocked(const Core::CPUThreadGuard& guard, const ARCode& arcod
 
 void RunAllActive(const Core::CPUThreadGuard& cpu_guard)
 {
-  prime::GetHackManager()->run_active_mods(cpu_guard);
+  prime::RunActiveMods(cpu_guard);
 
   if (!Config::AreCheatsEnabled())
     return;

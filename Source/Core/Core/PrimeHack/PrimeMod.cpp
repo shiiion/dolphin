@@ -90,15 +90,15 @@ void PrimeMod::add_code_change(u32 addr, u32 code, std::string_view group) {
 }
 
 void PrimeMod::add_asm_patch(std::string_view asm_patch) {
-    using namespace Common::GekkoAssembler;
-    auto result = Assemble(asm_patch, 0);
-    ASSERT(!IsFailure(result));
-    std::vector<CodeBlock> const& code_changes_blocks = GetT(result);
-    for (auto const& block : code_changes_blocks) {
-      for (u32 i = 0; i < block.instructions.size(); i += 4) {
-        add_code_change(block.block_address + i, Common::swap32(&block.instructions[i]));
-      }
+  using namespace Common::GekkoAssembler;
+  auto result = Assemble(asm_patch, 0);
+  ASSERT(!IsFailure(result));
+  std::vector<CodeBlock> const& code_changes_blocks = GetT(result);
+  for (auto const& block : code_changes_blocks) {
+    for (u32 i = 0; i < block.instructions.size(); i += 4) {
+      add_code_change(block.block_address + i, Common::swap32(&block.instructions[i]));
     }
+  }
 }
 
 void PrimeMod::set_code_change(u32 address, u32 var) {
@@ -114,11 +114,11 @@ void PrimeMod::update_original_instructions() {
 }
 
 u32 PrimeMod::lookup_address(std::string_view name) {
-  return addr_db->lookup_address(hack_mgr->get_active_game(), hack_mgr->get_active_region(), name);
+  return addr_db->lookup_address(GetActiveGame(), GetActiveRegion(), name);
 }
 
 u32 PrimeMod::lookup_dynamic_address(std::string_view name) const {
-  return addr_db->lookup_dynamic_address(*active_guard, hack_mgr->get_active_game(), hack_mgr->get_active_region(), name);
+  return addr_db->lookup_dynamic_address(*active_guard, GetActiveGame(), GetActiveRegion(), name);
 }
 
 u8 PrimeMod::read8(u32 addr) const {

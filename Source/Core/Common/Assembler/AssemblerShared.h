@@ -94,7 +94,8 @@ enum class GekkoDirective
   Skip,
   DefVar,
   Ascii,
-  Asciz
+  Asciz,
+  DefSym
 };
 
 enum class GekkoMnemonic : size_t

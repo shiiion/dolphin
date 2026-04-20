@@ -7,6 +7,7 @@
 
 namespace prime {
 namespace {
+
 enum PatchTable : u32 {
   kMenuNTSC,
   kMenuPAL,
@@ -50,10 +51,11 @@ u32 bsearch_strg_table(PowerPC::MMU& mmu, std::string const& key, u32 strg_heade
 }
 
 void patch_strg_entry_mp3_and_menu(PowerPC::PowerPCState& ppc_state, PowerPC::MMU& mmu, u32 vers) {
-  static_cast<STRGPatch*>(GetHackManager()->get_mod("strg_patch"))->patch_strg_entry_vmc_common(
+  GetMod<STRGPatch>()->patch_strg_entry_vmc_common(
     ppc_state, mmu, kPatchTargetTableStarts[vers], ppc_state.gpr[3], ppc_state.gpr[4]);
   ppc_state.gpr[0] = ppc_state.spr[SPR_LR];
 }
+
 }
 
 void STRGPatch::patch_strg_entry_vmc_common(PowerPC::PowerPCState& ppc_state, PowerPC::MMU& mmu,
@@ -74,38 +76,38 @@ void STRGPatch::patch_strg_entry_vmc_common(PowerPC::PowerPCState& ppc_state, Po
 
 void STRGPatch::run_mod(Game game, Region region) {
   switch (game) {
-  case Game::MENU:
-    if (region == Region::NTSC_U) {
-      run_mod_common(kPatchTargetTableStarts[kMenuNTSC]);
-    } else if (region == Region::PAL) {
-      run_mod_common(kPatchTargetTableStarts[kMenuPAL]);
-    }
-    break;
+    case Game::MENU:
+      if (region == Region::NTSC_U) {
+        run_mod_common(kPatchTargetTableStarts[kMenuNTSC]);
+      } else if (region == Region::PAL) {
+        run_mod_common(kPatchTargetTableStarts[kMenuPAL]);
+      }
+      break;
 
-  case Game::PRIME_1:
-  case Game::PRIME_1_GCN:
-  case Game::PRIME_1_GCN_R1:
-  case Game::PRIME_1_GCN_R2:
-  case Game::PRIME_2:
-  case Game::PRIME_2_GCN:
-    break;
+    case Game::PRIME_1:
+    case Game::PRIME_1_GCN:
+    case Game::PRIME_1_GCN_R1:
+    case Game::PRIME_1_GCN_R2:
+    case Game::PRIME_2:
+    case Game::PRIME_2_GCN:
+      break;
 
-  case Game::PRIME_3_STANDALONE:
-    if (region == Region::NTSC_U) {
-      run_mod_common(kPatchTargetTableStarts[kMP3StandaloneNTSC]);
-    }
-    break;
+    case Game::PRIME_3_STANDALONE:
+      if (region == Region::NTSC_U) {
+        run_mod_common(kPatchTargetTableStarts[kMP3StandaloneNTSC]);
+      }
+      break;
 
-  case Game::PRIME_3:
-    if (region == Region::NTSC_U) {
-      run_mod_common(kPatchTargetTableStarts[kMP3NTSC]);
-    } else if (region == Region::PAL) {
-      run_mod_common(kPatchTargetTableStarts[kMP3PAL]);
-    }
-    break;
+    case Game::PRIME_3:
+      if (region == Region::NTSC_U) {
+        run_mod_common(kPatchTargetTableStarts[kMP3NTSC]);
+      } else if (region == Region::PAL) {
+        run_mod_common(kPatchTargetTableStarts[kMP3PAL]);
+      }
+      break;
 
-  default:
-    break;
+    default:
+      break;
   }
 }
 
@@ -113,51 +115,52 @@ bool STRGPatch::init_mod(Game game, Region region) {
   clear_table();
 
   switch (game) {
-  case Game::MENU: {
-    add_table_entry("NunchukRequired", GetMotd());
-    add_table_entry("DifficultyMenu_Easiest",
-      "&link=[starteasiest]?typewrite=reverse;&wholepane;&rollover=menu2_hl;[ Easy ]&endlink;");
-    add_table_entry("DifficultyMenu_Medium",
-      "&link=[startmedium]?typewrite=reverse;&wholepane;&rollover=menu3_hl;[ Normal ]&endlink;");
-    add_table_entry("DifficultyMenu_Hardest",
-      "&if=HypermodeUnlocked;&link=[starthardest]?typewrite=reverse;&wholepane;&rollover=menu4_hl;[ Hard ]&endlink;&endif;");
-    int vmc_id = Core::System::GetInstance().GetPowerPC().RegisterVmcall(patch_strg_entry_mp3_and_menu);
-    if (region == Region::NTSC_U) {
-      add_code_change(0x8037e510, gen_vmcall(vmc_id, kMenuNTSC));
-    } else if (region == Region::PAL) {
-      add_code_change(0x8037e15c, gen_vmcall(vmc_id, kMenuPAL));
+    case Game::MENU: {
+      add_table_entry("NunchukRequired", GetMotd());
+      add_table_entry("DifficultyMenu_Easiest",
+        "&link=[starteasiest]?typewrite=reverse;&wholepane;&rollover=menu2_hl;[ Easy (Normal) ]&endlink;");
+      add_table_entry("DifficultyMenu_Medium",
+        "&link=[startmedium]?typewrite=reverse;&wholepane;&rollover=menu3_hl;[ Normal (Veteran) ]&endlink;");
+      add_table_entry("DifficultyMenu_Hardest",
+        "&if=HypermodeUnlocked;&link=[starthardest]?typewrite=reverse;&wholepane;&rollover=menu4_hl;[ Hard (Hypermode) ]&endlink;&endif;");
+      int vmc_id = Core::System::GetInstance().GetPowerPC().RegisterVmcall(patch_strg_entry_mp3_and_menu);
+      if (region == Region::NTSC_U) {
+        add_code_change(0x8037e510, gen_vmcall(vmc_id, kMenuNTSC));
+      } else if (region == Region::PAL) {
+        add_code_change(0x8037e15c, gen_vmcall(vmc_id, kMenuPAL));
+      }
+      break;
     }
-    break;
-  }
-  case Game::PRIME_1:
-  case Game::PRIME_1_GCN:
-  case Game::PRIME_1_GCN_R1:
-  case Game::PRIME_1_GCN_R2:
-  case Game::PRIME_2:
-  case Game::PRIME_2_GCN:
-    break;
-  case Game::PRIME_3_STANDALONE: {
-    add_table_entry("ShakeOffGandrayda",
-                    "&just=center;Mash Jump [&image=0x5FC17B1F30BAA7AE;] to shake off Gandrayda!");
-    int vmc_id = Core::System::GetInstance().GetPowerPC().RegisterVmcall(patch_strg_entry_mp3_and_menu);
-    if (region == Region::NTSC_U) {
-      add_code_change(0x803cdd64, gen_vmcall(vmc_id, kMP3StandaloneNTSC));
+    case Game::PRIME_1:
+    case Game::PRIME_1_GCN:
+    case Game::PRIME_1_GCN_R1:
+    case Game::PRIME_1_GCN_R2:
+    case Game::PRIME_2:
+    case Game::PRIME_2_GCN:
+      break;
+    case Game::PRIME_3_STANDALONE: {
+      add_table_entry("ShakeOffGandrayda",
+                      "&just=center;Mash Jump [&image=0x5FC17B1F30BAA7AE;] to shake off Gandrayda!");
+      int vmc_id = Core::System::GetInstance().GetPowerPC().RegisterVmcall(patch_strg_entry_mp3_and_menu);
+      if (region == Region::NTSC_U) {
+        add_code_change(0x803cdd64, gen_vmcall(vmc_id, kMP3StandaloneNTSC));
+      }
+      // TODO: Missing MP3 PAL support
+      break;
     }
-    break;
-  }
-  case Game::PRIME_3: {
-    add_table_entry("ShakeOffGandrayda",
-                    "&just=center;Mash Jump [&image=0x5FC17B1F30BAA7AE;] to shake off Gandrayda!");
-    int vmc_id = Core::System::GetInstance().GetPowerPC().RegisterVmcall(patch_strg_entry_mp3_and_menu);
-    if (region == Region::NTSC_U) {
-      add_code_change(0x803cc3f4, gen_vmcall(vmc_id, kMP3NTSC));
-    } else if (region == Region::PAL) {
-      add_code_change(0x803cbb10, gen_vmcall(vmc_id, kMP3PAL));
+    case Game::PRIME_3: {
+      add_table_entry("ShakeOffGandrayda",
+                      "&just=center;Mash Jump [&image=0x5FC17B1F30BAA7AE;] to shake off Gandrayda!");
+      int vmc_id = Core::System::GetInstance().GetPowerPC().RegisterVmcall(patch_strg_entry_mp3_and_menu);
+      if (region == Region::NTSC_U) {
+        add_code_change(0x803cc3f4, gen_vmcall(vmc_id, kMP3NTSC));
+      } else if (region == Region::PAL) {
+        add_code_change(0x803cbb10, gen_vmcall(vmc_id, kMP3PAL));
+      }
+      break;
     }
-    break;
-  }
-  default:
-    break;
+    default:
+      break;
   }
   return true;
 }
@@ -197,4 +200,4 @@ void STRGPatch::run_mod_common(u32 tbl_address) {
   }
 }
 
-}
+} // namespace prime

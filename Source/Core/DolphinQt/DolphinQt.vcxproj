@@ -477,7 +477,6 @@
     <QtMoc Include="TAS\TASSpinBox.h" />
     <QtMoc Include="TAS\WiiTASInputWindow.h" />
     <QtMoc Include="ToolBar.h" />
-    <QtMoc Include="CvarsWindow.h" />
     <QtMoc Include="Updater.h" />
   </ItemGroup>
   <ItemGroup>

@@ -10,6 +10,7 @@
 
 #include "Core/HW/GCPad.h"
 
+#include "InputCommon/ControllerEmu/Control/Input.h"
 #include "InputCommon/ControllerEmu/ControlGroup/AnalogStick.h"
 #include "InputCommon/ControllerEmu/ControlGroup/Buttons.h"
 #include "InputCommon/ControllerEmu/ControlGroup/ControlGroup.h"
@@ -141,8 +142,8 @@ GCPad::GCPad(const unsigned int index) : m_index(index)
 
   groups.emplace_back(m_primehack_misc = new ControllerEmu::ControlGroup(_trans("PrimeHack")));
 
-  //m_primehack_misc->controls.emplace_back(
-  //  new ControllerEmu::Input(ControllerEmu::DoNotTranslate, "Spring Ball", "Spring Ball"));
+  m_primehack_misc->controls.emplace_back(
+      new ControllerEmu::Input(Translatability::DoNotTranslate, "Spring Ball", "Spring Ball"));
 }
 
 std::string GCPad::GetName() const
@@ -422,7 +423,7 @@ void GCPad::ChangeUIPrimeHack(bool useMetroidUI)
 // May introduce Springball into GC at some point.
 bool GCPad::CheckSpringBallCtrl()
 {
-  return false; //m_primehack_misc->controls[0].get()->control_ref->State() > 0.5;
+  return m_primehack_misc->controls[0].get()->control_ref->State() > 0.5;
 }
 
 
