@@ -50,14 +50,6 @@ void update_active_game_region(const Core::CPUThreadGuard& cpu_guard) {
       active_game = Game::MENU;
       active_region = Region::NTSC_U;
       break;
-    case 0x806ddaec:
-      active_game = Game::MENU_PRIME_1;
-      active_region = Region::NTSC_J;
-      break;
-    case 0x801e0000:
-      active_game = Game::MENU_PRIME_2;
-      active_region = Region::NTSC_J;
-      break;
     case 0x7c0000d0:
       active_game = Game::MENU;
       active_region = Region::PAL;
@@ -66,10 +58,6 @@ void update_active_game_region(const Core::CPUThreadGuard& cpu_guard) {
       active_game = Game::PRIME_1;
       active_region = Region::NTSC_U;
       break;
-    case 0x53687566:
-      active_game = Game::PRIME_1;
-      active_region = Region::NTSC_J;
-      break;
     case 0x7c962378:
       active_game = Game::PRIME_1;
       active_region = Region::PAL;
@@ -77,10 +65,6 @@ void update_active_game_region(const Core::CPUThreadGuard& cpu_guard) {
     case 0x4bff64e1:
       active_game = Game::PRIME_2;
       active_region = Region::NTSC_U;
-      break;
-    case 0x936daabc:
-      active_game = Game::PRIME_2;
-      active_region = Region::NTSC_J;
       break;
     case 0x80830000:
       active_game = Game::PRIME_2;
@@ -132,10 +116,6 @@ void update_active_game_region(const Core::CPUThreadGuard& cpu_guard) {
           active_game = Game::PRIME_2_GCN;
           active_region = Region::NTSC_U;
           break;
-        case FOURCC('G', '2', 'M', 'J'):
-          active_game = Game::PRIME_2_GCN;
-          active_region = Region::NTSC_J;
-          break;
         case FOURCC('G', '2', 'M', 'P'):
           active_game = Game::PRIME_2_GCN;
           active_region = Region::PAL;
@@ -143,10 +123,6 @@ void update_active_game_region(const Core::CPUThreadGuard& cpu_guard) {
         case FOURCC('R', 'M', '3', 'E'):
           active_game = Game::PRIME_3_STANDALONE;
           active_region = Region::NTSC_U;
-          break;
-        case FOURCC('R', 'M', '3', 'J'):
-          active_game = Game::PRIME_3_STANDALONE;
-          active_region = Region::NTSC_J;
           break;
         case FOURCC('R', 'M', '3', 'P'):
           active_game = Game::PRIME_3_STANDALONE;
@@ -175,7 +151,7 @@ void update_mod_state_from_config() {
     SetModEnabled<PortalSkipMP2>(Config::Get(Config::PRIMEHACK_SKIPMP2_PORTAL));
     SetModEnabled<DisableHudMemoPopup>(Config::Get(Config::PRIMEHACK_DISABLE_HUDMEMO));
     SetModEnabled<UnlockHypermode>(Config::Get(Config::PRIMEHACK_UNLOCK_HYPERMODE));
-    // TODO: Configure AllDoorAnyBeam across all of these
+    SetModEnabled<AllDoorAnyBeam>(Config::Get(Config::PRIMEHACK_ANYBEAM_DOOR));
   } else {
     DisableMod<Noclip>();
     DisableMod<Invulnerability>();
@@ -185,6 +161,7 @@ void update_mod_state_from_config() {
     DisableMod<PortalSkipMP2>();
     DisableMod<DisableHudMemoPopup>();
     DisableMod<UnlockHypermode>();
+    DisableMod<AllDoorAnyBeam>();
   }
 
   // Disallow any PrimeHack control mods
@@ -234,8 +211,6 @@ void RunActiveMods(const Core::CPUThreadGuard& cpu_guard) {
     foreach_mod([](PrimeMod& mod) { mod.reset_mod(); });
     GetVariableManager()->reset_variables();
   }
-
-  ClrDevInfo(); // Clear the dev info stream before the mods print again.
 
   update_mod_state_from_config();
 

@@ -16,29 +16,29 @@ void init_db(AddressDB& addr_db);
 
 class AddressDB {
 public:
-  using region_triple = std::tuple<u32, u32, u32>;
+  using region_pair = std::pair<u32, u32>;
 
   AddressDB();
-  void register_address(Game game, std::string_view name, u32 addr_ntsc_u = 0, u32 addr_pal = 0, u32 addr_ntsc_j = 0);
+  void register_address(Game game, std::string_view name, u32 addr_ntsc_u = 0, u32 addr_pal = 0);
   // Address is computed as:
   //   [...[[source_var + offset0] + offset1] + ... + offsetN-2] + offsetN-1
   // singleton lists will only offset source_var, not dereference
   void register_dynamic_address(Game game, std::string_view name, std::string_view source_var,
-                                std::vector<region_triple>&& offsets);
+                                std::vector<region_pair>&& offsets);
   u32 lookup_address(Game game, Region region, std::string_view name) const;
   u32 lookup_dynamic_address(Core::CPUThreadGuard const& guard, Game game, Region region, std::string_view name) const;
 
 private:
   struct DynamicVariable {
-    DynamicVariable(std::string&& source, std::vector<region_triple>&& offsets)
+    DynamicVariable(std::string&& source, std::vector<region_pair>&& offsets)
       : source_var(std::move(source)), source_var_dynamic(false), offset_list(std::move(offsets)) {}
 
     std::string source_var;
     mutable bool source_var_dynamic;
-    std::vector<region_triple> offset_list;
+    std::vector<region_pair> offset_list;
   };
 
-  using var_map = std::map<std::string, region_triple, std::less<>>;
+  using var_map = std::map<std::string, region_pair, std::less<>>;
   using dyn_var_map = std::map<std::string, DynamicVariable, std::less<>>;
   using game_map = std::map<Game, var_map>;
 

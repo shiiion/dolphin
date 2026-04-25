@@ -36,6 +36,7 @@ void PrimeCheatsWidget::CreateWidgets()
   m_checkbox_skipportalmp2 = new QCheckBox(tr("Skip MP2 Portal Cutscenes"));
   m_checkbox_hypermode = new QCheckBox(tr("Unlock Hypermode (Hard) Difficulty"));
   m_checkbox_friendvouchers = new QCheckBox(tr("Bypass Friend Vouchers (Trilogy Only)"));
+  m_checkbox_anybeam = new QCheckBox(tr("Any Beam on All Doors (MP1 Only)"));
   m_warning = new CheatWarningWidget(m_game_id, m_restart_required, this);
 
   layout->addWidget(m_warning);
@@ -47,6 +48,7 @@ void PrimeCheatsWidget::CreateWidgets()
   layout->addWidget(m_checkbox_skipportalmp2);
   layout->addWidget(m_checkbox_hypermode);
   layout->addWidget(m_checkbox_friendvouchers);
+  layout->addWidget(m_checkbox_anybeam);
 
   main_layout->addWidget(group_box);
   main_layout->addStretch();
@@ -64,6 +66,7 @@ void PrimeCheatsWidget::ConnectWidgets()
   connect(m_checkbox_friendvouchers, &QCheckBox::toggled, this, &PrimeCheatsWidget::OnSaveConfig);
   connect(m_checkbox_hudmemo, &QCheckBox::toggled, this, &PrimeCheatsWidget::OnSaveConfig);
   connect(m_checkbox_hypermode, &QCheckBox::toggled, this, &PrimeCheatsWidget::OnSaveConfig);
+  connect(m_checkbox_anybeam, &QCheckBox::toggled, this, &PrimeCheatsWidget::OnSaveConfig);
   connect(m_warning, &CheatWarningWidget::OpenCheatEnableSettings, this, &PrimeCheatsWidget::OpenGeneralSettings);
 }
 
@@ -77,7 +80,7 @@ void PrimeCheatsWidget::OnSaveConfig()
   Config::SetBaseOrCurrent(Config::PRIMEHACK_FRIENDVOUCHERS, m_checkbox_friendvouchers->isChecked());
   Config::SetBaseOrCurrent(Config::PRIMEHACK_DISABLE_HUDMEMO, m_checkbox_hudmemo->isChecked());
   Config::SetBaseOrCurrent(Config::PRIMEHACK_UNLOCK_HYPERMODE, m_checkbox_hypermode->isChecked());
-  Config::Save();
+  Config::SetBaseOrCurrent(Config::PRIMEHACK_ANYBEAM_DOOR, m_checkbox_anybeam->isChecked());
 }
 
 void PrimeCheatsWidget::OnLoadConfig()
@@ -110,6 +113,8 @@ void PrimeCheatsWidget::AddDescriptions()
     QT_TR_NOOP("Removes the item pickup screen and explanation screen for powerups.");
   static const char TR_HYPERMODE[] =
     QT_TR_NOOP("Unlock Hypermode (Hard) Difficulty.");
+  static const char TR_ANYBEAM[] =
+    QT_TR_NOOP("Makes all doors which you have the beam for unlockable by any beam. MP1 Only.");
 
   m_checkbox_noclip->setToolTip(tr(TR_NOCLIP));
   m_checkbox_invulnerability->setToolTip(tr(TR_INVULNERABILITY));
@@ -119,6 +124,7 @@ void PrimeCheatsWidget::AddDescriptions()
   m_checkbox_friendvouchers->setToolTip(tr(TR_FRIENDVOUCHERS));
   m_checkbox_hudmemo->setToolTip(tr(TR_HUDMEMO));
   m_checkbox_hypermode->setToolTip(tr(TR_HYPERMODE));
+  m_checkbox_anybeam->setToolTip(tr(TR_ANYBEAM));
 }
 
 void PrimeCheatsWidget::showEvent(QShowEvent*)

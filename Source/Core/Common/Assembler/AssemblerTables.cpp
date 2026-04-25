@@ -174,7 +174,8 @@ extern const CaseInsensitiveDict<GekkoDirective> directives_map = {
     {"align", GekkoDirective::Align},   {"zeros", GekkoDirective::Zeros},
     {"skip", GekkoDirective::Skip},     {"defvar", GekkoDirective::DefVar},
     {"ascii", GekkoDirective::Ascii},   {"asciz", GekkoDirective::Asciz},
-    {"defsym", GekkoDirective::DefSym},
+    {"defsym", GekkoDirective::DefSym}, {"if", GekkoDirective::If},
+    {"endif", GekkoDirective::EndIf},   {"else", GekkoDirective::Else},
 };
 
 #define MNEMONIC(mnemonic_str, mnemonic_enum, variant_bits, alg)                                   \

@@ -270,6 +270,7 @@ const Info<bool> PRIMEHACK_RESTORE_SCANDASH{{System::Main, "Core", "PrimeRestore
 const Info<bool> PRIMEHACK_FRIENDVOUCHERS{{System::Main, "Core", "PrimeFriendVouchers"}, true};
 const Info<bool> PRIMEHACK_DISABLE_HUDMEMO{{System::Main, "Core", "PrimeDisableHudMemo"}, false};
 const Info<bool> PRIMEHACK_UNLOCK_HYPERMODE{{System::Main, "Core", "PrimeUnlockHypermode"}, true};
+const Info<bool> PRIMEHACK_ANYBEAM_DOOR{{System::Main, "Core", "PrimeAnybeamDoor"}, true};
 
 GPUDeterminismMode GetGPUDeterminismMode()
 {

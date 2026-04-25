@@ -125,8 +125,6 @@ bool SpringballButton::init_mod(Game game, Region region) {
         springball_code(0x801476d0);
       } else if (region == Region::PAL) {
         springball_code(0x80147820);
-      } else if (region == Region::NTSC_J) {
-        springball_code(0x80147cd0);
       }
       break;
     case Game::PRIME_1_GCN:
@@ -147,8 +145,6 @@ bool SpringballButton::init_mod(Game game, Region region) {
         springball_code(0x8010bd98);
       } else if (region == Region::PAL) {
         springball_code(0x8010d440);
-      } else if (region == Region::NTSC_J) {
-        springball_code(0x8010b368);
       }
       break;
     case Game::PRIME_2_GCN:
@@ -170,8 +166,6 @@ bool SpringballButton::init_mod(Game game, Region region) {
         springball_code(0x8010c984);
       } else if (region == Region::PAL) {
         springball_code(0x8010ced4);
-      } else if (region == Region::NTSC_J) {
-        springball_code(0x8010d49c);
       }
       break;
     default:

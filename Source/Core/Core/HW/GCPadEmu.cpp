@@ -374,6 +374,8 @@ void GCPad::LoadPrimeHackDefaults(const ControllerInterface& ciface)
   m_main_stick->SetControlExpression(3, "D | Right");  // Right
 #endif
 
+  m_primehack_misc->SetControlExpression(0, "Alt"); // Spring Ball
+
   // Because our defaults use keyboard input, set calibration shapes to squares.
   m_c_stick->SetCalibrationFromGate(ControllerEmu::SquareStickGate(1.0));
   m_main_stick->SetCalibrationFromGate(ControllerEmu::SquareStickGate(1.0));

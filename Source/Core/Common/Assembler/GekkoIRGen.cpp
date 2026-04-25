@@ -26,7 +26,7 @@ class GekkoIRPlugin : public ParsePlugin
 {
 public:
   GekkoIRPlugin(GekkoIR& result, u32 base_addr)
-      : m_output_result(result), m_active_var(nullptr), m_operand_scan_begin(0)
+      : m_output_result(result), m_active_var(nullptr), m_operand_scan_begin(0), m_blocking_codegen(false)
   {
     m_active_block = &m_output_result.blocks.emplace_back(base_addr);
   }
@@ -118,6 +118,10 @@ private:
   std::variant<std::vector<float>, std::vector<double>> m_floats_list;
   std::string_view m_string_lit;
   GekkoDirective m_active_directive;
+
+  // If statements
+  std::vector<bool> m_if_stack;
+  bool m_blocking_codegen;
 };
 
 ///////////////
@@ -126,6 +130,11 @@ private:
 
 void GekkoIRPlugin::OnDirectivePre(GekkoDirective directive)
 {
+  if (m_blocking_codegen)
+  {
+    return;
+  }
+
   m_evaluation_mode = EvalMode::AbsAddrSinglePass;
   m_active_directive = directive;
   m_eval_stack = std::vector<u64>{};
@@ -145,6 +154,29 @@ void GekkoIRPlugin::OnDirectivePre(GekkoDirective directive)
 
 void GekkoIRPlugin::OnDirectivePost(GekkoDirective directive)
 {
+  if (m_blocking_codegen)
+  {
+    if (directive == GekkoDirective::If)
+    {
+      m_if_stack.push_back(false);
+    }
+    else if (directive == GekkoDirective::EndIf)
+    {
+      m_blocking_codegen &= !m_if_stack.back();
+      m_if_stack.pop_back();
+    }
+    else if (directive == GekkoDirective::Else)
+    {
+      // Only flip codegen blocking if the current if level is what's blocking codegen
+      if (m_if_stack.back())
+      {
+        m_blocking_codegen = false;
+        m_if_stack.back() = false;
+      }
+    }
+    return;
+  }
+
   switch (directive)
   {
   // .nbyte directives are handled by OnResolvedExprPost
@@ -208,33 +240,87 @@ void GekkoIRPlugin::OnDirectivePost(GekkoDirective directive)
     *m_active_label = static_cast<u32>(m_eval_stack.back());
     m_active_label = nullptr;
     break;
+
+  case GekkoDirective::If:
+    m_if_stack.emplace_back(m_eval_stack.back() == 0);
+    m_blocking_codegen |= m_if_stack.back();
+    break;
+
+  case GekkoDirective::EndIf:
+    if (m_if_stack.empty())
+    {
+      m_owner->EmitErrorHere(".endif directive with no matching .if");
+    }
+    else
+    {
+      // Since m_blocking_codegen is false, no need to modify here
+      m_if_stack.pop_back();
+    }
+    break;
+
+  case GekkoDirective::Else:
+    if (m_if_stack.empty())
+    {
+      m_owner->EmitErrorHere(".else directive with no matching .if");
+    }
+    else
+    {
+      // Since m_blocking_codegen is false, must swap to true
+      m_if_stack.back() = true;
+      m_blocking_codegen = true;
+    }
   }
   m_eval_stack = {};
 }
 
 void GekkoIRPlugin::OnInstructionPre(const ParseInfo& mnemonic_info, bool extended)
 {
+  if (m_blocking_codegen)
+  {
+    return;
+  }
+
   m_evaluation_mode = EvalMode::RelAddrDoublePass;
   StartInstruction(mnemonic_info.mnemonic_index, extended);
 }
 
 void GekkoIRPlugin::OnInstructionPost(const ParseInfo&, bool)
 {
+  if (m_blocking_codegen)
+  {
+    return;
+  }
+
   FinishInstruction();
 }
 
 void GekkoIRPlugin::OnOperandPre()
 {
+  if (m_blocking_codegen)
+  {
+    return;
+  }
+
   m_operand_str_start = m_owner->lexer.ColNumber();
 }
 
 void GekkoIRPlugin::OnOperandPost()
 {
+  if (m_blocking_codegen)
+  {
+    return;
+  }
+
   SaveOperandFixup(m_operand_str_start, m_owner->lexer.ColNumber());
 }
 
 void GekkoIRPlugin::OnResolvedExprPost()
 {
+  if (m_blocking_codegen)
+  {
+    return;
+  }
+
   switch (m_active_directive)
   {
   case GekkoDirective::Byte:
@@ -257,6 +343,11 @@ void GekkoIRPlugin::OnResolvedExprPost()
 
 void GekkoIRPlugin::OnOperator(AsmOp operation)
 {
+  if (m_blocking_codegen)
+  {
+    return;
+  }
+
   if (m_evaluation_mode == EvalMode::RelAddrDoublePass)
   {
     EvalOperatorRel(operation);
@@ -269,6 +360,11 @@ void GekkoIRPlugin::OnOperator(AsmOp operation)
 
 void GekkoIRPlugin::OnTerminal(Terminal type, const AssemblerToken& val)
 {
+  if (m_blocking_codegen)
+  {
+    return;
+  }
+
   if (type == Terminal::Str)
   {
     m_string_lit = val.token_val;
@@ -285,6 +381,11 @@ void GekkoIRPlugin::OnTerminal(Terminal type, const AssemblerToken& val)
 
 void GekkoIRPlugin::OnHiaddr(std::string_view id)
 {
+  if (m_blocking_codegen)
+  {
+    return;
+  }
+
   if (m_evaluation_mode == EvalMode::RelAddrDoublePass)
   {
     AddSymbolResolve(id, true);
@@ -315,6 +416,11 @@ void GekkoIRPlugin::OnHiaddr(std::string_view id)
 
 void GekkoIRPlugin::OnLoaddr(std::string_view id)
 {
+  if (m_blocking_codegen)
+  {
+    return;
+  }
+
   if (m_evaluation_mode == EvalMode::RelAddrDoublePass)
   {
     AddSymbolResolve(id, true);
@@ -344,6 +450,11 @@ void GekkoIRPlugin::OnLoaddr(std::string_view id)
 
 void GekkoIRPlugin::OnCloseParen(ParenType type)
 {
+  if (m_blocking_codegen)
+  {
+    return;
+  }
+
   if (type != ParenType::RelConv)
   {
     return;
@@ -362,6 +473,11 @@ void GekkoIRPlugin::OnCloseParen(ParenType type)
 
 void GekkoIRPlugin::OnLabelDecl(std::string_view name)
 {
+  if (m_blocking_codegen)
+  {
+    return;
+  }
+
   const std::string name_str(name);
   if (const bool inserted = m_symset.insert(name_str).second; !inserted)
   {
@@ -374,6 +490,11 @@ void GekkoIRPlugin::OnLabelDecl(std::string_view name)
 
 void GekkoIRPlugin::OnSymDecl(std::string_view name)
 {
+  if (m_blocking_codegen)
+  {
+    return;
+  }
+
   const std::string name_str(name);
   if (const bool inserted = m_symset.insert(name_str).second; !inserted)
   {
@@ -386,11 +507,21 @@ void GekkoIRPlugin::OnSymDecl(std::string_view name)
 
 void GekkoIRPlugin::OnNumericLabelDecl(std::string_view, u32 num)
 {
+  if (m_blocking_codegen)
+  {
+    return;
+  }
+
   m_numlabs.emplace_back(num, m_active_block->BlockEndAddress());
 }
 
 void GekkoIRPlugin::OnVarDecl(std::string_view name)
 {
+  if (m_blocking_codegen)
+  {
+    return;
+  }
+
   const std::string name_str(name);
   if (const bool inserted = m_symset.insert(name_str).second; !inserted)
   {
@@ -403,7 +534,14 @@ void GekkoIRPlugin::OnVarDecl(std::string_view name)
 
 void GekkoIRPlugin::PostParseAction()
 {
-  RunFixups();
+  if (m_if_stack.empty())
+  {
+    RunFixups();
+  }
+  else
+  {
+    m_owner->EmitErrorHere("Unterminated .if directive");
+  }
 }
 
 //////////////////////

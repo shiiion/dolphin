@@ -11,18 +11,15 @@
 
 std::string info_str;
 
-namespace prime
-{
-/*
-* Prime one beam IDs: 0 = power, 1 = ice, 2 = wave, 3 = plasma
-* Prime one visor IDs: 0 = combat, 1 = xray, 2 = scan, 3 = thermal
-* Prime two beam IDs: 0 = power, 1 = dark, 2 = light, 3 = annihilator
-* Prime two visor IDs: 0 = combat, 1 = echo, 2 = scan, 3 = dark
-* ADDITIONAL INFO: Equipment have-status offsets:
-* Beams can be ignored (for now) as the existing code handles that for us
-* Prime one visor offsets: combat = 0x11, scan = 0x05, thermal = 0x09, xray = 0x0d
-* Prime two visor offsets: combat = 0x08, scan = 0x09, dark = 0x0a, echo = 0x0b
-*/
+namespace prime {
+// Prime one beam IDs: 0 = power, 1 = ice, 2 = wave, 3 = plasma
+// Prime one visor IDs: 0 = combat, 1 = xray, 2 = scan, 3 = thermal
+// Prime two beam IDs: 0 = power, 1 = dark, 2 = light, 3 = annihilator
+// Prime two visor IDs: 0 = combat, 1 = echo, 2 = scan, 3 = dark
+// ADDITIONAL INFO: Equipment have-status offsets:
+// Beams can be ignored (for now) as the existing code handles that for us
+// Prime one visor offsets: combat = 0x11, scan = 0x05, thermal = 0x09, xray = 0x0d
+// Prime two visor offsets: combat = 0x08, scan = 0x09, dark = 0x0a, echo = 0x0b
 
 static float cursor_x = 0, cursor_y = 0;
 static int current_beam = 0;
@@ -62,8 +59,7 @@ std::tuple<int, int> get_visor_switch(std::array<std::tuple<int, int>, 4> const&
       if (!pressing_button) {
         pressing_button = true;
         return visors[0];
-      }
-      else {
+      } else {
         return std::make_tuple(-1, 0);
       }
     }
@@ -73,20 +69,17 @@ std::tuple<int, int> get_visor_switch(std::array<std::tuple<int, int>, 4> const&
       pressing_button = true;
       return visors[1];
     }
-  }
-  else if (CheckVisorCtl(2)) {
+  } else if (CheckVisorCtl(2)) {
     if (!pressing_button) {
       pressing_button = true;
       return visors[2];
     }
-  }
-  else if (CheckVisorCtl(3)) {
+  } else if (CheckVisorCtl(3)) {
     if (!pressing_button) {
       pressing_button = true;
       return visors[3];
     }
-  }
-  else if (CheckVisorScrollCtl(true)) {
+  } else if (CheckVisorScrollCtl(true)) {
     if (!pressing_button) {
       pressing_button = true;
       for (int i = 0; i < 4; i++) {
@@ -94,8 +87,7 @@ std::tuple<int, int> get_visor_switch(std::array<std::tuple<int, int>, 4> const&
       }
       return visors[current_visor];
     }
-  }
-  else if (CheckVisorScrollCtl(false)) {
+  } else if (CheckVisorScrollCtl(false)) {
     if (!pressing_button) {
       pressing_button = true;
       for (int i = 0; i < 4; i++) {
@@ -103,8 +95,7 @@ std::tuple<int, int> get_visor_switch(std::array<std::tuple<int, int>, 4> const&
       }
       return visors[current_visor];
     }
-  }
-  else {
+  } else {
     pressing_button = false;
   }
   return std::make_tuple(-1, 0);
@@ -117,26 +108,22 @@ int get_beam_switch(std::array<int, 4> const& beams) {
       pressing_button = true;
       return current_beam = beams[0];
     }
-  }
-  else if (CheckBeamCtl(1)) {
+  } else if (CheckBeamCtl(1)) {
     if (!pressing_button) {
       pressing_button = true;
       return current_beam = beams[1];
     }
-  }
-  else if (CheckBeamCtl(2)) {
+  } else if (CheckBeamCtl(2)) {
     if (!pressing_button) {
       pressing_button = true;
       return current_beam = beams[2];
     }
-  }
-  else if (CheckBeamCtl(3)) {
+  } else if (CheckBeamCtl(3)) {
     if (!pressing_button) {
       pressing_button = true;
       return current_beam = beams[3];
     }
-  }
-  else if (CheckBeamScrollCtl(true)) {
+  } else if (CheckBeamScrollCtl(true)) {
     if (!pressing_button) {
       pressing_button = true;
       for (int i = 0; i < 4; i++) {
@@ -144,8 +131,7 @@ int get_beam_switch(std::array<int, 4> const& beams) {
       }
       return beams[current_beam];
     }
-  }
-  else if (CheckBeamScrollCtl(false)) {
+  } else if (CheckBeamScrollCtl(false)) {
     if (!pressing_button) {
       pressing_button = true;
       for (int i = 0; i < 4; i++) {
@@ -153,8 +139,7 @@ int get_beam_switch(std::array<int, 4> const& beams) {
       }
       return beams[current_beam];
     }
-  }
-  else {
+  } else {
     pressing_button = false;
   }
   return -1;
@@ -166,72 +151,19 @@ void swap_alt_profiles(u32 ball_state, u32 transition_state, u32 screw_state)
   const bool morphed = (ball_state == 1 || ball_state == 2 || ball_state == 3) && (screw_state == 0);
   const bool in_map = (transition_state == 1);
 
-  if ((morphed || in_map) && !was_in_alternate)
-  {
+  if ((morphed || in_map) && !was_in_alternate) {
     std::string profile = GetProfiles().first;
 
     if (!profile.empty() && (profile != std::string("Disabled"))) {
       ChangeControllerProfileAlt(profile);
     }
     was_in_alternate = true;
-  }
-  else if (!(morphed || in_map) && was_in_alternate)
-  {
+  } else if (!(morphed || in_map) && was_in_alternate) {
     std::string profile = GetProfiles().second;
 
     ChangeControllerProfileAlt(profile);
     was_in_alternate = false;
   }
-}
-
-std::stringstream ss;
-void DevInfo(const char* name, const char* format, ...)
-{
-  va_list args1;
-  va_start(args1, format);
-  va_list args2;
-  va_copy(args2, args1);
-
-  std::vector<char> buf(1+std::vsnprintf(nullptr, 0, format, args1));
-  std::vsnprintf(buf.data(), buf.size(), format, args2);
-
-  ss << name << ": " << buf.data() << std::endl;
-  va_end(args2);
-}
-
-void DevInfoMatrix(const char* name, const Transform& t)
-{
-  const char* format =
-    "\n   %.3f    %.3f    %.3f    %.3f"
-    "\n   %.3f    %.3f    %.3f    %.3f"
-    "\n   %.3f    %.3f    %.3f    %.3f";
-
-  u32 bufsize = snprintf(NULL, 0, format,
-    t.m[0][0], t.m[0][1], t.m[0][2], t.m[0][3],
-    t.m[1][0], t.m[1][1], t.m[1][2], t.m[1][3],
-    t.m[2][0], t.m[2][1], t.m[2][2], t.m[2][3]);
-
-  std::vector<char> buf;
-  buf.resize(bufsize + 1);
-
-  snprintf(buf.data(), bufsize + 1, format,
-    t.m[0][0], t.m[0][1], t.m[0][2], t.m[0][3],
-    t.m[1][0], t.m[1][1], t.m[1][2], t.m[1][3],
-    t.m[2][0], t.m[2][1], t.m[2][2], t.m[2][3]);
-
-  ss << name << ":" << buf.data() << std::endl;
-}
-
-std::string GetDevInfo()
-{
-  std::string result = ss.str();
-
-  return result;
-}
-
-void ClrDevInfo()
-{
-  ss = std::stringstream();
 }
 
 bool mem_check(u32 address) {
@@ -264,7 +196,9 @@ static AspectMode get_aspect_mode() {
   return Config::Get(Config::GFX_WIDESCREEN_HACK) ? AspectMode::Stretch : AspectMode::ForceWide;
 }
 
-static void handle_wiimote_IR(Core::CPUThreadGuard const& guard, u32 x_address, u32 y_address, Region region, float half_width, float half_height, AspectMode mode, float aspect_step) {
+static void handle_wiimote_IR(Core::CPUThreadGuard const& guard, u32 x_address,
+                              u32 y_address, Region region, float half_width,
+                              float half_height, AspectMode mode, float aspect_step) {
   constexpr float kInternalWidth = 640.f;
   const float cur_width = g_presenter->GetBackbufferWidth();
   const float cur_height = g_presenter->GetBackbufferHeight();
@@ -315,14 +249,18 @@ void handle_cursor(Core::CPUThreadGuard const& guard, u32 x_address, u32 y_addre
     const float cur_width = g_presenter->GetBackbufferWidth();
     const float cur_height = g_presenter->GetBackbufferHeight();
     const float render_aspect = cur_width / cur_height;
-    handle_wiimote_IR(guard, x_address, y_address, region, (region == Region::PAL ? kPalHalfHRange : kNtscHalfHRange), kMenuHalfVRange, AspectMode::ForceWide, render_aspect);
+    handle_wiimote_IR(guard, x_address, y_address, region,
+                      (region == Region::PAL ? kPalHalfHRange : kNtscHalfHRange),
+                      kMenuHalfVRange, AspectMode::ForceWide, render_aspect);
   } else {
-    handle_wiimote_IR(guard, x_address, y_address, region, (region == Region::PAL ? kPalHalfHRange : kNtscHalfHRange), kMenuHalfVRange, aspect_mode, kMetroidAr);
+    handle_wiimote_IR(guard, x_address, y_address, region,
+                      (region == Region::PAL ? kPalHalfHRange : kNtscHalfHRange),
+                      kMenuHalfVRange, aspect_mode, kMetroidAr);
   }
 }
 
 void handle_reticle(Core::CPUThreadGuard const& guard, u32 x_address, u32 y_address, Region region, float fov) {
-  constexpr float kDegToRad = 3.141592654f / 180.f;
+  constexpr float kDegToRad = kPi / 180.f;
   constexpr float kTan30 = 0.57735026918962576450914878050196f;
 
   const float fov_scaling = tan((fov / 2.f) * kDegToRad) / kTan30;
@@ -330,17 +268,18 @@ void handle_reticle(Core::CPUThreadGuard const& guard, u32 x_address, u32 y_addr
   const float base_cursor_range_w = (region == Region::PAL ? kPalHalfHRange : kNtscHalfHRange) * fov_scaling;
   float base_cursor_range_h;
   switch (aspect_mode) {
-  default:
-  case AspectMode::Auto:
-  case AspectMode::Stretch:
-  case AspectMode::ForceWide:
-    base_cursor_range_h = (region == Region::PAL ? kPalHalfVRange_16_9 : kNtscHalfVRange_16_9) * fov_scaling;
-    break;
-  case AspectMode::ForceStandard:
-    base_cursor_range_h = (region == Region::PAL ? kPalHalfVRange_4_3 : kNtscHalfVRange_4_3) * fov_scaling;
-    break;
+    default:
+    case AspectMode::Auto:
+    case AspectMode::Stretch:
+    case AspectMode::ForceWide:
+      base_cursor_range_h = (region == Region::PAL ? kPalHalfVRange_16_9 : kNtscHalfVRange_16_9) * fov_scaling;
+      break;
+    case AspectMode::ForceStandard:
+      base_cursor_range_h = (region == Region::PAL ? kPalHalfVRange_4_3 : kNtscHalfVRange_4_3) * fov_scaling;
+      break;
   }
 
   handle_wiimote_IR(guard, x_address, y_address, region, base_cursor_range_w, base_cursor_range_h, aspect_mode, kMetroidAr);
 }
-}  // namespace prime
+
+} // namespace prime

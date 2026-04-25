@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core/PowerPC/PowerPC.h"
 #include "Core/PrimeHack/PrimeMod.h"
 
 #include <map>

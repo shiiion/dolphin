@@ -112,8 +112,6 @@ vec3 Noclip::get_movement_vec(u32 camera_tf_addr) {
     movement_vec = movement_vec + vec3(0, 0, 1);
   }
 
-  DevInfoMatrix("camera_tf", camera_tf);
-
   return movement_vec;
 }
 
@@ -340,15 +338,6 @@ bool Noclip::init_mod(Game game, Region region) {
         add_code_change(0x80196d74, 0xd0210094);
         add_code_change(0x80196d78, 0xd00100a4);
         add_code_change(0x80196d7c, 0x481b1f39);
-      } else if (region == Region::NTSC_J) {
-        noclip_code_mp1(0x804de278, 0x800053a4, 0x8000bb80);
-        add_code_change(0x80197634, 0x60000000);
-        add_code_change(0x8019763c, 0x60000000);
-        add_code_change(0x80197644, 0x60000000);
-        add_code_change(0x80197658, 0xd0410084);
-        add_code_change(0x8019765c, 0xd0210094);
-        add_code_change(0x80197660, 0xd00100a4);
-        add_code_change(0x80197664, 0x481b11c1);
       }
       break;
     case Game::PRIME_1_GCN:
@@ -419,15 +408,6 @@ bool Noclip::init_mod(Game game, Region region) {
         add_code_change(0x801624fc, 0xd0210094);
         add_code_change(0x80162500, 0xd00100a4);
         add_code_change(0x80162504, 0x4beabdad);
-      } else if (region == Region::NTSC_J) {
-        noclip_code_mp2(0x804e8fcc, 0x800053a4, 0x8000d694);
-        add_code_change(0x80160330, 0x60000000);
-        add_code_change(0x80160338, 0x60000000);
-        add_code_change(0x80160340, 0x60000000);
-        add_code_change(0x80160348, 0xd0410084);
-        add_code_change(0x8016034c, 0xd0210094);
-        add_code_change(0x80160350, 0xd00100a4);
-        add_code_change(0x80160354, 0x4bead525);
       }
       break;
     case Game::PRIME_2_GCN:
@@ -440,15 +420,6 @@ bool Noclip::init_mod(Game game, Region region) {
         add_code_change(0x801865f4, 0xd0210088);
         add_code_change(0x801865f8, 0xd0010078);
         add_code_change(0x801865fc, 0x4bec395d);
-      } else if (region == Region::NTSC_J) {
-        noclip_code_mp2_gc(0x803dfb7c, 0x80420000, 0x8004b6ac);
-        add_code_change(0x801880d8, 0x60000000);
-        add_code_change(0x801880e0, 0x60000000);
-        add_code_change(0x801880e8, 0x60000000);
-        add_code_change(0x801880f0, 0xd0410098);
-        add_code_change(0x801880f4, 0xd0210088);
-        add_code_change(0x801880f8, 0xd0010078);
-        add_code_change(0x801880fc, 0x4bec2939);
       } else if (region == Region::PAL) {
         noclip_code_mp2_gc(0x803dddfc, 0x80420000, 0x8004ad44);
         add_code_change(0x801868bc, 0x60000000);
@@ -500,15 +471,6 @@ bool Noclip::init_mod(Game game, Region region) {
         add_code_change(0x8017cb74, 0xd0210094);
         add_code_change(0x8017cb78, 0xd00100a4);
         add_code_change(0x8017cb7c, 0x4be938a1);
-      } else if (region == Region::NTSC_J) {
-        noclip_code_mp3(0x805caa30, 0x80004380, 0x8000bee8);
-        add_code_change(0x8017dd54, 0x60000000);
-        add_code_change(0x8017dd5c, 0x60000000);
-        add_code_change(0x8017dd64, 0x60000000);
-        add_code_change(0x8017dd6c, 0xd0410084);
-        add_code_change(0x8017dd70, 0xd0210094);
-        add_code_change(0x8017dd74, 0xd00100a4);
-        add_code_change(0x8017dd78, 0x4be938a1);
       }
       break;
     default:

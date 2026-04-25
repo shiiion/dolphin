@@ -29,6 +29,7 @@ private:
   QCheckBox* m_checkbox_friendvouchers;
   QCheckBox* m_checkbox_hudmemo;
   QCheckBox* m_checkbox_hypermode;
+  QCheckBox* m_checkbox_anybeam;
   CheatWarningWidget* m_warning;
   std::string m_game_id;
   bool m_restart_required;

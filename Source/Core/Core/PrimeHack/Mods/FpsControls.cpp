@@ -26,36 +26,27 @@ const std::array<std::tuple<int, int>, 4> prime_three_visors = {
   std::make_tuple<int, int>(2, 0x0d), std::make_tuple<int, int>(3, 0x0e)};
 
 constexpr u32 ORBIT_STATE_GRAPPLE = 5;
-#define RIDLEY_STR(r) (r == Region::NTSC_J ? L"メタリドリー" : L"Meta Ridley")
-#define RIDLEY_STR_LEN(r) (r == Region::NTSC_J ? 6 : 11)
-}
-u32 byteswap(u8 const* addr) {
+
+} // namespace
+
+constexpr u32 byteswap(u8 const* addr) {
   return (addr[0] << 24) | (addr[1] << 16) | (addr[2] << 8) | (addr[3]);
 }
-bool FpsControls::is_string_ridley(Region active_region, u32 string_base) {
-  if (string_base == 0) {
+
+bool FpsControls::in_ridley_fight(Region active_region) {
+  LOOKUP_DYN(world_id);
+  // World ID for Norion
+  if (read64(world_id) != 0x6fb8ef2a9523c343) {
     return false;
   }
+  LOOKUP_DYN(area_id);
 
-  const wchar_t * ridley_str = RIDLEY_STR(active_region);
-  const auto str_len = RIDLEY_STR_LEN(active_region);
-  int str_idx = 0;
-
-  while (read16(string_base) != 0 && str_idx < str_len) {
-    if (static_cast<wchar_t>(read16(string_base)) != ridley_str[str_idx]) {
-      return false;
-    }
-    str_idx++;
-    string_base += 2;
-  }
-  return str_idx == str_len && read16(string_base) == 0;
+  return read32(area_id) == 0x16;
 }
 
 void FpsControls::run_mod(Game game, Region region) {
   switch (game) {
     case Game::MENU:
-    case Game::MENU_PRIME_1:
-    case Game::MENU_PRIME_2:
       run_mod_menu(game, region);
       break;
     case Game::PRIME_1:
@@ -201,7 +192,7 @@ float FpsControls::calculate_yaw_vel() {
 }
 
 void FpsControls::handle_beam_visor_switch(std::array<int, 4> const &beams,
-  std::array<std::tuple<int, int>, 4> const &visors) {
+                                           std::array<std::tuple<int, int>, 4> const &visors) {
   // Global array of all powerups (measured in "ammunition"
   // even for things like visors/beams)
   LOOKUP_DYN(powerups_array);
@@ -223,23 +214,17 @@ void FpsControls::handle_beam_visor_switch(std::array<int, 4> const &beams,
     }
   }
 
-  if (has_beams) {
+  if (has_beams && GetVariableManager()->get_uint(*active_guard, "switch_ready")) {
     const int beam_id = get_beam_switch(beams);
     if (beam_id != -1) {
-      // Prevent triggering more than one beam swap while one is currently in progress.
-      std::chrono::duration<double, std::milli> elapsed = hr_clock::now() - beam_scroll_timeout;
-      if (elapsed.count() > 800) {
-        prime::GetVariableManager()->set_variable(*active_guard, "new_beam", static_cast<u32>(beam_id));
-        prime::GetVariableManager()->set_variable(*active_guard, "beamchange_flag", u32{1});
-        beam_scroll_timeout = hr_clock::now();
-      }
+      prime::GetVariableManager()->set_variable(*active_guard, "new_beam", static_cast<u32>(beam_id));
+      prime::GetVariableManager()->set_variable(*active_guard, "beamchange_flag", u32{1});
     }
   }
 
   LOOKUP_DYN(active_visor);
   int visor_id, visor_off;
-  std::tie(visor_id, visor_off) = get_visor_switch(visors,
-    read32(active_visor) == 0);
+  std::tie(visor_id, visor_off) = get_visor_switch(visors, read32(active_visor) == 0);
 
   if (visor_id != -1) {
     if (read32(powerups_array + (visor_off * powerups_size) + powerups_offset)) {
@@ -259,8 +244,6 @@ void FpsControls::handle_beam_visor_switch(std::array<int, 4> const &beams,
       }
     }
   }
-
-  DevInfo("powerups_array", "%08X", powerups_array);
 }
 
 void FpsControls::run_mod_menu(Game game, Region region) {
@@ -275,13 +258,6 @@ void FpsControls::run_mod_menu(Game game, Region region) {
     }
 
     handle_cursor(*active_guard, p0, p0 + 0xc0, region);
-  } else if (region == Region::NTSC_J) {
-    if (game == Game::MENU_PRIME_1) {
-      handle_cursor(*active_guard, 0x805a7da8, 0x805a7dac, region);
-    }
-    if (game == Game::MENU_PRIME_2) {
-      handle_cursor(*active_guard, 0x805a7ba8, 0x805a7bac, region);
-    }
   } else if (region == Region::PAL) {
     u32 cursor_address = read32(0x80621ffc);
     handle_cursor(*active_guard, cursor_address + 0xdc, cursor_address + 0x19c, region);
@@ -293,7 +269,6 @@ void FpsControls::run_mod_mp1(Region region) {
   if (player == 0) {
     return;
   }
-  DevInfo("Player", "%08x", player);
 
   handle_beam_visor_switch(prime_one_beams, prime_one_visors);
   CheckBeamVisorSetting(Game::PRIME_1);
@@ -325,7 +300,7 @@ void FpsControls::run_mod_mp1(Region region) {
     if (beamvisor_menu_enabled) {
       LOOKUP_DYN(beamvisor_menu_mode);
       // if the menu id is not null
-      if (read32(beamvisor_menu_mode) != 0xFFFFFFFF) {
+      if (read32(beamvisor_menu_mode) != 0xffffffff) {
         if (menu_open == false) {
           set_code_group_state("beam_change", ModState::DISABLED);
         }
@@ -378,7 +353,6 @@ void FpsControls::run_mod_mp1_gc(Region region) {
   if (player == 0) {
     return;
   }
-  DevInfo("Player", "%08x", player);
 
   LOOKUP_DYN(player_xf);
   Transform cplayer_xf;
@@ -440,7 +414,6 @@ void FpsControls::run_mod_mp2(Region region) {
   if (player == 0) {
     return;
   }
-  DevInfo("Player", "%08x", player);
 
   LOOKUP_DYN(load_state);
   if (read32(load_state) != 1) {
@@ -471,10 +444,9 @@ void FpsControls::run_mod_mp2(Region region) {
 
     if (beamvisor_menu) {
       LOOKUP_DYN(beamvisor_menu_mode);
-      u32 mode = read32(beamvisor_menu_mode);
 
       // if the menu id is not null
-      if (mode != 0xFFFFFFFF) {
+      if (read32(beamvisor_menu_mode) != 0xffffffff) {
         if (menu_open == false) {
           set_code_group_state("beam_change", ModState::DISABLED);
         }
@@ -550,7 +522,6 @@ void FpsControls::run_mod_mp2_gc(Region region) {
   if (player == 0) {
     return;
   }
-  DevInfo("Player", "%08x", player);
 
   const bool show_crosshair = GetShowGCCrosshair();
   const u32 crosshair_color_rgba = show_crosshair ? GetGCCrosshairColor() : 0x4b7ea331;
@@ -691,6 +662,7 @@ void FpsControls::mp3_handle_lasso(u32 grapple_state_addr) {
 }
 
 // this game is
+// fucking annoying
 void FpsControls::run_mod_mp3(Game active_game, Region active_region) {
   CheckBeamVisorSetting(active_game);
 
@@ -718,7 +690,6 @@ void FpsControls::run_mod_mp3(Game active_game, Region active_region) {
 
   };
 
-  LOOKUP(state_manager);
   LOOKUP_DYN(ball_state);
   LOOKUP_DYN(menu_state);
   LOOKUP_DYN(screw_state);
@@ -732,37 +703,22 @@ void FpsControls::run_mod_mp3(Game active_game, Region active_region) {
     return;
   }
 
-  // In NTSC-J version there is a quiz to select the difficulty
-  // This checks if we are ingame
-  // I won't add (state_manager + 0x29C) to the address db, not sure what it is
-  if (active_region == Region::NTSC_J && read32(state_manager + 0x29C) == 0xffffffff) {
-    mp3_handle_cursor(false, false);
-    return;
-  }
-
   LOOKUP_DYN(player);
   if (player == 0) {
     return;
   }
-  DevInfo("Player", "%08x", player);
 
   handle_beam_visor_switch({}, prime_three_visors);
 
-  LOOKUP_DYN(boss_name);
-  LOOKUP_DYN(boss_status);
-  bool is_boss_metaridley = is_string_ridley(active_region, boss_name);
-
-  // Compare based on boss name string, Meta Ridley only appears once
-  if (is_boss_metaridley) {
-    // If boss is dead
-    if (read8(boss_status) == 8) {
-      set_state(ModState::ENABLED);
-      mp3_handle_cursor(true, true);
-    } else {
+  if (in_ridley_fight(active_region)) {
+    if (!was_in_ridley_fight) {
+      was_in_ridley_fight = true;
       set_state(ModState::CODE_DISABLED);
-      mp3_handle_cursor(false, true);
-      return;
     }
+    return;
+  } else if (was_in_ridley_fight) {
+    set_state(ModState::ENABLED);
+    was_in_ridley_fight = false;
   }
 
   prime::GetVariableManager()->set_variable(*active_guard, "trigger_grapple", prime::CheckGrappleCtl() ? u32{1} : u32{0});
@@ -840,6 +796,7 @@ void FpsControls::CheckBeamVisorSetting(Game game)
     case Game::PRIME_1:
     case Game::PRIME_2:
       set_code_group_state("beam_menu", beam ? ModState::DISABLED : ModState::ENABLED);
+      [[fallthrough]];
     case Game::PRIME_3:
     case Game::PRIME_3_STANDALONE:
       set_code_group_state("visor_menu", visor ? ModState::DISABLED : ModState::ENABLED);
@@ -853,10 +810,6 @@ bool FpsControls::init_mod(Game game, Region region) {
   swap_alt_profiles(0, 0, 0);
 
   switch (game) {
-    case Game::MENU_PRIME_1:
-    case Game::MENU_PRIME_2:
-      init_mod_menu(game, region);
-      break;
     case Game::PRIME_1:
       init_mod_mp1(region);
       break;
@@ -888,55 +841,93 @@ bool FpsControls::init_mod(Game game, Region region) {
 }
 
 void FpsControls::add_beam_change_code_mp1(u32 start_point) {
-  u32 bcf_lis, bcf_ori;
-  std::tie(bcf_lis, bcf_ori) = prime::GetVariableManager()->make_lis_ori(4, "beamchange_flag");
-  u32 nb_lis, nb_ori;
-  std::tie(nb_lis, nb_ori) = prime::GetVariableManager()->make_lis_ori(5, "new_beam");
-  add_code_change(start_point + 0x00, bcf_lis, "beam_change");     //                        ; set r4 to beam change base address
-  add_code_change(start_point + 0x04, bcf_ori, "beam_change");     //                        ;
-  add_code_change(start_point + 0x08, 0x80640000, "beam_change");  // lwz    r3, 0(r4)       ; grab flag
-  add_code_change(start_point + 0x0c, 0x2c030000, "beam_change");  // cmpwi  r3, 0           ; check if beam should change
-  add_code_change(start_point + 0x10, 0x41820058, "beam_change");  // beq    0x58            ; don't attempt beam change if 0
-  add_code_change(start_point + 0x14, nb_lis, "beam_change");      //                        ; set r5 to new beam base address
-  add_code_change(start_point + 0x18, nb_ori, "beam_change");      //                        ;
-  add_code_change(start_point + 0x1c, 0x83450000, "beam_change");  // lwz    r26, 0(r5)      ; get expected beam (r25, r26 used to assign beam)
-  add_code_change(start_point + 0x20, 0x7f59d378, "beam_change");  // mr     r25, r26        ; copy expected beam to other reg
-  add_code_change(start_point + 0x24, 0x38600000, "beam_change");  // li     r3, 0           ; reset flag
-  add_code_change(start_point + 0x28, 0x90640000, "beam_change");  // stw    r3, 0(r4)       ;
-  add_code_change(start_point + 0x2c, 0x4800003c, "beam_change");  // b      0x3c            ; jump forward to beam assign
+  std::string_view patch_str = R"(
+.defvar Start, 0x{start:x}
+.defvar BeamchangeFlag, 0x{beamchange_flag:x}
+.defvar NewBeam, 0x{new_beam:x}
+.defvar SwitchReady, 0x{switch_ready:x}
+.locate Start
+lis r6, SwitchReady@ha
+ori r6, r6, SwitchReady@l
+li r3, 1
+stw r3, 0(r6)
+lis r4, BeamchangeFlag@ha
+ori r4, r4, BeamchangeFlag@l
+lwz r3, 0(r4)
+cmpwi r3, 0
+beq _after
+lis r5, NewBeam@ha
+ori r5, r5, NewBeam@l
+lwz r26, 0(r5)
+mr r25, r26
+li r3, 0
+stw r3, 0(r4)
+stw r3, 0(r6)
+b _after
+
+.locate Start + 0x68
+_after:
+)";
+
+  u32 beamchange_flag = prime::GetVariableManager()->get_address("beamchange_flag");
+  u32 new_beam = prime::GetVariableManager()->get_address("new_beam");
+  u32 switch_ready = prime::GetVariableManager()->get_address("switch_ready");
+  add_asm_patch(fmt::format(fmt::runtime(patch_str), fmt::arg("start", start_point), fmt::arg("beamchange_flag", beamchange_flag),
+                            fmt::arg("new_beam", new_beam), fmt::arg("switch_ready", switch_ready)),
+                "beam_change");
 }
 
 void FpsControls::add_beam_change_code_mp2(u32 start_point) {
-  u32 bcf_lis, bcf_ori;
-  std::tie(bcf_lis, bcf_ori) = prime::GetVariableManager()->make_lis_ori(4, "beamchange_flag");
-  u32 nb_lis, nb_ori;
-  std::tie(nb_lis, nb_ori) = prime::GetVariableManager()->make_lis_ori(5, "new_beam");
-  add_code_change(start_point + 0x00, bcf_lis, "beam_change");     //                        ; set r4 to beam change base address
-  add_code_change(start_point + 0x04, bcf_ori, "beam_change");     //                        ;
-  add_code_change(start_point + 0x08, 0x80640000, "beam_change");  // lwz    r3, 0(r4)       ; grab flag
-  add_code_change(start_point + 0x0c, 0x2c030000, "beam_change");  // cmpwi  r3, 0           ; check if beam should change
-  add_code_change(start_point + 0x10, 0x4182005c, "beam_change");  // beq    0x5c            ; don't attempt beam change if 0
-  add_code_change(start_point + 0x14, nb_lis, "beam_change");      //                        ; set r5 to new beam base address
-  add_code_change(start_point + 0x18, nb_ori, "beam_change");      //                        ;
-  add_code_change(start_point + 0x1c, 0x83e50000, "beam_change");  // lwz    r31, 0(r5)      ; get expected beam (r31, r30 used to assign beam)
-  add_code_change(start_point + 0x20, 0x7ffefb78, "beam_change");  // mr     r30, r31        ; copy expected beam to other reg
-  add_code_change(start_point + 0x24, 0x38600000, "beam_change");  // li     r3, 0           ; reset flag
-  add_code_change(start_point + 0x28, 0x90640000, "beam_change");  // stw    r3, 0(r4)       ;
-  add_code_change(start_point + 0x2c, 0x48000040, "beam_change");  // b      0x40            ; jump forward to beam assign
+  std::string_view patch_str = R"(
+.defvar Start, 0x{start:x}
+.defvar BeamchangeFlag, 0x{beamchange_flag:x}
+.defvar NewBeam, 0x{new_beam:x}
+.defvar SwitchReady, 0x{switch_ready:x}
+.locate Start
+lis r6, SwitchReady@ha
+ori r6, r6, SwitchReady@l
+li r3, 1
+stw r3, 0(r6)
+lis r4, BeamchangeFlag@ha
+ori r4, r4, BeamchangeFlag@l
+lwz r3, 0(r4)
+cmpwi r3, 0
+beq _after
+lis r5, NewBeam@ha
+ori r5, r5, NewBeam@l
+lwz r31, 0(r5)
+mr r30, r31
+li r3, 0
+stw r3, 0(r4)
+stw r3, 0(r6)
+b _after
+
+.locate Start + 0x6c
+_after:
+)";
+
+  u32 beamchange_flag = prime::GetVariableManager()->get_address("beamchange_flag");
+  u32 new_beam = prime::GetVariableManager()->get_address("new_beam");
+  u32 switch_ready = prime::GetVariableManager()->get_address("switch_ready");
+  add_asm_patch(fmt::format(fmt::runtime(patch_str), fmt::arg("start", start_point), fmt::arg("beamchange_flag", beamchange_flag),
+                            fmt::arg("new_beam", new_beam), fmt::arg("switch_ready", switch_ready)),
+                "beam_change");
 }
 
 void FpsControls::add_grapple_slide_code_mp3(u32 start_point) {
-  add_code_change(start_point + 0x00, 0x60000000);  // nop                  ; trashed because useless
-  add_code_change(start_point + 0x04, 0x60000000);  // nop                  ; trashed because useless
-  add_code_change(start_point + 0x08, 0x60000000);  // nop                  ; trashed because useless
-  add_code_change(start_point + 0x0c, 0xc0010240);  // lfs  f0, 0x240(r1)   ; grab the x component of new origin
-  add_code_change(start_point + 0x10, 0xd01f0048);  // stfs f0, 0x48(r31)   ; store it into player's xform x origin (CTransform + 0x0c)
-  add_code_change(start_point + 0x14, 0xc0010244);  // lfs  f0, 0x244(r1)   ; grab the y component of new origin
-  add_code_change(start_point + 0x18, 0xd01f0058);  // stfs f0, 0x58(r31)   ; store it into player's xform y origin (CTransform + 0x1c)
-  add_code_change(start_point + 0x1c, 0xc0010248);  // lfs  f0, 0x248(r1)   ; grab the z component of new origin
-  add_code_change(start_point + 0x20, 0xd01f0068);  // stfs f0, 0x68(r31)   ; store it into player's xform z origin (CTransform + 0xcc)
-  add_code_change(start_point + 0x28, 0x389f003c);  // addi r4, r31, 0x3c   ; next sub call is SetTransform, so set player's transform
-                                                    //                      ; to their own transform (safety no-op, does other updating too)
+  std::string_view patch_str = R"(
+.locate 0x{start:x}
+nop
+nop
+nop
+lfs f0, 0x240(sp)  # X component of new origin
+stfs f0, 0x48(r31) # Set player transform X origin
+lfs f0, 0x244(sp)  # Y component of new origin
+stfs f0, 0x58(r31) # Set player transform Y origin
+lfs f0, 0x248(sp)  # Z component of new origin
+stfs f0, 0x68(r31) # Set player transform Z origin
+addi r4, r31, 0x3c # SetTransform is called on player, have the transform be set to itself)";
+  add_asm_patch(fmt::format(fmt::runtime(patch_str), fmt::arg("start", start_point)));
 }
 
 void FpsControls::add_grapple_lasso_code_mp3(u32 func1, u32 func2, u32 func3) {
@@ -958,25 +949,25 @@ void FpsControls::add_grapple_lasso_code_mp3(u32 func1, u32 func2, u32 func3) {
                                                               // Controls the pulling animation.
   add_code_change(func2, lis_x, "grapple_lasso_animation");
   add_code_change(func2 + 0x4, ori_x, "grapple_lasso_animation");
-  add_code_change(func2 + 0x8, 0xC00B0000, "grapple_lasso_animation");  // lfs f0, 0(r11)
-  add_code_change(func2 + 0xC, lis_y, "grapple_lasso_animation");
+  add_code_change(func2 + 0x8, 0xc00b0000, "grapple_lasso_animation");  // lfs f0, 0(r11)
+  add_code_change(func2 + 0xc, lis_y, "grapple_lasso_animation");
   add_code_change(func2 + 0x10, ori_y, "grapple_lasso_animation");
-  add_code_change(func2 + 0x14, 0xC04B0000, "grapple_lasso_animation");  // lfs f2, 0(r11)
-  add_code_change(func2 + 0x18, 0xD05701C8, "grapple_lasso_animation");  // stfs f2, 0x1C8(r23)
+  add_code_change(func2 + 0x14, 0xc04b0000, "grapple_lasso_animation");  // lfs f2, 0(r11)
+  add_code_change(func2 + 0x18, 0xd05701c8, "grapple_lasso_animation");  // stfs f2, 0x1C8(r23)
 
   u32 lis, ori;
   // Controls the return value of the "ProcessGrappleLasso" function.
   std::tie<u32, u32>(lis, ori) = prime::GetVariableManager()->make_lis_ori(30, "grapple_lasso_state");
   add_code_change(func1 + 0x160, lis, "grapple_lasso");
   add_code_change(func1 + 0x164, ori, "grapple_lasso");
-  add_code_change(func1 + 0x168, 0x83DE0000, "grapple_lasso"); // lwz r30, 0(r30)
+  add_code_change(func1 + 0x168, 0x83de0000, "grapple_lasso"); // lwz r30, 0(r30)
 
                                                                // Triggers grapple.
   std::tie<u32, u32>(lis, ori) = prime::GetVariableManager()->make_lis_ori(3, "trigger_grapple");
   add_code_change(func3 + 0x0, lis, "grapple_lasso");
   add_code_change(func3 + 0x4, ori, "grapple_lasso");
   add_code_change(func3 + 0x8, 0x80630000, "grapple_lasso"); // lwz r3, 0(r3)
-  add_code_change(func3 + 0xC, 0x4E800020, "grapple_lasso"); // blr
+  add_code_change(func3 + 0xc, 0x4e800020, "grapple_lasso"); // blr
 }
 
 void FpsControls::add_control_state_hook_mp3(u32 start_point, Game game, Region region) {
@@ -987,11 +978,6 @@ void FpsControls::add_control_state_hook_mp3(u32 start_point, Game game, Region 
     } else {
       add_code_change(start_point + 0x00, 0x3c60805c);  // lis  r3, 0x805c
       add_code_change(start_point + 0x04, 0x38634f6c);  // addi r3, r3, 0x4f6c
-    }
-  } else if (region == Region::NTSC_J) {
-    if (game == Game::PRIME_3_STANDALONE) {
-      add_code_change(start_point + 0x00, 0x3c60805d);  // lis  r3, 0x805d
-      add_code_change(start_point + 0x04, 0x3863aa30);  // subi r3, r3, 0x55d0
     }
   } else if (region == Region::PAL) {
     if (game == Game::PRIME_3) {
@@ -1016,33 +1002,10 @@ void FpsControls::add_control_state_hook_mp3(u32 start_point, Game game, Region 
   add_code_change(start_point + 0x24, 0x4e800020);  // blr
 }
 
-void FpsControls::init_mod_menu(Game game, Region region)
-{
-  if (region == Region::NTSC_J) {
-    if (game == Game::MENU_PRIME_1) {
-      // prevent wiimote pointer feedback to move the cursor
-      add_code_change(0x80487160, 0x60000000);
-      add_code_change(0x80487164, 0x60000000);
-      // Prevent recentering the cursor on X axis
-      add_code_change(0x80487090, 0x60000000);
-      // Prevent recentering the cursor on Y axis
-      add_code_change(0x80487098, 0x60000000);
-    }
-    if (game == Game::MENU_PRIME_2) {
-      // prevent wiimote pointer feedback to move the cursor
-      add_code_change(0x80486fe8, 0x60000000);
-      add_code_change(0x80486fec, 0x60000000);
-      // Prevent recentering the cursor on X axis
-      add_code_change(0x80486f18, 0x60000000);
-      // Prevent recentering the cursor on Y axis
-      add_code_change(0x80486f20, 0x60000000);
-    }
-  }
-}
-
 void FpsControls::init_mod_mp1(Region region) {
   prime::GetVariableManager()->register_variable("new_beam");
   prime::GetVariableManager()->register_variable("beamchange_flag");
+  prime::GetVariableManager()->register_variable("switch_ready");
   if (region == Region::NTSC_U) {
     // This instruction change is used in all 3 games, all 3 regions. It's an update to what I believe
     // to be interpolation for player camera pitch The change is from fmuls f0, f0, f1 (0xec000072) to
@@ -1058,6 +1021,10 @@ void FpsControls::init_mod_mp1(Region region) {
     // Cursor location, sets to f17 (always 0 due to little use)
     add_code_change(0x802fb5b4, 0xd23f009c);
     add_code_change(0x8019fbcc, 0x60000000);
+
+    // This stops armcannon stuttering by forcing the block that copies raycast info
+    // to assume the raycast was invalid and set the target point 100 units forward
+    add_code_change(0x80015894, 0x48000108);
 
     add_code_change(0x80075f24, 0x60000000, "beam_menu");
     add_code_change(0x80075f0c, 0x60000000, "visor_menu");
@@ -1075,6 +1042,7 @@ void FpsControls::init_mod_mp1(Region region) {
     add_code_change(0x801768b4, 0x60000000);
     add_code_change(0x802fb84c, 0xd23f009c);
     add_code_change(0x8019fe64, 0x60000000);
+    add_code_change(0x80015894, 0x48000108);
 
     add_code_change(0x80075f74, 0x60000000, "beam_menu");
     add_code_change(0x80075f8c, 0x60000000, "visor_menu");
@@ -1083,20 +1051,6 @@ void FpsControls::init_mod_mp1(Region region) {
 
     // Steps over bounds checking on the reticle
     add_code_change(0x80015164, 0x4800010c);
-  } else { // region == Region::NTSC-J
-    // Same as NTSC but slightly offset
-    add_code_change(0x80099060, 0xec010072);
-    add_code_change(0x800992b4, 0x60000000);
-    add_code_change(0x8018460c, 0x60000000);
-    add_code_change(0x801835e4, 0x60000000);
-    add_code_change(0x80176ff0, 0x60000000);
-    add_code_change(0x802fb234, 0xd23f009c);
-    add_code_change(0x801a074c, 0x60000000);
-
-    add_code_change(0x800760a4, 0x60000000, "beam_menu");
-    add_code_change(0x8007608c, 0x60000000, "visor_menu");
-
-    add_beam_change_code_mp1(0x8018f0c4);
   }
   has_beams = true;
 }
@@ -1202,6 +1156,7 @@ void FpsControls::init_mod_mp1_gc_r2() {
 void FpsControls::init_mod_mp2(Region region) {
   prime::GetVariableManager()->register_variable("new_beam");
   prime::GetVariableManager()->register_variable("beamchange_flag");
+  prime::GetVariableManager()->register_variable("switch_ready");
   if (region == Region::NTSC_U) {
     add_code_change(0x8008ccc8, 0xc0430184);
     add_code_change(0x8008cd1c, 0x60000000);
@@ -1213,6 +1168,10 @@ void FpsControls::init_mod_mp2(Region region) {
     add_code_change(0x803054a0, 0xd23f009c);
     add_code_change(0x80169dbc, 0x60000000);
     add_code_change(0x80143d00, 0x48000050);
+
+    // This stops armcannon stuttering by forcing the block that copies raycast info
+    // to assume the raycast was invalid and set the target point 100 units forward
+    add_code_change(0x80018e18, 0x48000108);
 
     add_code_change(0x8006fde0, 0x60000000, "beam_menu");
     add_code_change(0x8006fdc4, 0x60000000, "visor_menu");
@@ -1233,6 +1192,8 @@ void FpsControls::init_mod_mp2(Region region) {
     add_code_change(0x8016b534, 0x60000000);
     add_code_change(0x80145474, 0x48000050);
 
+    add_code_change(0x80018e18, 0x48000108);
+
     add_code_change(0x80071358, 0x60000000, "beam_menu");
     add_code_change(0x8007133c, 0x60000000, "visor_menu");
 
@@ -1240,23 +1201,6 @@ void FpsControls::init_mod_mp2(Region region) {
 
     // Steps over bounds checking on the reticle
     add_code_change(0x80018528, 0x48000144);
-  } else if (region == Region::NTSC_J) {
-    // Pendign support
-    add_code_change(0x8008c944, 0xc0430184);
-    add_code_change(0x8008c998, 0x60000000);
-    add_code_change(0x80147578, 0x60000000);
-    add_code_change(0x801475a0, 0x60000000);
-    add_code_change(0x8013511c, 0x60000000);
-    add_code_change(0x8008b7c4, 0x60000000);
-    add_code_change(0x8008b794, 0x60000000);
-    add_code_change(0x80303ec8, 0xd23f009c);
-    add_code_change(0x80169388, 0x60000000);
-    add_code_change(0x8014331c, 0x48000050);
-
-    add_code_change(0x8006fbb0, 0x60000000, "beam_menu");
-    add_code_change(0x8006fb94, 0x60000000, "visor_menu");
-
-    add_beam_change_code_mp2(0x8018c0d4);
   } else {}
   has_beams = true;
 }
@@ -1288,29 +1232,6 @@ void FpsControls::init_mod_mp2_gc(Region region) {
     const int null_players_vmc_idx = Core::System::GetInstance().GetPowerPC().RegisterVmcall(null_players_on_destruct_mp2_gc);
     u32 null_players_vmc = gen_vmcall(null_players_vmc_idx, 0);
     add_code_change(0x80042994, null_players_vmc);
-  } else if (region == Region::NTSC_J) {
-    // Pending support
-    // TODO: Enable arm cannon bobbing for JP
-    add_code_change(0x801b1e6c, 0x48000050);
-    add_code_change(0x801b0d10, 0x60000000);
-    add_code_change(0x80013414, 0x4e800020);
-    add_code_change(0x801b0f18, 0x60000000);
-    add_code_change(0x801b2000, 0x48000078);
-    add_code_change(0x801b1208, 0x48000a34);
-    // Enable strafing with left/right on L-Stick
-    add_code_change(0x80189f70, 0xc022a5c8);
-    add_code_change(0x80189c08, 0x4800000c);
-    // Grapple point yaw fix
-    add_code_change(0x8011e918, 0x389d0054);
-    add_code_change(0x8011e91c, 0x4bf2cd91);
-
-    add_code_change(0x8001695c, 0x3aa00001, "show_crosshair"); // li r21, 1
-    add_code_change(0x80016960, 0x8add1268, "show_crosshair"); // lbz r22, 0x1268(r29)
-    add_code_change(0x80016964, 0x52b63672, "show_crosshair"); // rlwimi r22, r21, 6, 25, 25 (00000001)
-    add_code_change(0x80016968, 0x9add1268, "show_crosshair"); // stb r22, 0x1268(r29)
-    add_code_change(0x8001696c, 0x4e800020, "show_crosshair"); // blr
-
-    add_code_change(0x80061fc0, 0xc022d400);
   } else if (region == Region::PAL) {
     //add_code_change(0x801b03c0, 0x48000050);
     add_code_change(0x800bcdd0, 0x38810044); // output cannon bob only for viewbob
@@ -1363,8 +1284,12 @@ void FpsControls::init_mod_mp3(Game game, Region region) {
     add_code_change(0x8007fdc8, 0x480000e4);
     add_code_change(0x8017f88c, 0x60000000);
 
+    // This stops armcannon stuttering by forcing the block that copies raycast info
+    // to assume the raycast was invalid and set the target point 100 units forward
+    add_code_change(0x80017844, 0x48000108);
+
     // Grapple Lasso
-    add_grapple_lasso_code_mp3(0x800DDE64, 0x80170CF0, 0x80171AD8);
+    add_grapple_lasso_code_mp3(0x800dde64, 0x80170cf0, 0x80171ad8);
 
     add_control_state_hook_mp3(0x80005880, game, region);
     add_grapple_slide_code_mp3(0x8017f2a0);
@@ -1382,8 +1307,10 @@ void FpsControls::init_mod_mp3(Game game, Region region) {
     add_code_change(0x8007fdc8, 0x480000e4);
     add_code_change(0x8017f1d8, 0x60000000);
 
+    add_code_change(0x80017844, 0x48000108);
+
     // Grapple Lasso
-    add_grapple_lasso_code_mp3(0x800DDE44, 0x8017063C, 0x80171424);
+    add_grapple_lasso_code_mp3(0x800dde44, 0x8017063c, 0x80171424);
 
     add_control_state_hook_mp3(0x80005880, game, region);
     add_grapple_slide_code_mp3(0x8017ebec);
@@ -1417,10 +1344,14 @@ void FpsControls::init_mod_mp3_standalone(Game game, Region region) {
     add_code_change(0x8007fef0, 0x480000e4);
     add_code_change(0x80183288, 0x60000000);
 
+    // This stops armcannon stuttering by forcing the block that copies raycast info
+    // to assume the raycast was invalid and set the target point 100 units forward
+    add_code_change(0x80017b8c, 0x48000108);
+
     add_code_change(0x800617c8, 0x60000000, "visor_menu");
 
     // Grapple Lasso
-    add_grapple_lasso_code_mp3(0x800DF790, 0x80174D70, 0x80175B54);
+    add_grapple_lasso_code_mp3(0x800df790, 0x80174d70, 0x80175b54);
 
     add_control_state_hook_mp3(0x80005880, game, region);
     add_grapple_slide_code_mp3(0x80182c9c);
@@ -1429,27 +1360,6 @@ void FpsControls::init_mod_mp3_standalone(Game game, Region region) {
     add_code_change(0x80017290, 0x48000120);
     const int wiimote_shake_override_idx = Core::System::GetInstance().GetPowerPC().RegisterVmcall(wiimote_shake_override);
     add_code_change(0x800a8f40, gen_vmcall(wiimote_shake_override_idx, 0));
-  } else if (region == Region::NTSC_J) {
-    add_code_change(0x80081018, 0xec010072);
-    add_code_change(0x80153ed4, 0x60000000);
-    add_code_change(0x80153eac, 0x60000000);
-    add_code_change(0x8013a054, 0x60000000);
-    add_code_change(0x8013969c, 0x60000000);
-    add_code_change(0x8000ae44, 0x4bffaa3d);
-    add_code_change(0x8008129c, 0x60000000);
-    add_code_change(0x80080320, 0x480000e4);
-    add_code_change(0x80184fd4, 0x60000000);
-
-    add_code_change(0x80075f0c, 0x80061958, "visor_menu");
-
-    // Grapple Lasso
-    add_grapple_lasso_code_mp3(0x800E003C, 0x80176B20, 0x80177908);
-
-    add_control_state_hook_mp3(0x80005880, game, region);
-    add_grapple_slide_code_mp3(0x801849e8);
-
-    // Steps over bounds checking on the reticle
-    add_code_change(0x80017258, 0x48000120);
   } else if (region == Region::PAL) {
     add_code_change(0x80080e84, 0xec010072);
     add_code_change(0x80152d50, 0x60000000);
@@ -1461,10 +1371,12 @@ void FpsControls::init_mod_mp3_standalone(Game game, Region region) {
     add_code_change(0x8008018c, 0x480000e4);
     add_code_change(0x80183dc8, 0x60000000);
 
+    add_code_change(0x80017b54, 0x48000108);
+
     add_code_change(0x80061a88, 0x60000000, "visor_menu");
 
     // Grapple Lasso
-    add_grapple_lasso_code_mp3(0x800DFC4C, 0x80175914, 0x801766FC);
+    add_grapple_lasso_code_mp3(0x800dfc4c, 0x80175914, 0x801766fc);
 
     add_control_state_hook_mp3(0x80005880, game, region);
     add_grapple_slide_code_mp3(0x801837dc);

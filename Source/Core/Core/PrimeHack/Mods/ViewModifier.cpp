@@ -110,8 +110,6 @@ void ViewModifier::run_mod_mp1() {
 
   adjust_viewmodel(fov, gun_pos, camera + 0x168, 0x3d200000);
   set_code_group_state("culling", (GetCulling() || get_fov() > 101.f) ? ModState::ENABLED : ModState::DISABLED);
-
-  DevInfo("camera", "%08X", camera);
 }
 
 void ViewModifier::run_mod_mp1_gc() {
@@ -153,7 +151,6 @@ void ViewModifier::run_mod_mp1_gc() {
     0x3d200000);
 
   set_code_group_state("culling", (GetCulling() || get_fov() > 101.f) ? ModState::ENABLED : ModState::DISABLED);
-  DevInfo("camera", "%08X", camera);
 }
 
 void ViewModifier::run_mod_mp2() {
@@ -186,7 +183,6 @@ void ViewModifier::run_mod_mp2() {
   adjust_viewmodel(fov, read32(read32(tweakgun)) + 0x4c, camera + 0x1c4, 0x3d200000);
 
   set_code_group_state("culling", (GetCulling() || get_fov() > 101.f) ? ModState::ENABLED : ModState::DISABLED);
-  DevInfo("camera", "%08X", camera);
 }
 
 void ViewModifier::run_mod_mp2_gc() {
@@ -222,7 +218,6 @@ void ViewModifier::run_mod_mp2_gc() {
   adjust_viewmodel(fov, read32(read32(Core::System::GetInstance().GetPPCState().gpr[13] + tweakgun_offset)) + 0x50, camera + 0x1cc, 0x3d200000);
 
   set_code_group_state("culling", (GetCulling() || get_fov() > 101.f) ? ModState::ENABLED : ModState::DISABLED);
-  DevInfo("camera", "%08X", camera);
 }
 
 void ViewModifier::on_camera_change(PowerPC::PowerPCState& ppc_state, PowerPC::MMU& mmu, u32) {
@@ -295,7 +290,6 @@ void ViewModifier::run_mod_mp3() {
   set_code_group_state("culling", (GetCulling() || get_fov() > 94.f) ? ModState::ENABLED : ModState::DISABLED);
 
   const u32 camera = read32(object_list + ((camera_id & 0x7ff) << 3) + 4);
-  DevInfo("camera", "%08X", camera);
 }
 
 bool ViewModifier::init_mod(Game game, Region region) {
@@ -337,9 +331,6 @@ void ViewModifier::init_mod_mp1(Region region) {
   } else if (region == Region::PAL) {
     add_code_change(0x802c8024, 0x38600001, "culling");
     add_code_change(0x802c8024 + 0x4, 0x4e800020, "culling");
-  } else if (region == Region::NTSC_J) {
-    add_code_change(0x802c7a3c, 0x38600001, "culling");
-    add_code_change(0x802c7a3c + 0x4, 0x4e800020, "culling");
   }
 }
 
@@ -367,9 +358,6 @@ void ViewModifier::init_mod_mp2(Region region) {
   if (region == Region::NTSC_U) {
     add_code_change(0x802c8114, 0x38600001, "culling");
     add_code_change(0x802c8114 + 0x4, 0x4e800020, "culling");
-  } else if (region == Region::NTSC_J) {
-    add_code_change(0x802c6a28, 0x38600001, "culling");
-    add_code_change(0x802c6a28 + 0x4, 0x4e800020, "culling");
   } else if (region == Region::PAL) {
     add_code_change(0x802ca730, 0x38600001, "culling");
     add_code_change(0x802ca730 + 0x4, 0x4e800020, "culling");
@@ -381,10 +369,6 @@ void ViewModifier::init_mod_mp2_gc(Region region) {
     add_code_change(0x801b0b38, 0x60000000);
     add_code_change(0x802f84c0, 0x38600001, "culling");
     add_code_change(0x802f84c0 + 0x4, 0x4e800020, "culling");
-  } else if (region == Region::NTSC_J) {
-    add_code_change(0x801b28f0, 0x60000000);
-    add_code_change(0x802faa28, 0x38600001, "culling");
-    add_code_change(0x802faa28 + 0x4, 0x4e800020, "culling");
   } else if (region == Region::PAL) {
     add_code_change(0x801b0e44, 0x60000000);
     add_code_change(0x802f8818, 0x38600001, "culling");
@@ -434,14 +418,6 @@ void ViewModifier::init_mod_mp3_standalone(Region region) {
     add_code_change(0x80318170, 0x38600001, "culling");
     add_code_change(0x80318170 + 0x4, 0x4e800020, "culling");
     add_code_change(0x802b3ac4, on_camera_change_vmc);
-  } else if (region == Region::NTSC_J) {
-    add_code_change(0x8007f934, 0x60000000);
-    add_code_change(0x800de128, 0x60000000);
-    add_code_change(0x800dd75c, 0x60000000);
-    add_code_change(0x8017f10c, 0x60000000);
-    add_code_change(0x8031a4b4, 0x38600001, "culling");
-    add_code_change(0x8031a4b4 + 0x4, 0x4e800020, "culling");
-    add_code_change(0x802b4fd8, on_camera_change_vmc);
   }
 }
 

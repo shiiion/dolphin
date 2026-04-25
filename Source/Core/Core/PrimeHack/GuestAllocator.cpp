@@ -50,8 +50,6 @@ void AllocSwitchGame(Game game, Region region) {
         avail_zones.emplace_back(0x805afc00, 0xe000);
       } else if (region == Region::PAL) {
         avail_zones.emplace_back(0x80471c00, 0xe000);
-      } else if (region == Region::NTSC_J) {
-        avail_zones.emplace_back(0x80599000, 0xe000);
       }
       break;
 
@@ -91,7 +89,7 @@ void AllocSwitchGame(Game game, Region region) {
       if (region == Region::NTSC_U) {
         avail_zones.emplace_back(0x80684800, 0xd000);
       } else if (region == Region::PAL) {
-        // TODO: Prime 3 PAL
+        avail_zones.emplace_back(0x80687000, 0xd000);
       }
       break;
 

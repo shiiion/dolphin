@@ -95,7 +95,10 @@ enum class GekkoDirective
   DefVar,
   Ascii,
   Asciz,
-  DefSym
+  DefSym,
+  If,
+  EndIf,
+  Else,
 };
 
 enum class GekkoMnemonic : size_t

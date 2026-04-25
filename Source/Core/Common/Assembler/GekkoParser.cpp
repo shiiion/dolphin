@@ -716,7 +716,8 @@ void ParseDefvar(ParseState* state)
   }
 }
 
-void ParseDefsym(ParseState* state) {
+void ParseDefsym(ParseState* state)
+{
   AssemblerToken tok = state->lexer.Lookahead();
   if (tok.token_type == TokenType::Identifier)
   {
@@ -738,6 +739,15 @@ void ParseDefsym(ParseState* state) {
   else
   {
     state->EmitErrorHere(fmt::format("Expected an identifier, but found '{}'", tok.ValStr()));
+  }
+}
+
+void ParseIf(ParseState* state)
+{
+  ParseResolvedExpr(state);
+  if (state->error)
+  {
+    return;
   }
 }
 
@@ -793,6 +803,7 @@ void ParseDirective(ParseState* state)
   case GekkoDirective::Locate:
   case GekkoDirective::Zeros:
   case GekkoDirective::Skip:
+  case GekkoDirective::If:
     ParseResolvedExpr(state);
     break;
 
@@ -812,6 +823,11 @@ void ParseDirective(ParseState* state)
 
   case GekkoDirective::DefSym:
     ParseDefsym(state);
+    break;
+
+  case GekkoDirective::EndIf:
+  case GekkoDirective::Else:
+    // Nothing to parse
     break;
   }
 

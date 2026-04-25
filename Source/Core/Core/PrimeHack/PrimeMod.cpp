@@ -1,12 +1,11 @@
 #include "Core/PrimeHack/PrimeMod.h"
 
+#include "Common/Assembler/GekkoAssembler.h"
+#include "Common/Logging/Log.h"
+#include "Core/PowerPC/MMU.h"
+#include "Core/PowerPC/PowerPC.h"
 #include "Core/PrimeHack/AddressDB.h"
 #include "Core/PrimeHack/HackManager.h"
-
-#include "Common/BitUtils.h"
-#include "Common/Logging/Log.h"
-#include "Common/Swap.h"
-#include "Core/PowerPC/MMU.h"
 #include "Core/System.h"
 
 namespace prime {
@@ -36,8 +35,7 @@ const std::vector<CodeChange>& PrimeMod::get_changes_to_apply() const {
   if (state == ModState::CODE_DISABLED ||
       state == ModState::DISABLED) {
     return original_instructions;
-  }
-  else {
+  } else {
     return current_active_changes;
   }
 }
@@ -89,14 +87,14 @@ void PrimeMod::add_code_change(u32 addr, u32 code, std::string_view group) {
   current_active_changes.emplace_back(addr, code);
 }
 
-void PrimeMod::add_asm_patch(std::string_view asm_patch) {
+void PrimeMod::add_asm_patch(std::string_view asm_patch, std::string_view group) {
   using namespace Common::GekkoAssembler;
   auto result = Assemble(asm_patch, 0);
   ASSERT(!IsFailure(result));
   std::vector<CodeBlock> const& code_changes_blocks = GetT(result);
   for (auto const& block : code_changes_blocks) {
     for (u32 i = 0; i < block.instructions.size(); i += 4) {
-      add_code_change(block.block_address + i, Common::swap32(&block.instructions[i]));
+      add_code_change(block.block_address + i, Common::swap32(&block.instructions[i]), group);
     }
   }
 }

@@ -33,8 +33,6 @@ public:
           add_code_change(0x80290edc, 0x4e800020, "bloom_disable");
         } else if (region == Region::PAL) {
           add_code_change(0x80291258, 0x4e800020, "bloom_disable");
-        } else { // region == Region::NTSC_J
-          add_code_change(0x802919bc, 0x4e800020, "bloom_disable");
         }
         break;
       case Game::PRIME_2:
@@ -42,8 +40,6 @@ public:
           add_code_change(0x80292204, 0x4e800020, "bloom_disable");
         } else if (region == Region::PAL) {
           add_code_change(0x80294a40, 0x4e800020, "bloom_disable");
-        } else { // region == Region::NTSC_J
-          add_code_change(0x8029137c, 0x4e800020, "bloom_disable");
         }
         break;
       default:

@@ -55,12 +55,16 @@ void PrimeHackEmuGC::CreateMainLayout()
 
   groupbox1->addWidget(modes);
 
-  auto* camera = 
+  auto* camera =
     CreateGroupBox(tr("Camera"),
       Pad::GetGroup(GetPort(), PadGroup::Camera));
 
   camera->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
   groupbox1->addWidget(camera, 0, Qt::AlignTop);
+
+  auto* springball = CreateGroupBox(tr("Miscellaneous"), Pad::GetGroup(
+    GetPort(), PadGroup::Misc));
+  groupbox1->addWidget(springball, 0, Qt::AlignTop);
 
   // May be used later.
   //auto* misc_box = CreateGroupBox(tr("Miscellaneous"),

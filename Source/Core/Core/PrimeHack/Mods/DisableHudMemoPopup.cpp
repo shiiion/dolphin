@@ -91,10 +91,6 @@ void DisableHudMemoPopup::init_mod_mp1(Region region) {
     add_code_change(0x801ed734, 0x48000018);
     add_code_change(0x801ed75c, vmc_fix_time);
     add_code_change(0x801cc964, vmc_fix_justification);
-  } else { // region == Region::NTSC_J
-    add_code_change(0x801ee014, 0x48000018);
-    add_code_change(0x801ee03c, vmc_fix_time);
-    add_code_change(0x801cd208, vmc_fix_justification);
   }
 }
 
@@ -155,8 +151,6 @@ void DisableHudMemoPopup::init_mod_mp3(Game game, Region region) {
       add_code_change(0x8021fe80, vmc_restart_audio);
     } else if (region == Region::PAL) {
       add_code_change(0x80220f10, vmc_restart_audio);
-    } else { // region == Region::NTSC_J
-      add_code_change(0x8022251c, vmc_restart_audio);
     }
   }
 }
@@ -180,8 +174,6 @@ bool DisableHudMemoPopup::init_mod(Game game, Region region) {
         add_code_change(0x801f3354, 0x48000018);
       } else if  (region == Region::PAL) {
         add_code_change(0x801f586c, 0x48000018);
-      } else { // region == Region::NTSC_J
-        add_code_change(0x801f2368, 0x48000018);
       }
       break;
     case Game::PRIME_2_GCN:
@@ -189,8 +181,6 @@ bool DisableHudMemoPopup::init_mod(Game game, Region region) {
         add_code_change(0x800bb10c, 0x48000018);
       } else if (region == Region::PAL) {
         add_code_change(0x800bb1a0, 0x48000018);
-      } else { // region == Region::NTSC_J
-        add_code_change(0x800bbe9c, 0x48000018);
       }
       break;
     case Game::PRIME_3:

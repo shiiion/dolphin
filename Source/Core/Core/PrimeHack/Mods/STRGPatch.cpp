@@ -75,6 +75,7 @@ void STRGPatch::patch_strg_entry_vmc_common(PowerPC::PowerPCState& ppc_state, Po
 }
 
 void STRGPatch::run_mod(Game game, Region region) {
+  return;
   switch (game) {
     case Game::MENU:
       if (region == Region::NTSC_U) {
@@ -112,6 +113,7 @@ void STRGPatch::run_mod(Game game, Region region) {
 }
 
 bool STRGPatch::init_mod(Game game, Region region) {
+  return true;
   clear_table();
 
   switch (game) {

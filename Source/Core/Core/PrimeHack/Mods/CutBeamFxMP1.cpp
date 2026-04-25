@@ -18,10 +18,6 @@ bool CutBeamFxMP1::init_mod(Game game, Region region) {
     gunfx_offset = 0;
     transform_ctor_offset = 0;
     advance_particles_offset = 0;
-  } else if (region == Region::NTSC_J) {
-    gunfx_offset = 0x8e8;                   // 0x8018cf90 - 0x8018c6a8;
-    transform_ctor_offset = 0xfffffb70;     // 0x803487f0 - 0x80348c80;
-    advance_particles_offset = 0x4b0;       // 0x80139e70 - 0x801399c0;
   } else {
     return true;
   }

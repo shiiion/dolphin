@@ -14,8 +14,6 @@ public:
           add_return_one(0x800cf054);
         } else if (region == Region::PAL) {
           add_return_one(0x800cf174);
-        } else if (region == Region::NTSC_J) {
-          add_return_one(0x800cf3e4);
         }
         break;
       case Game::PRIME_1_GCN:
@@ -36,15 +34,11 @@ public:
           add_return_one(0x800bc4d0);
         } else if (region == Region::PAL) {
           add_return_one(0x800bdb9c);
-        } else if (region == Region::NTSC_J) {
-          add_return_one(0x800bbb68);
         }
         break;
       case Game::PRIME_2_GCN:
         if (region == Region::NTSC_U) {
           add_return_one(0x80142340);
-        } else if (region == Region::NTSC_J) {
-          add_return_one(0x80143330);
         } else if (region == Region::PAL) {
           add_return_one(0x8014257c);
         }
@@ -61,8 +55,6 @@ public:
           add_return_one(0x800bb930);
         } else if (region == Region::PAL) {
           add_return_one(0x800bbd24);
-        } else if (region == Region::NTSC_J) {
-          add_return_one(0x800bc10c);
         }
         break;
       default:

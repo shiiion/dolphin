@@ -7,13 +7,11 @@
 #include <vector>
 
 #include "Core/Core.h"
-#include "Core/PowerPC/PowerPC.h"
-
-#include "Common/Assembler/GekkoAssembler.h"
 
 #define GEN_NAME(cname) std::string_view mod_name() override { return #cname; }
 
 namespace prime {
+
 struct CodeChange {
   uint32_t address, var;
   CodeChange() : CodeChange(0, 0) {}
@@ -23,14 +21,12 @@ struct CodeChange {
 enum class Game : int {
   INVALID_GAME = -1,
   MENU = 0,
-  /* New Play Controls only */
-  MENU_PRIME_1 = 1,
-  MENU_PRIME_2 = 2,
-  /* */
+  // Wii Games
   PRIME_1 = 3,
   PRIME_2 = 4,
   PRIME_3 = 5,
   PRIME_3_STANDALONE = 6,
+  // GC Games
   PRIME_1_GCN = 7,
   PRIME_2_GCN = 8,
   PRIME_1_GCN_R1 = 9,
@@ -42,8 +38,7 @@ enum class Region : int {
   INVALID_REGION = -1,
   NTSC_U = 0,
   PAL = 1,
-  NTSC_J = 2,
-  MAX_VAL = NTSC_J,
+  MAX_VAL = PAL,
 };
 
 enum class ModState {
@@ -77,7 +72,7 @@ public:
   // Gets the corresponding list of code changes to apply per-frame
   const std::vector<CodeChange>& get_changes_to_apply() const;
   void add_code_change(u32 addr, u32 code, std::string_view group = "");
-  void add_asm_patch(std::string_view patch);
+  void add_asm_patch(std::string_view patch, std::string_view group = "");
   void set_code_change(u32 address, u32 var);
   void update_original_instructions();
   std::vector<CodeChange>& get_code_changes() { return code_changes; }
@@ -138,4 +133,5 @@ private:
 #define LOOKUP(name) const u32 name = lookup_address(#name)
 // Lookup addressdb dynamics by "name", bind to name
 #define LOOKUP_DYN(name) const u32 name = lookup_dynamic_address(#name)
-}
+
+} // namespace prime

@@ -52,12 +52,6 @@ void set_cursor_pos(float x, float y);
 
 void swap_alt_profiles(u32 ball_state, u32 transition_state, u32 screw_state);
 
-void DevInfo(const char* name, const char* format, ...);
-void DevInfoMatrix(const char* name, const Transform& t);
-
-std::string GetDevInfo();
-void ClrDevInfo();
-
 // Borrowed from DolphinQt MathUtil.h
 template <typename T, typename F>
 constexpr auto Lerp(const T& x, const T& y, const F& a) -> decltype(x + (y - x) * a)
