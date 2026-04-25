@@ -45,6 +45,13 @@ void AllocSwitchGame(Game game, Region region) {
   avail_zones.clear();
 
   switch (game) {
+    case Game::MENU:
+      if (region == Region::NTSC_U) {
+        avail_zones.emplace_back(0x80626100, 0x2000);
+      } else if (region == Region::PAL) {
+        avail_zones.emplace_back(0x8062b800, 0x2000);
+      }
+      break;
     case Game::PRIME_1_GCN:
       if (region == Region::NTSC_U) {
         avail_zones.emplace_back(0x805afc00, 0xe000);
