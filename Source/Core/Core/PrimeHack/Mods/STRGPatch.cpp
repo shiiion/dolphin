@@ -1,28 +1,17 @@
 #include "Core/PrimeHack/Mods/STRGPatch.h"
 
+#include <cassert>
+
 #include "Core/PowerPC/PowerPC.h"
 #include "Core/PowerPC/MMU.h"
+#include "Core/PrimeHack/GuestAllocator.h"
 #include "Core/PrimeHack/PrimeUtils.h"
 #include "Core/System.h"
 
+constexpr u32 STR_TABLE_SIZE = 0x1000;
+
 namespace prime {
 namespace {
-
-enum PatchTable : u32 {
-  kMenuNTSC,
-  kMenuPAL,
-  kMP3StandaloneNTSC,
-  kMP3NTSC,
-  kMP3PAL,
-  kPatchTableSize,
-};
-constexpr u32 kPatchTargetTableStarts[kPatchTableSize] = {
-  0x80626100, // kMenuNTSC
-  0x8062b800, // kMenuPAL
-  0x80684800, // kMP3StandaloneNTSC
-  0x80676c00, // kMP3NTSC
-  0x8067a400, // kMP3PAL
-};
 
 std::string readin_str(PowerPC::MMU& mmu, u32 str_ptr) {
   std::ostringstream key_readin;
@@ -50,16 +39,15 @@ u32 bsearch_strg_table(PowerPC::MMU& mmu, std::string const& key, u32 strg_heade
   return bsearch_left;
 }
 
-void patch_strg_entry_mp3_and_menu(PowerPC::PowerPCState& ppc_state, PowerPC::MMU& mmu, u32 vers) {
+void patch_strg_entry_mp3_and_menu(PowerPC::PowerPCState& ppc_state, PowerPC::MMU& mmu, u32) {
   GetMod<STRGPatch>()->patch_strg_entry_vmc_common(
-    ppc_state, mmu, kPatchTargetTableStarts[vers], ppc_state.gpr[3], ppc_state.gpr[4]);
+    ppc_state, mmu, ppc_state.gpr[3], ppc_state.gpr[4]);
   ppc_state.gpr[0] = ppc_state.spr[SPR_LR];
 }
 
 }
 
-void STRGPatch::patch_strg_entry_vmc_common(PowerPC::PowerPCState& ppc_state, PowerPC::MMU& mmu,
-    u32 patched_table_addr, u32 strg_header, u32 key_ptr) {
+void STRGPatch::patch_strg_entry_vmc_common(PowerPC::PowerPCState& ppc_state, PowerPC::MMU& mmu, u32 strg_header, u32 key_ptr) {
   std::string key = readin_str(mmu, key_ptr);
 
   auto replacement = replace_tbl.find(key);
@@ -69,19 +57,18 @@ void STRGPatch::patch_strg_entry_vmc_common(PowerPC::PowerPCState& ppc_state, Po
     if (found_key == key) {
       u32 strg_val_index = mmu.Read_U32(bsearch_result + 4);
       u32 strg_val_table = mmu.Read_U32(strg_header + 0x1c);
-      mmu.Write_U32(replacement->second.first + patched_table_addr, strg_val_table + 4 * strg_val_index);
+      mmu.Write_U32(replacement->second.first + guest_table_addr, strg_val_table + 4 * strg_val_index);
     }
   }
 }
 
 void STRGPatch::run_mod(Game game, Region region) {
-  return;
   switch (game) {
     case Game::MENU:
       if (region == Region::NTSC_U) {
-        run_mod_common(kPatchTargetTableStarts[kMenuNTSC]);
+        run_mod_common(guest_table_addr);
       } else if (region == Region::PAL) {
-        run_mod_common(kPatchTargetTableStarts[kMenuPAL]);
+        run_mod_common(guest_table_addr);
       }
       break;
 
@@ -95,15 +82,15 @@ void STRGPatch::run_mod(Game game, Region region) {
 
     case Game::PRIME_3_STANDALONE:
       if (region == Region::NTSC_U) {
-        run_mod_common(kPatchTargetTableStarts[kMP3StandaloneNTSC]);
+        run_mod_common(guest_table_addr);
       }
       break;
 
     case Game::PRIME_3:
       if (region == Region::NTSC_U) {
-        run_mod_common(kPatchTargetTableStarts[kMP3NTSC]);
+        run_mod_common(guest_table_addr);
       } else if (region == Region::PAL) {
-        run_mod_common(kPatchTargetTableStarts[kMP3PAL]);
+        run_mod_common(guest_table_addr);
       }
       break;
 
@@ -113,11 +100,12 @@ void STRGPatch::run_mod(Game game, Region region) {
 }
 
 bool STRGPatch::init_mod(Game game, Region region) {
-  return true;
   clear_table();
 
   switch (game) {
     case Game::MENU: {
+      guest_table_addr = GuestAlloc(STR_TABLE_SIZE);
+
       add_table_entry("NunchukRequired", GetMotd());
       add_table_entry("DifficultyMenu_Easiest",
         "&link=[starteasiest]?typewrite=reverse;&wholepane;&rollover=menu2_hl;[ Easy (Normal) ]&endlink;");
@@ -127,9 +115,9 @@ bool STRGPatch::init_mod(Game game, Region region) {
         "&if=HypermodeUnlocked;&link=[starthardest]?typewrite=reverse;&wholepane;&rollover=menu4_hl;[ Hard (Hypermode) ]&endlink;&endif;");
       int vmc_id = Core::System::GetInstance().GetPowerPC().RegisterVmcall(patch_strg_entry_mp3_and_menu);
       if (region == Region::NTSC_U) {
-        add_code_change(0x8037e510, gen_vmcall(vmc_id, kMenuNTSC));
+        add_code_change(0x8037e510, gen_vmcall(vmc_id, 0));
       } else if (region == Region::PAL) {
-        add_code_change(0x8037e15c, gen_vmcall(vmc_id, kMenuPAL));
+        add_code_change(0x8037e15c, gen_vmcall(vmc_id, 0));
       }
       break;
     }
@@ -141,23 +129,27 @@ bool STRGPatch::init_mod(Game game, Region region) {
     case Game::PRIME_2_GCN:
       break;
     case Game::PRIME_3_STANDALONE: {
+      guest_table_addr = GuestAlloc(STR_TABLE_SIZE);
+
       add_table_entry("ShakeOffGandrayda",
                       "&just=center;Mash Jump [&image=0x5FC17B1F30BAA7AE;] to shake off Gandrayda!");
       int vmc_id = Core::System::GetInstance().GetPowerPC().RegisterVmcall(patch_strg_entry_mp3_and_menu);
       if (region == Region::NTSC_U) {
-        add_code_change(0x803cdd64, gen_vmcall(vmc_id, kMP3StandaloneNTSC));
+        add_code_change(0x803cdd64, gen_vmcall(vmc_id, 0));
       }
       // TODO: Missing MP3 PAL support
       break;
     }
     case Game::PRIME_3: {
+      guest_table_addr = GuestAlloc(STR_TABLE_SIZE);
+
       add_table_entry("ShakeOffGandrayda",
                       "&just=center;Mash Jump [&image=0x5FC17B1F30BAA7AE;] to shake off Gandrayda!");
       int vmc_id = Core::System::GetInstance().GetPowerPC().RegisterVmcall(patch_strg_entry_mp3_and_menu);
       if (region == Region::NTSC_U) {
-        add_code_change(0x803cc3f4, gen_vmcall(vmc_id, kMP3NTSC));
+        add_code_change(0x803cc3f4, gen_vmcall(vmc_id, 0));
       } else if (region == Region::PAL) {
-        add_code_change(0x803cbb10, gen_vmcall(vmc_id, kMP3PAL));
+        add_code_change(0x803cbb10, gen_vmcall(vmc_id, 0));
       }
       break;
     }
@@ -171,12 +163,17 @@ void STRGPatch::add_table_entry(std::string key, std::string val) {
   if (key.empty()) {
     return;
   }
+
+  u32 val_len = static_cast<u32>(val.length());
   if (replace_tbl.count(key) > 0) {
     replace_tbl[key].second = val;
     recompute_tbl_off();
+  } else if (current_tbl_off + val_len + 1 >= STR_TABLE_SIZE) {
+    assert("STRGPatch: string pool is out of capacity.");
+    return;
   } else {
     replace_tbl[key] = std::make_pair(current_tbl_off, val);
-    current_tbl_off += static_cast<u32>(val.length()) + 1;
+    current_tbl_off += val_len + 1;
   }
 }
 

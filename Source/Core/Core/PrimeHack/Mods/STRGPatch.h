@@ -14,8 +14,7 @@ public:
   void on_state_change(ModState) override {}
   GEN_NAME(STRGPatch)
 
-  void patch_strg_entry_vmc_common(PowerPC::PowerPCState& ppc_state, PowerPC::MMU& mmu,
-                             u32 patched_table_addr, u32 strg_header, u32 key_ptr);
+  void patch_strg_entry_vmc_common(PowerPC::PowerPCState& ppc_state, PowerPC::MMU& mmu, u32 strg_header, u32 key_ptr);
   std::map<std::string, std::pair<u32, std::string>> const& get_table() const {
     return replace_tbl;
   }
@@ -26,6 +25,7 @@ private:
   void run_mod_common(u32 tbl_address);
   void recompute_tbl_off();
 
+  u32 guest_table_addr;
   u32 current_tbl_off;
   std::map<std::string, std::pair<u32, std::string>> replace_tbl;
 };
