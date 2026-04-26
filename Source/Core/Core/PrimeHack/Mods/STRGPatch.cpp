@@ -115,13 +115,14 @@ bool STRGPatch::init_mod(Game game, Region region) {
     case Game::PRIME_3_STANDALONE: {
       guest_table_addr = GuestAlloc(STR_TABLE_SIZE);
 
+      add_table_entry("NunchukRequired", GetMotd());
       add_table_entry("ShakeOffGandrayda",
                       "&just=center;Mash Jump [&image=0x5FC17B1F30BAA7AE;] to shake off Gandrayda!");
       int vmc_id = Core::System::GetInstance().GetPowerPC().RegisterVmcall(patch_strg_entry_mp3_and_menu);
       if (region == Region::NTSC_U) {
-        add_code_change(0x803cdd64, gen_vmcall(vmc_id, 0));
+        add_code_change(0x803cdbd8, gen_vmcall(vmc_id, 0));
       } else if (region == Region::PAL) {
-        add_code_change(0x803cf648, gen_vmcall(vmc_id, 0));
+        add_code_change(0x803cf4b8, gen_vmcall(vmc_id, 0));
       }
       break;
     }
@@ -132,9 +133,9 @@ bool STRGPatch::init_mod(Game game, Region region) {
                       "&just=center;Mash Jump [&image=0x5FC17B1F30BAA7AE;] to shake off Gandrayda!");
       int vmc_id = Core::System::GetInstance().GetPowerPC().RegisterVmcall(patch_strg_entry_mp3_and_menu);
       if (region == Region::NTSC_U) {
-        add_code_change(0x803cc3f4, gen_vmcall(vmc_id, 0));
+        add_code_change(0x803cc268, gen_vmcall(vmc_id, 0));
       } else if (region == Region::PAL) {
-        add_code_change(0x803cbb10, gen_vmcall(vmc_id, 0));
+        add_code_change(0x803cb984, gen_vmcall(vmc_id, 0));
       }
       break;
     }

@@ -35,11 +35,11 @@ constexpr u32 byteswap(u8 const* addr) {
 
 bool FpsControls::in_ridley_fight(Region active_region) {
   LOOKUP_DYN(world_id);
+  LOOKUP_DYN(area_id);
   // World ID for Norion
   if (read64(world_id) != 0x6fb8ef2a9523c343) {
     return false;
   }
-  LOOKUP_DYN(area_id);
 
   return read32(area_id) == 0x16;
 }
@@ -713,11 +713,12 @@ void FpsControls::run_mod_mp3(Game active_game, Region active_region) {
   if (in_ridley_fight(active_region)) {
     if (!was_in_ridley_fight) {
       was_in_ridley_fight = true;
-      set_state(ModState::CODE_DISABLED);
+      disable_patches();
     }
+    mp3_handle_cursor(false, true);
     return;
   } else if (was_in_ridley_fight) {
-    set_state(ModState::ENABLED);
+    enable_patches();
     was_in_ridley_fight = false;
   }
 

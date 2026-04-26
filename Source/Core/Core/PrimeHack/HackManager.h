@@ -47,6 +47,14 @@ template <IsMod T>
 void ResetMod() {
   return GetMod<T>()->reset_mod();
 }
+template <IsMod T>
+void EnablePatches() {
+  return GetMod<T>()->enable_patches();
+}
+template <IsMod T>
+void DisablePatches() {
+  return GetMod<T>()->disable_patches();
+}
 void RunActiveMods(const Core::CPUThreadGuard& cpu_guard);
 Game GetActiveGame();
 Region GetActiveRegion();

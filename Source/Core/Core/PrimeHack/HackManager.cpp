@@ -174,11 +174,11 @@ void update_mod_state_from_config() {
   } else {
     EnableMod<FpsControls>();
     EnableMod<SpringballButton>();
-
+    EnableMod<ContextSensitiveControls>();
     if (ImprovedMotionControls()) {
-      EnableMod<ContextSensitiveControls>();
+      DisablePatches<ContextSensitiveControls>();
     } else {
-      GetMod<ContextSensitiveControls>()->set_state(ModState::CODE_DISABLED);
+      EnablePatches<ContextSensitiveControls>();
     }
     SetModEnabled<MapController>(NewMapControlsEnabled());
   }
@@ -229,8 +229,7 @@ void RunActiveMods(const Core::CPUThreadGuard& cpu_guard) {
     last_region = active_region;
 
     foreach_mod([](PrimeMod& mod) {
-      if (mod.mod_state() == ModState::ENABLED ||
-          mod.mod_state() == ModState::CODE_DISABLED) {
+      if (mod.mod_state() == ModState::ENABLED) {
         mod.run_mod(active_game, active_region);
       }
     });

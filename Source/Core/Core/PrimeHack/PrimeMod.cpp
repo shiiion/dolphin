@@ -32,8 +32,7 @@ void PrimeMod::apply_instruction_changes(bool invalidate)  {
 }
 
 const std::vector<CodeChange>& PrimeMod::get_changes_to_apply() const {
-  if (state == ModState::CODE_DISABLED ||
-      state == ModState::DISABLED) {
+  if (state == ModState::DISABLED || patches_disabled) {
     return original_instructions;
   } else {
     return current_active_changes;
@@ -48,6 +47,7 @@ void PrimeMod::set_code_group_state(const std::string& group_name, ModState new_
   group_change& cg = code_groups[std::string(group_name)];
   if (std::get<1>(cg) == new_state) {
     return; // Can't not do anything UwU! (Shio)
+    // Mangler LARPing as a furry ^
   }
 
   std::get<1>(cg) = new_state;
@@ -61,15 +61,19 @@ void PrimeMod::reset_mod() {
   code_changes.clear();
   original_instructions.clear();
   pending_change_backups.clear();
+  code_groups.clear();
   current_active_changes.clear();
   initialized = false;
+  patches_disabled = false;
   on_reset();
 }
 
 void PrimeMod::set_state(ModState new_state) {
   ModState original = this->state;
   this->state = new_state;
-  on_state_change(original);
+  if (original != new_state) {
+    on_state_change(original);
+  }
 }
 
 void PrimeMod::set_state_no_notify(ModState new_state) {

@@ -647,6 +647,8 @@ void HotkeyScheduler::Run()
       {
         const bool new_value = !Config::Get(Config::PRIMEHACK_INVULNERABILITY);
         Config::SetBaseOrCurrent(Config::PRIMEHACK_INVULNERABILITY, new_value);
+
+        OSD::AddMessage(StringFromFormat("Invulnerability: %s", new_value ? "Enabled" : "Disabled"));
       }
 
       if (IsHotkey(HK_SKIP_CUTSCENE))

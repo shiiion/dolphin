@@ -8,7 +8,7 @@
 
 #include "Core/Core.h"
 
-#define GEN_NAME(cname) std::string_view mod_name() override { return #cname; }
+#define GEN_NAME(cname) std::string_view mod_name() const override { return #cname; }
 
 namespace prime {
 
@@ -41,11 +41,32 @@ enum class Region : int {
   MAX_VAL = PAL,
 };
 
+constexpr std::string_view game_str(Game g) {
+  switch (g) {
+    case Game::MENU: return "Trilogy Menu";
+    case Game::PRIME_1: return "Trilogy Prime 1";
+    case Game::PRIME_2: return "Trilogy Prime 2";
+    case Game::PRIME_3: return "Trilogy Prime 3";
+    case Game::PRIME_1_GCN: return "GCN Prime 1 Rev 0";
+    case Game::PRIME_1_GCN_R1: return "GCN Prime 1 Rev 1";
+    case Game::PRIME_1_GCN_R2: return "GCN Prime 1 Rev 1";
+    case Game::PRIME_2_GCN: return "GCN Prime 2";
+    case Game::PRIME_3_STANDALONE: return "Standalone Prime 3";
+    default: return "Invalid";
+  }
+}
+
+constexpr std::string_view region_str(Region r) {
+  switch (r) {
+    case Region::NTSC_U: return "NTSC-U";
+    case Region::PAL: return "PAL";
+    default: return "Invalid";
+  }
+}
+
 enum class ModState {
   // not running, no active instruction changes
   DISABLED,
-  // running, no active instruction changes
-  CODE_DISABLED,
   // running, active instruction changes
   ENABLED,
 };
@@ -65,7 +86,7 @@ public:
   virtual bool init_mod(Game game, Region region) = 0;
   virtual void on_state_change(ModState old_state) = 0;
   virtual void on_reset() {}
-  virtual std::string_view mod_name() = 0;
+  virtual std::string_view mod_name() const = 0;
 
   virtual bool should_apply_changes() const;
   void apply_instruction_changes(bool invalidate = true);
@@ -89,6 +110,9 @@ public:
   void set_code_group_state(const std::string& group_name, ModState new_state);
 
   void set_temporary_cpu_guard(Core::CPUThreadGuard const* guard) { active_guard = guard; }
+
+  void disable_patches() { patches_disabled = true; }
+  void enable_patches() { patches_disabled = false; }
 
   static void set_address_database(const AddressDB* db_ptr) { addr_db = db_ptr; }
 
@@ -125,6 +149,7 @@ private:
   std::vector<u32> pending_change_backups;
   std::map<std::string, group_change> code_groups;
   ModState state = ModState::DISABLED;
+  bool patches_disabled = false;
 
   std::vector<CodeChange> current_active_changes;
 };

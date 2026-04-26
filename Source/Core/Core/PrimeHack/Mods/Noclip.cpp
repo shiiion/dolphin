@@ -1,8 +1,7 @@
 #include "Core/PrimeHack/Mods/Noclip.h"
 
-#include "Common/Logging/Log.h"
+#include "Core/PrimeHack/GuestAllocator.h"
 #include "Core/PrimeHack/PrimeUtils.h"
-#include "VideoCommon/OnScreenDisplay.h"
 
 #include <fmt/format.h>
 
@@ -123,13 +122,13 @@ void Noclip::run_mod_mp1(bool has_control) {
 
   if (!has_control) {
     player_transform.read_from(*active_guard, player + 0x2c);
-    set_state(ModState::CODE_DISABLED);
+    disable_patches();
     apply_instruction_changes();
     had_control = has_control;
     return;
   }
   if (has_control && !had_control) {
-    set_state(ModState::ENABLED);
+    enable_patches();
     had_control = has_control;
     return;
   }
@@ -147,10 +146,12 @@ void Noclip::run_mod_mp1(bool has_control) {
   const u32 camera_tf_addr = read32(object_list + ((camera_id & 0x3ff) << 3) + 4) + 0x2c;
   vec3 movement_vec = (get_movement_vec(camera_tf_addr) * 0.5f) + player_transform.loc();
 
+  LOOKUP_DYN(move_state);
   player_transform.set_loc(movement_vec);
   writef32(movement_vec.x, player + 0x2c + 0x0c);
   writef32(movement_vec.y, player + 0x2c + 0x1c);
   writef32(movement_vec.z, player + 0x2c + 0x2c);
+  write32(0, move_state);
 }
 
 void Noclip::run_mod_mp1_gc(bool has_control) {
@@ -161,14 +162,14 @@ void Noclip::run_mod_mp1_gc(bool has_control) {
   LOOKUP_DYN(player_xf);
   if (!has_control) {
     player_transform.read_from(*active_guard, player_xf);
-    set_state(ModState::CODE_DISABLED);
+    disable_patches();
     apply_instruction_changes();
     had_control = has_control;
     return;
   }
 
   if (has_control && !had_control) {
-    set_state(ModState::ENABLED);
+    enable_patches();
     had_control = has_control;
     return;
   }
@@ -208,14 +209,14 @@ void Noclip::run_mod_mp2(bool has_control) {
 
   if (!has_control) {
     player_vec.read_from(*active_guard, player + 0x50);
-    set_state(ModState::CODE_DISABLED);
+    disable_patches();
     apply_instruction_changes();
     had_control = has_control;
     return;
   }
 
   if (has_control && !had_control) {
-    set_state(ModState::ENABLED);
+    enable_patches();
     had_control = has_control;
     return;
   }
@@ -234,8 +235,10 @@ void Noclip::run_mod_mp2(bool has_control) {
   }
   u32 camera_address = read32(object_list + 4 + ((camera_uid & 0x3ff) << 3));
 
+  LOOKUP_DYN(move_state);
   player_vec = (get_movement_vec(camera_address + 0x20) * 0.5f) + player_vec;
   player_vec.write_to(*active_guard, player + 0x50);
+  write32(0, move_state);
 }
 
 void Noclip::run_mod_mp2_gc(bool has_control) {
@@ -250,13 +253,13 @@ void Noclip::run_mod_mp2_gc(bool has_control) {
 
   if (!has_control) {
     player_vec.read_from(*active_guard, player + 0x54);
-    set_state(ModState::CODE_DISABLED);
+    disable_patches();
     apply_instruction_changes();
     had_control = has_control;
     return;
   }
   if (has_control && !had_control) {
-    set_state(ModState::ENABLED);
+    enable_patches();
     had_control = has_control;
     return;
   }
@@ -275,8 +278,10 @@ void Noclip::run_mod_mp2_gc(bool has_control) {
   }
   u32 camera_address = read32(object_list + 4 + ((camera_uid & 0x3ff) << 3));
 
+  LOOKUP_DYN(move_state);
   player_vec = (get_movement_vec(camera_address + 0x24) * 0.5f) + player_vec;
   player_vec.write_to(*active_guard, player + 0x54);
+  write32(0, move_state);
 }
 
 void Noclip::run_mod_mp3(bool has_control) {
@@ -287,14 +292,14 @@ void Noclip::run_mod_mp3(bool has_control) {
 
   if (!has_control) {
     player_vec.read_from(*active_guard, player + 0x6c);
-    set_state(ModState::CODE_DISABLED);
+    disable_patches();
     apply_instruction_changes();
     had_control = has_control;
     return;
   }
 
   if (has_control && !had_control) {
-    set_state(ModState::ENABLED);
+    enable_patches();
     had_control = has_control;
     return;
   }
@@ -313,8 +318,10 @@ void Noclip::run_mod_mp3(bool has_control) {
   }
   const u32 camera_address = read32(object_list + 4 + ((camera_id & 0x7ff) << 3));
 
+  LOOKUP_DYN(move_state);
   player_vec = (get_movement_vec(camera_address + 0x3c) * 0.5f) + player_vec;
   player_vec.write_to(*active_guard, player + 0x6c);
+  write32(0, move_state);
 }
 
 bool Noclip::init_mod(Game game, Region region) {
@@ -340,9 +347,10 @@ bool Noclip::init_mod(Game game, Region region) {
         add_code_change(0x80196d7c, 0x481b1f39);
       }
       break;
-    case Game::PRIME_1_GCN:
+    case Game::PRIME_1_GCN: {
+      const u32 code_alloc = GuestAllocAligned(0x18, 2);
       if (region == Region::NTSC_U) {
-        noclip_code_mp1_gc(0x8046b97c, 0x805afd00, 0x80052e90);
+        noclip_code_mp1_gc(0x8046b97c, code_alloc, 0x80052e90);
         // For whatever reason CPlayer::Teleport calls SetTransform then SetTranslation
         // which the above code changes will mess up, so just force the position to be
         // used in SetTransform and remove the call to SetTranslation, now Teleport works
@@ -356,7 +364,7 @@ bool Noclip::init_mod(Game game, Region region) {
         add_code_change(0x80285170, 0xd0410098);
         add_code_change(0x80285174, 0x4808d9cd);
       } else if (region == Region::PAL) {
-        noclip_code_mp1_gc(0x803f38a4, 0x80471d00, 0x80053fa4);
+        noclip_code_mp1_gc(0x803f38a4, code_alloc, 0x80053fa4);
 
         add_code_change(0x802724ac, 0x60000000);
         add_code_change(0x802724bc, 0x60000000);
@@ -367,9 +375,10 @@ bool Noclip::init_mod(Game game, Region region) {
         add_code_change(0x802724f8, 0x48089419);
       }
       break;
-    case Game::PRIME_1_GCN_R1:
-      // 0x8046bb5c, 0x805afd00 0x80052f0c
-      noclip_code_mp1_gc(0x8046bb5c, 0x805afd00, 0x80052f0c);
+    }
+    case Game::PRIME_1_GCN_R1: {
+      const u32 code_alloc = GuestAllocAligned(0x18, 2);
+      noclip_code_mp1_gc(0x8046bb5c, code_alloc, 0x80052f0c);
       add_code_change(0x802851a4, 0x60000000);
       add_code_change(0x802851b4, 0x60000000);
       add_code_change(0x802851bc, 0x60000000);
@@ -378,8 +387,10 @@ bool Noclip::init_mod(Game game, Region region) {
       add_code_change(0x802851ec, 0xd0410098);
       add_code_change(0x802851f0, 0x4808da31);
       break;
-    case Game::PRIME_1_GCN_R2:
-      noclip_code_mp1_gc(0x8046c9e8, 0x805b0d00, 0x800531d8);
+    }
+    case Game::PRIME_1_GCN_R2: {
+      const u32 code_alloc = GuestAllocAligned(0x18, 2);
+      noclip_code_mp1_gc(0x8046c9e8, code_alloc, 0x800531d8);
 
       add_code_change(0x80285a9c, 0x60000000);
       add_code_change(0x80285aac, 0x60000000);
@@ -389,6 +400,7 @@ bool Noclip::init_mod(Game game, Region region) {
       add_code_change(0x80285ae4, 0xd0410098);
       add_code_change(0x80285ae8, 0x4808daa9);
       break;
+    }
     case Game::PRIME_2:
       if (region == Region::NTSC_U) {
         noclip_code_mp2(0x804e87dc, 0x800053a4, 0x8000d694);
@@ -410,9 +422,10 @@ bool Noclip::init_mod(Game game, Region region) {
         add_code_change(0x80162504, 0x4beabdad);
       }
       break;
-    case Game::PRIME_2_GCN:
+    case Game::PRIME_2_GCN: {
+      const u32 code_alloc = GuestAllocAligned(0x1c, 2);
       if (region == Region::NTSC_U) {
-        noclip_code_mp2_gc(0x803dcbdc, 0x80420000, 0x8004abc8);
+        noclip_code_mp2_gc(0x803dcbdc, code_alloc, 0x8004abc8);
         add_code_change(0x801865d8, 0x60000000);
         add_code_change(0x801865e0, 0x60000000);
         add_code_change(0x801865e8, 0x60000000);
@@ -421,7 +434,7 @@ bool Noclip::init_mod(Game game, Region region) {
         add_code_change(0x801865f8, 0xd0010078);
         add_code_change(0x801865fc, 0x4bec395d);
       } else if (region == Region::PAL) {
-        noclip_code_mp2_gc(0x803dddfc, 0x80420000, 0x8004ad44);
+        noclip_code_mp2_gc(0x803dddfc, code_alloc, 0x8004ad44);
         add_code_change(0x801868bc, 0x60000000);
         add_code_change(0x801868c4, 0x60000000);
         add_code_change(0x801868cc, 0x60000000);
@@ -431,6 +444,7 @@ bool Noclip::init_mod(Game game, Region region) {
         add_code_change(0x801868e0, 0x4bec37e9);
       }
       break;
+    }
     case Game::PRIME_3:
       if (region == Region::NTSC_U) {
         noclip_code_mp3(0x805c6c40, 0x80004380, 0x8000bbfc);
@@ -544,10 +558,6 @@ void Noclip::noclip_code_mp3(u32 cplayer_address, u32 start_point, u32 return_lo
 }
 
 void Noclip::on_state_change(ModState old_state) {
-  if (mod_state() != old_state) {
-    OSD::AddMessage(StringFromFormat("Noclip: %s", mod_state() == ModState::ENABLED ? "Enabled" : "Disabled"));
-    INFO_LOG_FMT(CORE, "State changed to {}", (int) mod_state());
-  }
   LOOKUP_DYN(player);
   if (player == 0) {
     return;
@@ -590,8 +600,7 @@ void Noclip::on_state_change(ModState old_state) {
       default:
         break;
     }
-  } else if ((mod_state() == ModState::DISABLED || mod_state() == ModState::CODE_DISABLED) &&
-             old_state == ModState::ENABLED) {
+  } else if (mod_state() == ModState::DISABLED && old_state == ModState::ENABLED) {
     switch (GetActiveGame()) {
       case Game::PRIME_1:
         write64(old_matexclude_list, player + 0x70);
