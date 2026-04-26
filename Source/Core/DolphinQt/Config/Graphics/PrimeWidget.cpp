@@ -83,7 +83,7 @@ void PrimeWidget::CreateWidgets()
   m_bloom_intensity->setMinimum(0);
   m_bloom_intensity->setMaximum(100);
   m_bloom_intensity->setPageStep(1);
-  
+
   m_bloom_intensity->setEnabled(Config::Get(Config::REDUCE_BLOOM));
   m_bloom_intensity_val->setEnabled(Config::Get(Config::REDUCE_BLOOM));
 
@@ -170,19 +170,19 @@ void PrimeWidget::CreateWidgets()
   m_y_axis->setMinimum(-50);
   m_y_axis->setMaximum(50);
   m_y_axis->setPageStep(1);
-  
+
   viewmodel_layout->addWidget(m_toggle_arm_position, 0, 0);
   viewmodel_layout->addWidget(m_auto_arm_position, 1, 0);
   viewmodel_layout->addWidget(m_manual_arm_position, 1, 1);
-  
+
   viewmodel_layout->addWidget(new QLabel(tr("Up/Down")), 4, 0);
   viewmodel_layout->addWidget(new QLabel(tr("Left/Right")), 5, 0);
   viewmodel_layout->addWidget(new QLabel(tr("Forwards/Backwards")), 6, 0);
-  
+
   viewmodel_layout->addWidget(m_y_axis, 4, 1);
   viewmodel_layout->addWidget(m_x_axis, 5, 1);
   viewmodel_layout->addWidget(m_z_axis, 6, 1);
-  
+
   viewmodel_layout->addWidget(y_counter, 4, 2);
   viewmodel_layout->addWidget(x_counter, 5, 2);
   viewmodel_layout->addWidget(z_counter, 6, 2);
@@ -215,26 +215,26 @@ void PrimeWidget::ToggleShowCrosshair(bool mode)
 
 void PrimeWidget::ConnectWidgets()
 {
-  connect(m_fov_toggle, &ConfigBool::clicked, this, [=](bool checked) {
+  connect(m_fov_toggle, &ConfigBool::clicked, this, [this](bool checked) {
     m_fov_counter->setEnabled(checked);
     m_fov_axis->setEnabled(checked);
   });
-  connect(m_reduce_bloom, &ConfigBool::clicked, this, [=](bool checked) {
+  connect(m_reduce_bloom, &ConfigBool::clicked, this, [this](bool checked) {
     m_bloom_intensity->setEnabled(checked);
     m_bloom_intensity_val->setEnabled(checked);
   });
   connect(m_toggle_gc_show_crosshair, &ConfigBool::clicked, this,
-          [=](bool checked) { PrimeWidget::ToggleShowCrosshair(checked); });
+          [this](bool checked) { PrimeWidget::ToggleShowCrosshair(checked); });
   connect(m_auto_arm_position, &QRadioButton::clicked, this,
-          [=](bool checked) { PrimeWidget::ArmPositionModeChanged(!checked); });
+          [this](bool checked) { PrimeWidget::ArmPositionModeChanged(!checked); });
   connect(m_manual_arm_position, &QRadioButton::clicked, this,
-          [=](bool checked) { PrimeWidget::ArmPositionModeChanged(checked); });
-  connect(m_toggle_arm_position, &QCheckBox::clicked, this, [=](bool checked) {
+          [this](bool checked) { PrimeWidget::ArmPositionModeChanged(checked); });
+  connect(m_toggle_arm_position, &QCheckBox::clicked, this, [this](bool checked) {
     m_auto_arm_position->setEnabled(checked);
     m_manual_arm_position->setEnabled(checked);
     PrimeWidget::ArmPositionModeChanged(m_manual_arm_position->isChecked());
   });
-  connect(&Settings::Instance(), &Settings::EmulationStateChanged, this, [=](Core::State state) {
+  connect(&Settings::Instance(), &Settings::EmulationStateChanged, this, [this](Core::State state) {
     if (state != Core::State::Uninitialized)
     {
       m_toggle_culling->setEnabled(true);
@@ -249,7 +249,7 @@ void PrimeWidget::ConnectWidgets()
     }
   });
 
-  connect(m_select_colour, &QPushButton::clicked, this, [=]() {
+  connect(m_select_colour, &QPushButton::clicked, this, [this]() {
     QColor c = colorpicker->getColor(QColor::fromRgba(0x4b7ea331), this,
                                      tr("Select a cursor color"), QColorDialog::ShowAlphaChannel);
 
@@ -260,7 +260,7 @@ void PrimeWidget::ConnectWidgets()
     m_select_colour->setStyleSheet(tr("border: 2px solid ") + c.name() + tr(";"));
     Config::SetBaseOrCurrent(Config::GC_CROSSHAIR_COLOR_RGBA, colour);
   });
-  connect(m_reset_colour, &QPushButton::clicked, this, [=]() {
+  connect(m_reset_colour, &QPushButton::clicked, this, [this]() {
     m_select_colour->setStyleSheet(tr("border: 2px double #4b7ea3;"));
     Config::SetBaseOrCurrent(Config::GC_CROSSHAIR_COLOR_RGBA, 0x4b7ea331);
   });

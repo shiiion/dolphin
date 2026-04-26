@@ -281,7 +281,7 @@ void PowerPCManager::Init(CPUCore cpu_core)
   m_ppc_state.dCache.Init(memory);
 }
 
-void vmcall_noop(PowerPCState& ppc_state, MMU&, u32 param) {
+static void vmcall_noop(PowerPCState& ppc_state, MMU&, u32 param) {
   WARN_LOG_FMT(POWERPC, "Executed unhandled vmcall, PC={:#x} VMFP={}", ppc_state.pc, param);
 }
 
@@ -333,10 +333,10 @@ void PowerPCManager::RegisterVmcallWithIndex(int index, vm_call pfn) {
 }
 
 int PowerPCManager::RegisterVmcall(vm_call pfn) {
-  for (int i = 0; i < m_ppc_state.vmcall_table.size(); i++) {
+  for (size_t i = 0; i < m_ppc_state.vmcall_table.size(); i++) {
     if (m_ppc_state.vmcall_table[i] == vmcall_noop) {
       m_ppc_state.vmcall_table[i] = pfn;
-      return i;
+      return static_cast<int>(i);
     }
   }
   return -1;

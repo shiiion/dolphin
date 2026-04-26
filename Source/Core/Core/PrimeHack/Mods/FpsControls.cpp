@@ -27,6 +27,18 @@ const std::array<std::tuple<int, int>, 4> prime_three_visors = {
 
 constexpr u32 ORBIT_STATE_GRAPPLE = 5;
 
+void null_players_on_destruct_mp2_gc(PowerPC::PowerPCState& ppc_state, PowerPC::MMU& mmu, u32) {
+  // r27 is an iterator variable pointing to start of statemgr
+  mmu.Write_U32(0, ppc_state.gpr[27] + 0x14fc);
+
+  // Original instruction: addi r27, r27, 4
+  ppc_state.gpr[27] += 4;
+}
+
+void wiimote_shake_override(PowerPC::PowerPCState& ppc_state, PowerPC::MMU&, u32) {
+  ppc_state.gpr[26] = CheckJump() ? 1 : 0;
+}
+
 } // namespace
 
 constexpr u32 byteswap(u8 const* addr) {
@@ -498,14 +510,6 @@ void FpsControls::run_mod_mp2(Region region) {
     LOOKUP_DYN(screw_state);
     swap_alt_profiles(read32(ball_state), read32(menu_state), read32(screw_state));
   }
-}
-
-void null_players_on_destruct_mp2_gc(PowerPC::PowerPCState& ppc_state, PowerPC::MMU& mmu, u32) {
-  // r27 is an iterator variable pointing to start of statemgr
-  mmu.Write_U32(0, ppc_state.gpr[27] + 0x14fc);
-
-  // Original instruction: addi r27, r27, 4
-  ppc_state.gpr[27] += 4;
 }
 
 void FpsControls::run_mod_mp2_gc(Region region) {
@@ -1260,10 +1264,6 @@ void FpsControls::init_mod_mp2_gc(Region region) {
     u32 null_players_vmc = gen_vmcall(null_players_vmc_idx, 0);
     add_code_change(0x80042b04, null_players_vmc);
   } else {}
-}
-
-void wiimote_shake_override(PowerPC::PowerPCState& ppc_state, PowerPC::MMU&, u32) {
-  ppc_state.gpr[26] = CheckJump() ? 1 : 0;
 }
 
 void FpsControls::init_mod_mp3(Game game, Region region) {

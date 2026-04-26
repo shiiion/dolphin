@@ -7,7 +7,7 @@ namespace prime {
 
 struct vec3 {
   vec3() : vec3(0, 0, 0) {}
-  vec3(float x, float y, float z) : x(x), y(y), z(z) {}
+  vec3(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {}
 
   union {
     float arr[3];

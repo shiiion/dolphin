@@ -187,6 +187,8 @@ bool DisableHudMemoPopup::init_mod(Game game, Region region) {
     case Game::PRIME_3_STANDALONE:
       init_mod_mp3(game, region);
       break;
+    default:
+      break;
   }
 
   return true;

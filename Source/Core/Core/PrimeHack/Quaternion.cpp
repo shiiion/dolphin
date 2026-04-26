@@ -4,8 +4,8 @@
 
 namespace prime {
 
-quat::quat(float x, float y, float z, float w)
-  : x(x), y(y), z(z), w(w) {}
+quat::quat(float _x, float _y, float _z, float _w)
+  : x(_x), y(_y), z(_z), w(_w) {}
 
 void quat::build_aa(vec3 const& axis, float angle) {
   const float sin_t = sinf(angle / 2.f);

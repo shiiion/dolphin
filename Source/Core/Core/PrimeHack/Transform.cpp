@@ -2,7 +2,6 @@
 
 #include "Core/PowerPC/MMU.h"
 #include "Core/PowerPC/PowerPC.h"
-#include "Core/PrimeHack/PrimeUtils.h"
 
 #include <cstring>
 #include <cmath>
@@ -74,13 +73,13 @@ void Transform::build_rotation(float yaw) {
 }
 
 void Transform::read_from(Core::CPUThreadGuard const& guard, u32 address) {
-  for (int i = 0; i < sizeof(Transform) / 4; i++) {
+  for (size_t i = 0; i < sizeof(Transform) / 4; i++) {
     m[i / 4][i % 4] = PowerPC::MMU::HostRead_F32(guard, address + i * 4);
   }
 }
 
 void Transform::write_to(Core::CPUThreadGuard const& guard, u32 address) {
-  for (int i = 0; i < sizeof(Transform) / 4; i++) {
+  for (size_t i = 0; i < sizeof(Transform) / 4; i++) {
     PowerPC::MMU::HostWrite_F32(guard, m[i / 4][i % 4], address + i * 4);
   }
 }

@@ -288,8 +288,6 @@ void ViewModifier::run_mod_mp3() {
   adjust_viewmodel(fov, read32(read32(tweakgun)) + 0xe0, perspective_info + 0x8c, 0x3dcccccd);
 
   set_code_group_state("culling", (GetCulling() || get_fov() > 94.f) ? ModState::ENABLED : ModState::DISABLED);
-
-  const u32 camera = read32(object_list + ((camera_id & 0x7ff) << 3) + 4);
 }
 
 bool ViewModifier::init_mod(Game game, Region region) {

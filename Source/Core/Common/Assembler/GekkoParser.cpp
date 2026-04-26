@@ -742,15 +742,6 @@ void ParseDefsym(ParseState* state)
   }
 }
 
-void ParseIf(ParseState* state)
-{
-  ParseResolvedExpr(state);
-  if (state->error)
-  {
-    return;
-  }
-}
-
 void ParseString(ParseState* state)
 {
   AssemblerToken tok = state->lexer.Lookahead();

@@ -4,11 +4,6 @@
 #include "Core/PowerPC/MMU.h"
 #include "VideoCommon/VideoConfig.h"
 
-#include "Common/Timer.h"
-#include "Common/BitUtils.h"
-
-#include <cstdarg>
-
 std::string info_str;
 
 namespace prime {
@@ -26,18 +21,7 @@ static int current_beam = 0;
 static int current_visor = 0;
 static std::array<bool, 4> beam_owned = {false, false, false, false};
 static std::array<bool, 4> visor_owned = {false, false, false, false};
-static bool noclip_enabled = false;
 static bool was_in_alternate = false;
-
-std::array<std::array<CodeChange, static_cast<int>(Game::MAX_VAL) + 1>,
-  static_cast<int>(Region::MAX_VAL) + 1> noclip_enable_codes;
-std::array<std::array<CodeChange, static_cast<int>(Game::MAX_VAL) + 1>,
-  static_cast<int>(Region::MAX_VAL) + 1> noclip_disable_codes;
-
-static u32 noclip_msg_time;
-static u32 invulnerability_msg_time;
-static u32 cutscene_msg_time;
-static u32 scandash_msg_time;
 
 void set_beam_owned(int index, bool owned) {
   beam_owned[index] = owned;
@@ -179,11 +163,11 @@ constexpr float kNtscStretchMultiplier = 1.003125f;
 
 constexpr float kNtscHalfHRange = 1.025f;
 constexpr float kNtscHalfVRange_16_9 = 0.715f;
-constexpr float kNtscHalfVRange_16_10 = 0.8f;
+// constexpr float kNtscHalfVRange_16_10 = 0.8f;
 constexpr float kNtscHalfVRange_4_3 = 0.95f;
 constexpr float kPalHalfHRange = 0.87f;
 constexpr float kPalHalfVRange_16_9 = 0.73f;
-constexpr float kPalHalfVRange_16_10 = 0.815f;
+// constexpr float kPalHalfVRange_16_10 = 0.815f;
 constexpr float kPalHalfVRange_4_3 = 0.965f;
 
 constexpr float kMenuHalfVRange = 1.f;
