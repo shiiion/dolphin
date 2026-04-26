@@ -65,11 +65,9 @@ void STRGPatch::patch_strg_entry_vmc_common(PowerPC::PowerPCState& ppc_state, Po
 void STRGPatch::run_mod(Game game, Region region) {
   switch (game) {
     case Game::MENU:
-      if (region == Region::NTSC_U) {
-        run_mod_common(guest_table_addr);
-      } else if (region == Region::PAL) {
-        run_mod_common(guest_table_addr);
-      }
+    case Game::PRIME_3_STANDALONE:
+    case Game::PRIME_3:
+      run_mod_common(guest_table_addr);
       break;
 
     case Game::PRIME_1:
@@ -78,20 +76,6 @@ void STRGPatch::run_mod(Game game, Region region) {
     case Game::PRIME_1_GCN_R2:
     case Game::PRIME_2:
     case Game::PRIME_2_GCN:
-      break;
-
-    case Game::PRIME_3_STANDALONE:
-      if (region == Region::NTSC_U) {
-        run_mod_common(guest_table_addr);
-      }
-      break;
-
-    case Game::PRIME_3:
-      if (region == Region::NTSC_U) {
-        run_mod_common(guest_table_addr);
-      } else if (region == Region::PAL) {
-        run_mod_common(guest_table_addr);
-      }
       break;
 
     default:
@@ -136,8 +120,9 @@ bool STRGPatch::init_mod(Game game, Region region) {
       int vmc_id = Core::System::GetInstance().GetPowerPC().RegisterVmcall(patch_strg_entry_mp3_and_menu);
       if (region == Region::NTSC_U) {
         add_code_change(0x803cdd64, gen_vmcall(vmc_id, 0));
+      } else if (region == Region::PAL) {
+        add_code_change(0x803cf648, gen_vmcall(vmc_id, 0));
       }
-      // TODO: Missing MP3 PAL support
       break;
     }
     case Game::PRIME_3: {
