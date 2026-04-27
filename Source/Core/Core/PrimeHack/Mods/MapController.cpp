@@ -20,18 +20,18 @@ void rotate_map_mp1_gc(PowerPC::PowerPCState& ppc_state, PowerPC::MMU& mmu, u32 
   MapController* const map_controller = GetMod<MapController>();
   if (job == 0) {  // Executed during Automapper transitions
     // Only reset our rotations if transitioning to normal map from minimap
-    if (ppc_state.gpr[30] == 1 && mmu.Read_U32(ppc_state.gpr[28] + 0x1bc) == 0) {
+    if (ppc_state.gpr[30] == 1 && mmu.Read<u32>(ppc_state.gpr[28] + 0x1bc) == 0) {
       map_controller->reset_rotation(map_controller->get_player_yaw(), mmu.Read_F32(ppc_state.gpr[28] + 0xc4) * -(kPi / 180.f));
     }
-    ppc_state.gpr[0] = mmu.Read_U32(ppc_state.gpr[28] + 0x1c0);
+    ppc_state.gpr[0] = mmu.Read<u32>(ppc_state.gpr[28] + 0x1c0);
   } else if (job == 1) {  // Hooks ProcessMapRotateInput
     quat r = map_controller->compute_orientation();
     write_quat(mmu, r, ppc_state.gpr[29] + 0xb0);
   } else if (job == 2) {  // Because PAL just had to be different? Sure whatever
-    if (ppc_state.gpr[27] == 1 && mmu.Read_U32(ppc_state.gpr[28] + 0x1d4) == 0) {
+    if (ppc_state.gpr[27] == 1 && mmu.Read<u32>(ppc_state.gpr[28] + 0x1d4) == 0) {
       map_controller->reset_rotation(map_controller->get_player_yaw(), mmu.Read_F32(ppc_state.gpr[28] + 0xdc) * -(kPi / 180.f));
     }
-    ppc_state.gpr[0] = mmu.Read_U32(ppc_state.gpr[28] + 0x1d8);
+    ppc_state.gpr[0] = mmu.Read<u32>(ppc_state.gpr[28] + 0x1d8);
   } else if (job == 3) {
     quat r = map_controller->compute_orientation();
     write_quat(mmu, r, ppc_state.gpr[29] + 0xc8);
@@ -41,10 +41,10 @@ void rotate_map_mp1_gc(PowerPC::PowerPCState& ppc_state, PowerPC::MMU& mmu, u32 
 void rotate_map_mp1(PowerPC::PowerPCState& ppc_state, PowerPC::MMU& mmu, u32 job) {
   MapController* const map_controller = GetMod<MapController>();
   if (job == 0) {
-    if (ppc_state.gpr[31] == 1 && mmu.Read_U32(ppc_state.gpr[29] + 0x1d0) == 0) {
+    if (ppc_state.gpr[31] == 1 && mmu.Read<u32>(ppc_state.gpr[29] + 0x1d0) == 0) {
       map_controller->reset_rotation(map_controller->get_player_yaw(), mmu.Read_F32(ppc_state.gpr[29] + 0xd8) * -(kPi / 180.f));
     }
-    ppc_state.gpr[24] = mmu.Read_U32(ppc_state.gpr[29] + 0x1d4);
+    ppc_state.gpr[24] = mmu.Read<u32>(ppc_state.gpr[29] + 0x1d4);
   } else if (job == 1) {
     quat r = map_controller->compute_orientation();
     write_quat(mmu, r, ppc_state.gpr[29] + 0xc4);
@@ -54,10 +54,10 @@ void rotate_map_mp1(PowerPC::PowerPCState& ppc_state, PowerPC::MMU& mmu, u32 job
 void rotate_map_mp2_gc(PowerPC::PowerPCState& ppc_state, PowerPC::MMU& mmu, u32 job) {
   MapController* const map_controller = GetMod<MapController>();
   if (job == 0) {
-    if (ppc_state.gpr[27] == 1 && mmu.Read_U32(ppc_state.gpr[28] + 0x200) == 0) {
+    if (ppc_state.gpr[27] == 1 && mmu.Read<u32>(ppc_state.gpr[28] + 0x200) == 0) {
       map_controller->reset_rotation(map_controller->get_player_yaw(), mmu.Read_F32(ppc_state.gpr[28] + 0x108) * -(kPi / 180.f));
     }
-    ppc_state.gpr[0] = mmu.Read_U32(ppc_state.gpr[28] + 0x204);
+    ppc_state.gpr[0] = mmu.Read<u32>(ppc_state.gpr[28] + 0x204);
   } else if (job == 1) {  // Hooks ProcessMapRotateInput
     quat r = map_controller->compute_orientation();
     write_quat(mmu, r, ppc_state.gpr[29] + 0xf4);
@@ -67,10 +67,10 @@ void rotate_map_mp2_gc(PowerPC::PowerPCState& ppc_state, PowerPC::MMU& mmu, u32 
 void rotate_map_mp2(PowerPC::PowerPCState& ppc_state, PowerPC::MMU& mmu, u32 job) {
   MapController* const map_controller = GetMod<MapController>();
   if (job == 0) {
-    if (ppc_state.gpr[31] == 1 && mmu.Read_U32(ppc_state.gpr[29] + 0x1f8) == 0) {
+    if (ppc_state.gpr[31] == 1 && mmu.Read<u32>(ppc_state.gpr[29] + 0x1f8) == 0) {
       map_controller->reset_rotation(map_controller->get_player_yaw(), mmu.Read_F32(ppc_state.gpr[29] + 0x100) * -(kPi / 180.f));
     }
-    ppc_state.gpr[24] = mmu.Read_U32(ppc_state.gpr[29] + 0x1fc);
+    ppc_state.gpr[24] = mmu.Read<u32>(ppc_state.gpr[29] + 0x1fc);
   } else if (job == 1) {  // Hooks ProcessMapRotateInput
     quat r = map_controller->compute_orientation();
     write_quat(mmu, r, ppc_state.gpr[29] + 0xec);

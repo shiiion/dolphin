@@ -120,7 +120,7 @@ u32 AddressDB::lookup_dynamic_address(Core::CPUThreadGuard const& guard, Game ga
       default:
         return 0;
     }
-    result_addr = PowerPC::MMU::HostRead_U32(guard, result_addr + offset);
+    result_addr = PowerPC::MMU::HostRead<u32>(guard, result_addr + offset);
     if (!mem_check(result_addr)) {
       return 0;
     }

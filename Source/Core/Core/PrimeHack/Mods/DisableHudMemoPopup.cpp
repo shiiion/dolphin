@@ -19,7 +19,7 @@ void hudmemo_overlay_adjust_mp1(PowerPC::PowerPCState& ppc_state, PowerPC::MMU& 
   } else if (job == 1) {  // Fix justification of hud text overlay
     const u32 justification_addr = ppc_state.gpr[3] + 0xd4 + 0x18;
     // 1 = Center justify
-    mmu.Write_U32(1, justification_addr);
+    mmu.Write<u32>(1, justification_addr);
 
     // Original instruction: addi r3, r3, 0xd4
     ppc_state.gpr[3] += 0xd4;
@@ -36,7 +36,7 @@ void hudmemo_overlay_adjust_mp1_gc(PowerPC::PowerPCState& ppc_state, PowerPC::MM
   } else if (job == 1) {  // Fix justification of hud text overlay
     const u32 justification_addr = ppc_state.gpr[3] + 0xd4 + 0x18;
     // 1 = Center justify
-    mmu.Write_U32(1, justification_addr);
+    mmu.Write<u32>(1, justification_addr);
 
     // Original instruction: addi r3, r3, 0xd4
     ppc_state.gpr[3] += 0xd4;

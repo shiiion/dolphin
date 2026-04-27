@@ -29,7 +29,7 @@ constexpr u32 ORBIT_STATE_GRAPPLE = 5;
 
 void null_players_on_destruct_mp2_gc(PowerPC::PowerPCState& ppc_state, PowerPC::MMU& mmu, u32) {
   // r27 is an iterator variable pointing to start of statemgr
-  mmu.Write_U32(0, ppc_state.gpr[27] + 0x14fc);
+  mmu.Write<u32>(0, ppc_state.gpr[27] + 0x14fc);
 
   // Original instruction: addi r27, r27, 4
   ppc_state.gpr[27] += 4;

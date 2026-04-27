@@ -13,7 +13,7 @@ void EmuVariableManager::set_variable(Core::CPUThreadGuard const& guard, const s
     return;
   }
 
-  PowerPC::MMU::HostWrite_U8(guard, value, result->second);
+  PowerPC::MMU::HostWrite<u8>(guard, value, result->second);
 }
 
 void EmuVariableManager::set_variable(Core::CPUThreadGuard const& guard, const std::string& variable, u32 value) {
@@ -22,7 +22,7 @@ void EmuVariableManager::set_variable(Core::CPUThreadGuard const& guard, const s
     return;
   }
 
-  PowerPC::MMU::HostWrite_U32(guard, value, result->second);
+  PowerPC::MMU::HostWrite<u32>(guard, value, result->second);
 }
 
 void EmuVariableManager::set_variable(Core::CPUThreadGuard const& guard, const std::string& variable, float value) {
@@ -31,7 +31,7 @@ void EmuVariableManager::set_variable(Core::CPUThreadGuard const& guard, const s
     return;
   }
 
-  PowerPC::MMU::HostWrite_F32(guard, value, result->second);
+  PowerPC::MMU::HostWrite<float>(guard, value, result->second);
 }
 
 u32 EmuVariableManager::get_uint(Core::CPUThreadGuard const& guard, const std::string& variable) const {
@@ -40,7 +40,7 @@ u32 EmuVariableManager::get_uint(Core::CPUThreadGuard const& guard, const std::s
     return 0;
   }
 
-  return PowerPC::MMU::HostRead_U32(guard, result->second);
+  return PowerPC::MMU::HostRead<u32>(guard, result->second);
 }
 
 float EmuVariableManager::get_float(Core::CPUThreadGuard const& guard, const std::string& variable) const {
@@ -49,7 +49,7 @@ float EmuVariableManager::get_float(Core::CPUThreadGuard const& guard, const std
     return 0;
   }
 
-  return PowerPC::MMU::HostRead_F32(guard, result->second);
+  return PowerPC::MMU::HostRead<float>(guard, result->second);
 }
 
 u32 EmuVariableManager::get_address(const std::string& variable) const {

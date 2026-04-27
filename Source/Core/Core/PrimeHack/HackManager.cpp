@@ -71,7 +71,7 @@ void update_active_game_region(const Core::CPUThreadGuard& cpu_guard) {
       active_region = Region::PAL;
       break;
     case 0x80010070:
-      if (PowerPC::MMU::HostRead_U32(cpu_guard, 0x80576ae8) == 0x7d415378) {
+      if (PowerPC::MMU::HostRead<u32>(cpu_guard, 0x80576ae8) == 0x7d415378) {
         active_game = Game::PRIME_3;
         active_region = Region::NTSC_U;
       } else {
@@ -80,7 +80,7 @@ void update_active_game_region(const Core::CPUThreadGuard& cpu_guard) {
       }
       break;
     case 0x3a800000:
-      if (PowerPC::MMU::HostRead_U32(cpu_guard, 0x805795a4) == 0x7d415378) {
+      if (PowerPC::MMU::HostRead<u32>(cpu_guard, 0x805795a4) == 0x7d415378) {
         active_game = Game::PRIME_3;
         active_region = Region::PAL;
       } else {
@@ -89,10 +89,10 @@ void update_active_game_region(const Core::CPUThreadGuard& cpu_guard) {
       }
       break;
     default:
-      switch (PowerPC::MMU::HostRead_U32(cpu_guard, 0x80000000)) {
+      switch (PowerPC::MMU::HostRead<u32>(cpu_guard, 0x80000000)) {
         case FOURCC('G', 'M', '8', 'E'):
           active_region = Region::NTSC_U;
-          switch (PowerPC::MMU::HostRead_U8(cpu_guard, 0x80000007)) {
+          switch (PowerPC::MMU::HostRead<u8>(cpu_guard, 0x80000007)) {
             case 0:
               active_game = Game::PRIME_1_GCN;
               break;
@@ -196,7 +196,7 @@ void foreach_mod(Fn&& fn) {
 void RunActiveMods(const Core::CPUThreadGuard& cpu_guard) {
   // When launching a new title, the EH being 0 is a good sign
   // that the game isn't done loading yet
-  u32 exception_hook = PowerPC::MMU::HostRead_U32(cpu_guard, 0x80000048);
+  u32 exception_hook = PowerPC::MMU::HostRead<u32>(cpu_guard, 0x80000048);
   if (exception_hook == 0) {
     return;
   }

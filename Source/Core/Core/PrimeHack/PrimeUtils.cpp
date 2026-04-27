@@ -223,8 +223,8 @@ static void handle_wiimote_IR(Core::CPUThreadGuard const& guard, u32 x_address,
   cursor_x = std::clamp(cursor_x, -half_width, half_width);
   cursor_y = std::clamp(cursor_y, -half_height, half_height);
 
-  PowerPC::MMU::HostWrite_F32(guard, cursor_x, x_address);
-  PowerPC::MMU::HostWrite_F32(guard, cursor_y, y_address);
+  PowerPC::MMU::HostWrite<float>(guard, cursor_x, x_address);
+  PowerPC::MMU::HostWrite<float>(guard, cursor_y, y_address);
 }
 
 void handle_cursor(Core::CPUThreadGuard const& guard, u32 x_address, u32 y_address, Region region) {

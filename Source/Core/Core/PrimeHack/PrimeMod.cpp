@@ -128,7 +128,7 @@ u8 PrimeMod::read8(u32 addr) const {
     WARN_LOG_FMT(POWERPC, "Attempted active mod code outside of critical section");
     return 0;
   }
-  return PowerPC::MMU::HostRead_U8(*active_guard, addr);
+  return PowerPC::MMU::HostRead<u8>(*active_guard, addr);
 }
 
 u16 PrimeMod::read16(u32 addr) const {
@@ -136,7 +136,7 @@ u16 PrimeMod::read16(u32 addr) const {
     WARN_LOG_FMT(POWERPC, "Attempted active mod code outside of critical section");
     return 0;
   }
-  return PowerPC::MMU::HostRead_U16(*active_guard, addr);
+  return PowerPC::MMU::HostRead<u16>(*active_guard, addr);
 }
 
 u32 PrimeMod::read32(u32 addr) const {
@@ -144,7 +144,7 @@ u32 PrimeMod::read32(u32 addr) const {
     WARN_LOG_FMT(POWERPC, "Attempted active mod code outside of critical section");
     return 0;
   }
-  return PowerPC::MMU::HostRead_U32(*active_guard, addr);
+  return PowerPC::MMU::HostRead<u32>(*active_guard, addr);
 }
 
 u32 PrimeMod::readi(u32 addr) const {
@@ -160,7 +160,7 @@ u64 PrimeMod::read64(u32 addr) const {
     WARN_LOG_FMT(POWERPC, "Attempted active mod code outside of critical section");
     return 0;
   }
-  return PowerPC::MMU::HostRead_U64(*active_guard, addr);
+  return PowerPC::MMU::HostRead<u64>(*active_guard, addr);
 }
 
 float PrimeMod::readf32(u32 addr) const {
@@ -184,7 +184,7 @@ void PrimeMod::write8(u8 var, u32 addr) const {
     WARN_LOG_FMT(POWERPC, "Attempted active mod code outside of critical section");
     return;
   }
-  PowerPC::MMU::HostWrite_U8(*active_guard, var, addr);
+  PowerPC::MMU::HostWrite<u8>(*active_guard, var, addr);
 }
 
 void PrimeMod::write16(u16 var, u32 addr) const {
@@ -192,7 +192,7 @@ void PrimeMod::write16(u16 var, u32 addr) const {
     WARN_LOG_FMT(POWERPC, "Attempted active mod code outside of critical section");
     return;
   }
-  PowerPC::MMU::HostWrite_U16(*active_guard, var, addr);
+  PowerPC::MMU::HostWrite<u16>(*active_guard, var, addr);
 }
 
 void PrimeMod::write32(u32 var, u32 addr) const {
@@ -200,7 +200,7 @@ void PrimeMod::write32(u32 var, u32 addr) const {
     WARN_LOG_FMT(POWERPC, "Attempted active mod code outside of critical section");
     return;
   }
-  PowerPC::MMU::HostWrite_U32(*active_guard, var, addr);
+  PowerPC::MMU::HostWrite<u32>(*active_guard, var, addr);
 }
 
 void PrimeMod::write64(u64 var, u32 addr) const {
@@ -208,7 +208,7 @@ void PrimeMod::write64(u64 var, u32 addr) const {
     WARN_LOG_FMT(POWERPC, "Attempted active mod code outside of critical section");
     return;
   }
-  PowerPC::MMU::HostWrite_U64(*active_guard, var, addr);
+  PowerPC::MMU::HostWrite<u64>(*active_guard, var, addr);
 }
 
 void PrimeMod::writef32(float var, u32 addr) const {
@@ -216,7 +216,7 @@ void PrimeMod::writef32(float var, u32 addr) const {
     WARN_LOG_FMT(POWERPC, "Attempted active mod code outside of critical section");
     return;
   }
-  PowerPC::MMU::HostWrite_F32(*active_guard, var, addr);
+  PowerPC::MMU::HostWrite<float>(*active_guard, var, addr);
 }
 
 void PrimeMod::writef64(double var, u32 addr) const {
@@ -224,6 +224,6 @@ void PrimeMod::writef64(double var, u32 addr) const {
     WARN_LOG_FMT(POWERPC, "Attempted active mod code outside of critical section");
     return;
   }
-  PowerPC::MMU::HostWrite_F64(*active_guard, var, addr);
+  PowerPC::MMU::HostWrite<double>(*active_guard, var, addr);
 }
 }

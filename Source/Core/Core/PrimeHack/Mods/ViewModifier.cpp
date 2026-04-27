@@ -222,7 +222,7 @@ void ViewModifier::run_mod_mp2_gc() {
 
 void ViewModifier::on_camera_change(PowerPC::PowerPCState& ppc_state, PowerPC::MMU& mmu, u32) {
   // Original inst: stw r0, 0x14(r6)
-  mmu.Write_U32(ppc_state.gpr[0], 0x14 + ppc_state.gpr[6]);
+  mmu.Write<u32>(ppc_state.gpr[0], 0x14 + ppc_state.gpr[6]);
 
   ViewModifier* mod = GetMod<ViewModifier>();
 
