@@ -282,7 +282,7 @@ void PrimeWidget::AddDescriptions()
                  "recommended value is 65, 0 will effectively disable bloom.\n\n"
                  "Source: TheHatedGravity and dreamsyntax.");
   static const char TR_TOGGLE_ARM_POSITION[] =
-      QT_TR_NOOP("Allows for adjustments for the position of Samus' arms, recommended for a higher"
+      QT_TR_NOOP("Allows for adjustments for the position of Samus' arms, recommended for a higher "
                   "than normal FOV.");
   static const char TR_TOGGLE_CULL[] =
       QT_TR_NOOP("Disables graphical culling. This allows for Field of Views above 101 in Metroid "

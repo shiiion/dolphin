@@ -1384,6 +1384,9 @@ void FpsControls::init_mod_mp3_standalone(Game game, Region region) {
 
     // Steps over bounds checking on the reticle
     add_code_change(0x80017258, 0x48000120);
+
+    const int wiimote_shake_override_idx = Core::System::GetInstance().GetPowerPC().RegisterVmcall(wiimote_shake_override);
+    add_code_change(0x800a938c, gen_vmcall(wiimote_shake_override_idx, 0));
   } else {}
   has_beams = false;
 }
