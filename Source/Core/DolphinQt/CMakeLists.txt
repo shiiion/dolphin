@@ -30,6 +30,8 @@ add_executable(dolphin-emu
   CheatSearchWidget.h
   CheatsManager.cpp
   CheatsManager.h
+  ConfigureModWindow.cpp
+  ConfigureModWindow.h
   Achievements/AchievementBox.cpp
   Achievements/AchievementBox.h
   Achievements/AchievementHeaderWidget.cpp

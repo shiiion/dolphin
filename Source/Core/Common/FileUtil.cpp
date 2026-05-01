@@ -911,6 +911,8 @@ static void RebuildUserDirectories(unsigned int dir_index)
 
     s_user_paths[D_ASM_ROOT_IDX] = s_user_paths[D_USER_IDX] + ASSEMBLY_DIR DIR_SEP;
 
+    s_user_paths[D_PRIMEHACK_MODLOADER_IDX] = s_user_paths[D_USER_IDX] + MODLOADER_DIR DIR_SEP;
+
     // The shader cache has moved to the cache directory, so remove the old one.
     // TODO: remove that someday.
     File::DeleteDirRecursively(s_user_paths[D_USER_IDX] + SHADERCACHE_LEGACY_DIR DIR_SEP);

@@ -7,6 +7,8 @@
 #include "Core/Boot/Boot.h"
 #include "Core/Boot/ElfTypes.h"
 
+#include <unordered_map>
+
 namespace File
 {
 class IOFile;
@@ -35,7 +37,11 @@ public:
   ElfMachine GetMachine() const { return (ElfMachine)(header->e_machine); }
   u32 GetEntryPoint() const override { return entryPoint; }
   u32 GetFlags() const { return (u32)(header->e_flags); }
+  u32 MappedSize() const;
   bool LoadIntoMemory(Core::System& system, bool only_in_mem1 = false) const override;
+  bool LoadIntoMemory(Core::System& system, u32 slide, bool only_in_mem1 = false) const;
+  bool LoadSymbols(const Core::CPUThreadGuard& guard, PPCSymbolDB& ppc_symbol_db,
+                   const std::string& filename, u32 slide) const;
   bool LoadSymbols(const Core::CPUThreadGuard& guard, PPCSymbolDB& ppc_symbol_db,
                    const std::string& filename) const override;
   // TODO: actually check for validity.
@@ -63,6 +69,8 @@ public:
   SectionID GetSectionByName(const char* name, int firstSection = 0) const;  //-1 for not found
 
   bool DidRelocate() const { return bRelocate; }
+
+  std::unordered_map<std::string_view, u8 const*> StaticSymMap() const;
 
 private:
   void Initialize(u8* bytes);

@@ -291,6 +291,7 @@ void CreateDirectories()
   File::CreateFullPath(File::GetUserPath(D_STATESAVES_IDX));
   File::CreateFullPath(File::GetUserPath(D_ASM_ROOT_IDX));
   File::CreateFullPath(File::GetUserPath(D_WFSROOT_IDX));
+  File::CreateFullPath(File::GetUserPath(D_PRIMEHACK_MODLOADER_IDX));
 #ifndef ANDROID
   File::CreateFullPath(File::GetUserPath(D_THEMES_IDX));
   File::CreateFullPath(File::GetUserPath(D_STYLES_IDX));

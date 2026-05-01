@@ -574,6 +574,8 @@ add_library(core
   PrimeHack/AddressDB.cpp
   PrimeHack/AddressDBInit.cpp
   PrimeHack/EmuVariableManager.cpp
+  PrimeHack/ElfModLoaderInterface.cpp
+  PrimeHack/ElfModLoaderInterface.h
   PrimeHack/GuestAllocator.cpp
   PrimeHack/GuestAllocator.h
   PrimeHack/HackConfig.cpp

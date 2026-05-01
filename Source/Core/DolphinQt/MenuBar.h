@@ -137,8 +137,9 @@ signals:
 
   void ConfigureOSD();
 
-  // Mod Loader
-  void OpenCVarsMenu();
+  // PrimeHack
+  void ModLoaderToggled(bool on);
+
 private:
   void OnEmulationStateChanged(Core::State state);
   void OnConfigChanged();
@@ -163,6 +164,8 @@ private:
   void AddMovieMenu();
   void AddJITMenu();
   void AddSymbolsMenu();
+
+  void RebuildModSettings();
 
   void UpdateStateSlotMenu();
 
@@ -313,7 +316,13 @@ private:
   QAction* m_jit_branch_off;
   QAction* m_jit_register_cache_off;
 
+  // ModLoader
+  QAction* m_modloader_enabled;
+  QAction* m_import_mod;
+  QMenu* m_mod_settings;
+
   bool m_game_selected = false;
+  bool m_emulation_active = false;
 
 #ifdef RC_CLIENT_SUPPORTS_RAINTEGRATION
   Common::EventHook m_raintegration_event_hook;

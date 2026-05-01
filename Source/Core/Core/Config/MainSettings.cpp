@@ -271,6 +271,7 @@ const Info<bool> PRIMEHACK_FRIENDVOUCHERS{{System::Main, "Core", "PrimeFriendVou
 const Info<bool> PRIMEHACK_DISABLE_HUDMEMO{{System::Main, "Core", "PrimeDisableHudMemo"}, false};
 const Info<bool> PRIMEHACK_UNLOCK_HYPERMODE{{System::Main, "Core", "PrimeUnlockHypermode"}, true};
 const Info<bool> PRIMEHACK_ANYBEAM_DOOR{{System::Main, "Core", "PrimeAnybeamDoor"}, true};
+const Info<bool> PRIMEHACK_MODLOADER_ENABLED{{System::Main, "Core", "PrimeModLoader"}, false};
 
 GPUDeterminismMode GetGPUDeterminismMode()
 {

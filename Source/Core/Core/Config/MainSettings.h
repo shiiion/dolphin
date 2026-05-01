@@ -410,6 +410,7 @@ extern const Info<bool> PRIMEHACK_FRIENDVOUCHERS;
 extern const Info<bool> PRIMEHACK_DISABLE_HUDMEMO;
 extern const Info<bool> PRIMEHACK_UNLOCK_HYPERMODE;
 extern const Info<bool> PRIMEHACK_ANYBEAM_DOOR;
+extern const Info<bool> PRIMEHACK_MODLOADER_ENABLED;
 
 // GameCube path utility functions
 

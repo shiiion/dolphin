@@ -88,6 +88,9 @@ void MemoryManager::InitMMIO(Core::System& system)
 void MemoryManager::Init()
 {
   const auto get_mem1_size = [] {
+    // Primehack: Mod Loader wants 32MB of RAM, auto-override this for users
+    if (Config::Get(Config::PRIMEHACK_MODLOADER_ENABLED))
+      return 0x02000000U;
     if (Config::Get(Config::MAIN_RAM_OVERRIDE_ENABLE))
       return Config::Get(Config::MAIN_MEM1_SIZE);
     return Memory::MEM1_SIZE_RETAIL;
