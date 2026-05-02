@@ -1027,9 +1027,8 @@ void FpsControls::init_mod_mp1(Region region) {
     add_code_change(0x802fb5b4, 0xd23f009c);
     add_code_change(0x8019fbcc, 0x60000000);
 
-    // This stops armcannon stuttering by forcing the block that copies raycast info
-    // to assume the raycast was invalid and set the target point 100 units forward
-    add_code_change(0x80015894, 0x48000108);
+    // This stops armcannon stuttering by having the XF updater think you're in orbit mode
+    add_code_change(0x8018b8d4, 0x48000354);
 
     add_code_change(0x80075f24, 0x60000000, "beam_menu");
     add_code_change(0x80075f0c, 0x60000000, "visor_menu");
@@ -1048,6 +1047,9 @@ void FpsControls::init_mod_mp1(Region region) {
     add_code_change(0x802fb84c, 0xd23f009c);
     add_code_change(0x8019fe64, 0x60000000);
     add_code_change(0x80015894, 0x48000108);
+
+    // This stops armcannon stuttering by having the XF updater think you're in orbit mode
+    add_code_change(0x8018bb6c, 0x48000354);
 
     add_code_change(0x80075f74, 0x60000000, "beam_menu");
     add_code_change(0x80075f8c, 0x60000000, "visor_menu");
@@ -1174,9 +1176,8 @@ void FpsControls::init_mod_mp2(Region region) {
     add_code_change(0x80169dbc, 0x60000000);
     add_code_change(0x80143d00, 0x48000050);
 
-    // This stops armcannon stuttering by forcing the block that copies raycast info
-    // to assume the raycast was invalid and set the target point 100 units forward
-    add_code_change(0x80018e18, 0x48000108);
+    // This stops armcannon stuttering by having the XF updater think you're in orbit mode
+    add_code_change(0x8018a7ec, 0x48000468);
 
     add_code_change(0x8006fde0, 0x60000000, "beam_menu");
     add_code_change(0x8006fdc4, 0x60000000, "visor_menu");
@@ -1197,7 +1198,8 @@ void FpsControls::init_mod_mp2(Region region) {
     add_code_change(0x8016b534, 0x60000000);
     add_code_change(0x80145474, 0x48000050);
 
-    add_code_change(0x80018e18, 0x48000108);
+    // This stops armcannon stuttering by having the XF updater think you're in orbit mode
+    add_code_change(0x8018bf88, 0x48000468);
 
     add_code_change(0x80071358, 0x60000000, "beam_menu");
     add_code_change(0x8007133c, 0x60000000, "visor_menu");
@@ -1285,9 +1287,11 @@ void FpsControls::init_mod_mp3(Game game, Region region) {
     add_code_change(0x8007fdc8, 0x480000e4);
     add_code_change(0x8017f88c, 0x60000000);
 
-    // This stops armcannon stuttering by forcing the block that copies raycast info
-    // to assume the raycast was invalid and set the target point 100 units forward
-    add_code_change(0x80017844, 0x48000108);
+    // This stops armcannon stuttering by having the XF updater think you're in orbit mode
+    add_code_change(0x80183734, 0x48000498);
+    // This makes sure the stupid gun shoots where you're actually aiming because of course prime 3
+    // does this differently too
+    add_code_change(0x80184e98, 0x60000000);
 
     // Grapple Lasso
     add_grapple_lasso_code_mp3(0x800dde64, 0x80170cf0, 0x80171ad8);
@@ -1308,7 +1312,9 @@ void FpsControls::init_mod_mp3(Game game, Region region) {
     add_code_change(0x8007fdc8, 0x480000e4);
     add_code_change(0x8017f1d8, 0x60000000);
 
-    add_code_change(0x80017844, 0x48000108);
+    // This stops armcannon stuttering by having the XF updater think you're in orbit mode
+    add_code_change(0x80183080, 0x48000498);
+    add_code_change(0x801847e4, 0x60000000);
 
     // Grapple Lasso
     add_grapple_lasso_code_mp3(0x800dde44, 0x8017063c, 0x80171424);
@@ -1345,9 +1351,9 @@ void FpsControls::init_mod_mp3_standalone(Game game, Region region) {
     add_code_change(0x8007fef0, 0x480000e4);
     add_code_change(0x80183288, 0x60000000);
 
-    // This stops armcannon stuttering by forcing the block that copies raycast info
-    // to assume the raycast was invalid and set the target point 100 units forward
-    add_code_change(0x80017b8c, 0x48000108);
+    // This stops armcannon stuttering by having the XF updater think you're in orbit mode
+    add_code_change(0x80186f98, 0x48000498);
+    add_code_change(0x801886f0, 0x60000000);
 
     add_code_change(0x800617c8, 0x60000000, "visor_menu");
 
@@ -1372,7 +1378,9 @@ void FpsControls::init_mod_mp3_standalone(Game game, Region region) {
     add_code_change(0x8008018c, 0x480000e4);
     add_code_change(0x80183dc8, 0x60000000);
 
-    add_code_change(0x80017b54, 0x48000108);
+    // This stops armcannon stuttering by having the XF updater think you're in orbit mode
+    add_code_change(0x80187ad8, 0x48000498);
+    add_code_change(0x801886f0, 0x60000000);
 
     add_code_change(0x80061a88, 0x60000000, "visor_menu");
 
