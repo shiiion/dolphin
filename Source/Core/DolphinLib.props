@@ -1209,6 +1209,8 @@
     <ClCompile Include="Core\PrimeHack\Mods\SpringballButton.cpp" />
     <ClCompile Include="Core\PrimeHack\Mods\STRGPatch.cpp" />
     <ClCompile Include="Core\PrimeHack\Mods\ViewModifier.cpp" />
+    <ClCompile Include="Core\PrimeHack\ElfModLoaderInterface.cpp" />
+    <ClCompile Include="Core\PrimeHack\GuestAllocator.cpp" />
     <ClCompile Include="DiscIO\Blob.cpp" />
     <ClCompile Include="DiscIO\CISOBlob.cpp" />
     <ClCompile Include="DiscIO\CachedBlob.cpp" />

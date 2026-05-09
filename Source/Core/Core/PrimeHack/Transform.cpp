@@ -74,13 +74,13 @@ void Transform::build_rotation(float yaw) {
 
 void Transform::read_from(Core::CPUThreadGuard const& guard, u32 address) {
   for (size_t i = 0; i < sizeof(Transform) / 4; i++) {
-    m[i / 4][i % 4] = PowerPC::MMU::HostRead<float>(guard, address + i * 4);
+    m[i / 4][i % 4] = PowerPC::MMU::HostRead<float>(guard, address + static_cast<u32>(i) * 4);
   }
 }
 
 void Transform::write_to(Core::CPUThreadGuard const& guard, u32 address) {
   for (size_t i = 0; i < sizeof(Transform) / 4; i++) {
-    PowerPC::MMU::HostWrite<float>(guard, m[i / 4][i % 4], address + i * 4);
+    PowerPC::MMU::HostWrite<float>(guard, m[i / 4][i % 4], address + static_cast<u32>(i) * 4);
   }
 }
 }

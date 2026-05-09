@@ -163,7 +163,7 @@ struct FCC {
   }
 };
 
-constexpr FCC game_region_fcc(Game game, Region region) {
+FCC game_region_fcc(Game game, Region region) {
   FCC fcc;
   switch (game) {
     case Game::PRIME_1_GCN:
@@ -369,7 +369,7 @@ parse_game_mod(std::string const& root_path, picojson::object const& root, Game 
   ElfMod mod_out;
   mod_out.game = g;
   mod_out.region = r;
-  mod_out.presets_dir = fs::path(root_path) / "presets";
+  mod_out.presets_dir = (fs::path(root_path) / "presets").string();
   const std::string game_str = game_region_pretty(g, r);
 
   if (auto const& elf_path = root.find("binpath"); elf_path != root.end() &&
@@ -563,7 +563,7 @@ std::expected<ModPack, std::string> parse_mpk(std::string const& path) {
     game_region_fcc(Game::PRIME_3, Region::PAL),
   };
 
-  std::string base_path = fs::path(path).parent_path();
+  std::string base_path = fs::path(path).parent_path().string();
   for (auto game_fcc : supported_games) {
     if (auto game_def = root_obj.find(game_fcc.to_string()); game_def != root_obj.end() &&
         game_def->second.is<picojson::object>()) {
@@ -633,7 +633,7 @@ std::string parse_preset(ModPack& pack, fs::path const& path) {
 
   std::string error;
   picojson::value root;
-  if (!JsonFromFile(path, &root, &error)) {
+  if (!JsonFromFile(path.string(), &root, &error)) {
     return error;
   }
 
@@ -704,7 +704,7 @@ std::string parse_preset(ModPack& pack, fs::path const& path) {
     }
   }
 
-  result.name = path.filename();
+  result.name = path.filename().string();
   result.dirty = false;
   preset_mod->saved_presets.emplace_back(std::move(result));
   if (result.name == preset_game.to_string()) {

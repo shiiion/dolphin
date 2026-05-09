@@ -57,6 +57,7 @@
     <ClCompile Include="CheatSearchFactoryWidget.cpp" />
     <ClCompile Include="CheatSearchWidget.cpp" />
     <ClCompile Include="CheatsManager.cpp" />
+    <ClCompile Include="ConfigureModWindow.cpp" />
     <ClCompile Include="Achievements\AchievementBox.cpp" />
     <ClCompile Include="Achievements\AchievementHeaderWidget.cpp" />
     <ClCompile Include="Achievements\AchievementLeaderboardWidget.cpp" />
@@ -206,7 +207,6 @@
     <ClCompile Include="NetPlay\PadMappingDialog.cpp" />
     <ClCompile Include="NANDRepairDialog.cpp" />
     <ClCompile Include="NKitWarningDialog.cpp" />
-    <ClCompile Include="CVarsWindow.cpp" />
     <ClCompile Include="pch_qt.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -478,6 +478,7 @@
     <QtMoc Include="TAS\WiiTASInputWindow.h" />
     <QtMoc Include="ToolBar.h" />
     <QtMoc Include="Updater.h" />
+    <QtMoc Include="ConfigureModWindow.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt" />
