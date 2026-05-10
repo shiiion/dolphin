@@ -6,6 +6,7 @@
 #include <cmath>
 #include <sstream>
 
+#include "Core/PowerPC/MMU.h"
 #include "Core/PowerPC/PowerPC.h"
 #include "Core/PrimeHack/HackConfig.h"
 #include "InputCommon/GenericMouse.h"
@@ -63,6 +64,31 @@ template <typename T, typename F>
 constexpr auto AntiLerp(const T& x, const T& y, const F& a) -> decltype((a - x) / (y - x))
 {
   return (a - x) / (y - x);
+}
+
+struct HostMem {
+  HostMem(Core::CPUThreadGuard const& g) : _guard(g) {}
+  Core::CPUThreadGuard const& _guard;
+
+  template <typename T>
+  T Read(u32 addr) {
+    return PowerPC::MMU::HostRead<T>(_guard, addr);
+  }
+
+  template <typename T>
+  void Write(T var, u32 addr) {
+    PowerPC::MMU::HostWrite<T>(_guard, var, addr);
+  }
+};
+
+template <typename Mem>
+std::string readin_str(Mem&& mem, u32 str_ptr) {
+  std::ostringstream key_readin;
+
+  for (char c = mem.template Read<u8>(str_ptr); c; c = mem.template Read<u8>(++str_ptr)) {
+    key_readin << c;
+  }
+  return key_readin.str();
 }
 
 }  // namespace prime

@@ -44,6 +44,8 @@
 #include "Core/Movie.h"
 #include "Core/NetPlayProto.h"
 #include "Core/PowerPC/PowerPC.h"
+#include "Core/PrimeHack/HackConfig.h"
+#include "Core/PrimeHack/HackManager.h"
 #include "Core/System.h"
 
 #include "UICommon/UICommon.h"
@@ -166,6 +168,16 @@ static void DoState(Core::System& system, PointerWrap& p)
     return;
   }
 
+  if (p.IsWriteMode())
+  {
+    prime::StashMemoryChanges();
+  }
+  else if (p.IsReadMode())
+  {
+    // When overwriting RAM, best to have all mods be reset
+    prime::Shutdown();
+  }
+
   // Movie must be done before the video backend, because the window is redrawn in the video backend
   // state load, and the frame number must be up-to-date.
   system.GetMovie().DoState(p);
@@ -197,6 +209,14 @@ static void DoState(Core::System& system, PointerWrap& p)
 #ifdef USE_RETRO_ACHIEVEMENTS
   AchievementManager::GetInstance().DoState(p);
 #endif  // USE_RETRO_ACHIEVEMENTS
+  if (p.IsWriteMode())
+  {
+    prime::RestoreMemoryChanges();
+  }
+  else if (p.IsReadMode())
+  {
+    prime::EnableDefaultMods();
+  }
 }
 
 static bool CheckIfStateLoadIsAllowed(Core::System& system)

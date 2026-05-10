@@ -24,7 +24,7 @@ namespace {
 
 namespace fs = std::filesystem;
 
-// List of mods discovered from LoadModDirectory
+// List of mods discovered from RefreshMods
 std::vector<ModPack> sDiscoveredMods;
 // List of mods enabled by UI
 std::vector<std::string> sEnabledList;
@@ -45,6 +45,7 @@ std::optional<CVarType> parse_cvar_type(std::string const& str) {
   } else if (str == "f64") {
     return CVarType::FLOAT64;
   }
+
   return std::nullopt;
 }
 
@@ -115,6 +116,58 @@ struct FCC {
   FCC(std::string_view sv) : FCC() {
     memcpy(_arr, sv.data(), std::min(sizeof(_arr), sv.length()));
   }
+  FCC(Game game, Region region) : FCC() {
+    switch (game) {
+      case Game::PRIME_1_GCN:
+        _arr[0] = '1';
+        _arr[1] = 'S';
+        _arr[2] = '0';
+        break;
+      case Game::PRIME_1_GCN_R1:
+        _arr[0] = '1';
+        _arr[1] = 'S';
+        _arr[2] = '1';
+        break;
+      case Game::PRIME_1_GCN_R2:
+        _arr[0] = '1';
+        _arr[1] = 'S';
+        _arr[2] = '2';
+        break;
+      case Game::PRIME_1:
+        _arr[0] = '1';
+        _arr[1] = 'T';
+        _arr[2] = '0';
+        break;
+      case Game::PRIME_2_GCN:
+        _arr[0] = '2';
+        _arr[1] = 'S';
+        _arr[2] = '0';
+        break;
+      case Game::PRIME_2:
+        _arr[0] = '2';
+        _arr[1] = 'T';
+        _arr[2] = '0';
+        break;
+      case Game::PRIME_3_STANDALONE:
+        _arr[0] = '3';
+        _arr[1] = 'S';
+        _arr[2] = '0';
+        break;
+      case Game::PRIME_3:
+        _arr[0] = '3';
+        _arr[1] = 'T';
+        _arr[2] = '0';
+        break;
+      default:
+        break;
+    }
+
+    if (region == Region::NTSC_U) {
+      _arr[3] = 'N';
+    } else if (region == Region::PAL) {
+      _arr[3] = 'P';
+    }
+  }
 
   std::string to_string() const {
     return std::string(_arr, 4);
@@ -163,71 +216,15 @@ struct FCC {
   }
 };
 
-FCC game_region_fcc(Game game, Region region) {
-  FCC fcc;
-  switch (game) {
-    case Game::PRIME_1_GCN:
-      fcc._arr[0] = '1';
-      fcc._arr[1] = 'S';
-      fcc._arr[2] = '0';
-      break;
-    case Game::PRIME_1_GCN_R1:
-      fcc._arr[0] = '1';
-      fcc._arr[1] = 'S';
-      fcc._arr[2] = '1';
-      break;
-    case Game::PRIME_1_GCN_R2:
-      fcc._arr[0] = '1';
-      fcc._arr[1] = 'S';
-      fcc._arr[2] = '2';
-      break;
-    case Game::PRIME_1:
-      fcc._arr[0] = '1';
-      fcc._arr[1] = 'T';
-      fcc._arr[2] = '0';
-      break;
-    case Game::PRIME_2_GCN:
-      fcc._arr[0] = '2';
-      fcc._arr[1] = 'S';
-      fcc._arr[2] = '0';
-      break;
-    case Game::PRIME_2:
-      fcc._arr[0] = '2';
-      fcc._arr[1] = 'T';
-      fcc._arr[2] = '0';
-      break;
-    case Game::PRIME_3_STANDALONE:
-      fcc._arr[0] = '3';
-      fcc._arr[1] = 'S';
-      fcc._arr[2] = '0';
-      break;
-    case Game::PRIME_3:
-      fcc._arr[0] = '3';
-      fcc._arr[1] = 'T';
-      fcc._arr[2] = '0';
-      break;
-    default:
-      break;
-  }
-
-  if (region == Region::NTSC_U) {
-    fcc._arr[3] = 'N';
-  } else if (region == Region::PAL) {
-    fcc._arr[3] = 'P';
-  }
-
-  return fcc;
-}
-
 std::optional<std::string> parse_elfpath(std::string const& rel_dir, std::string const& str) {
-  std::filesystem::path search_name(str);
+  fs::path search_name(str);
 
-  if (search_name.is_absolute() && std::filesystem::exists(str)) {
+  if (search_name.is_absolute() && fs::exists(str)) {
     return std::make_optional<std::string>(str);
   }
   search_name = fs::path(rel_dir) / str;
 
-  if (std::filesystem::exists(search_name)) {
+  if (fs::exists(search_name)) {
     auto tmp = search_name.native();
     return std::make_optional<std::string>(tmp.begin(), tmp.end());
   }
@@ -542,25 +539,25 @@ std::expected<ModPack, std::string> parse_mpk(std::string const& path) {
 
   // List of supported games for the elf mod loader system
   const std::array<FCC, 16> supported_games = {
-    game_region_fcc(Game::PRIME_1_GCN, Region::NTSC_U),
-    game_region_fcc(Game::PRIME_1_GCN_R1, Region::NTSC_U),
-    game_region_fcc(Game::PRIME_1_GCN_R2, Region::NTSC_U),
-    game_region_fcc(Game::PRIME_2_GCN, Region::NTSC_U),
-    game_region_fcc(Game::PRIME_3_STANDALONE, Region::NTSC_U),
-    game_region_fcc(Game::PRIME_1, Region::NTSC_U),
-    game_region_fcc(Game::PRIME_2, Region::NTSC_U),
-    game_region_fcc(Game::PRIME_3, Region::NTSC_U),
+    FCC(Game::PRIME_1_GCN, Region::NTSC_U),
+    FCC(Game::PRIME_1_GCN_R1, Region::NTSC_U),
+    FCC(Game::PRIME_1_GCN_R2, Region::NTSC_U),
+    FCC(Game::PRIME_2_GCN, Region::NTSC_U),
+    FCC(Game::PRIME_3_STANDALONE, Region::NTSC_U),
+    FCC(Game::PRIME_1, Region::NTSC_U),
+    FCC(Game::PRIME_2, Region::NTSC_U),
+    FCC(Game::PRIME_3, Region::NTSC_U),
 
     // Can't support PAL games, since they seem to strongly dislike extending RAM
     // but in case I figure something out in the future there's no harm in leaving this in here
-    game_region_fcc(Game::PRIME_1_GCN, Region::PAL),
-    game_region_fcc(Game::PRIME_1_GCN_R1, Region::PAL),
-    game_region_fcc(Game::PRIME_1_GCN_R2, Region::PAL),
-    game_region_fcc(Game::PRIME_2_GCN, Region::PAL),
-    game_region_fcc(Game::PRIME_3_STANDALONE, Region::PAL),
-    game_region_fcc(Game::PRIME_1, Region::PAL),
-    game_region_fcc(Game::PRIME_2, Region::PAL),
-    game_region_fcc(Game::PRIME_3, Region::PAL),
+    FCC(Game::PRIME_1_GCN, Region::PAL),
+    FCC(Game::PRIME_1_GCN_R1, Region::PAL),
+    FCC(Game::PRIME_1_GCN_R2, Region::PAL),
+    FCC(Game::PRIME_2_GCN, Region::PAL),
+    FCC(Game::PRIME_3_STANDALONE, Region::PAL),
+    FCC(Game::PRIME_1, Region::PAL),
+    FCC(Game::PRIME_2, Region::PAL),
+    FCC(Game::PRIME_3, Region::PAL),
   };
 
   std::string base_path = fs::path(path).parent_path().string();
@@ -738,7 +735,7 @@ void read_modpack_data(ModPack& pack, fs::path const& root_dir) {
 }
 
 void save_preset(Presets const& preset, fs::path const& presets_dir) {
-  FCC preset_gamergn = game_region_fcc(preset.game, preset.region);
+  FCC preset_gamergn = FCC(preset.game, preset.region);
   picojson::object root_obj;
   root_obj.emplace("game", preset_gamergn.to_string());
 
@@ -787,7 +784,7 @@ std::string CVarValString(CVarVal const& var) {
 }
 
 bool Presets::is_persistent() const {
-  return name == game_region_fcc(game, region).to_string();
+  return name == FCC(game, region).to_string();
 }
 
 ElfMod* ModPack::get_mod(Game game, Region region) {
@@ -894,7 +891,7 @@ void ElfMod::update_or_create_preset(std::string const& name) {
 void ElfMod::flush() {
   // Bit of a hack, forcefully update the persistent preset with current state, dirty it, then it's
   // guaranteed to flush immediately after
-  update_or_create_preset(game_region_fcc(game, region).to_string());
+  update_or_create_preset(FCC(game, region).to_string());
 
   for (auto const& preset : saved_presets) {
     if (preset.dirty) {

@@ -38,7 +38,8 @@ struct CVar {
   CVarVal def;
 
   CVar() = default;
-  CVar(std::string&& name, std::string&& description, CVarType type) : name(std::forward<std::string>(name)), type(type) {}
+  CVar(std::string&& n, std::string&& d, CVarType t)
+    : name(std::move(n)), description(std::move(d)), type(t) {}
 };
 
 std::string CVarValString(CVarVal const&);

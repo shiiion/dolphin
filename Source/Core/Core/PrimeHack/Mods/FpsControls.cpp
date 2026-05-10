@@ -41,19 +41,16 @@ void wiimote_shake_override(PowerPC::PowerPCState& ppc_state, PowerPC::MMU&, u32
 
 } // namespace
 
-constexpr u32 byteswap(u8 const* addr) {
-  return (addr[0] << 24) | (addr[1] << 16) | (addr[2] << 8) | (addr[3]);
-}
-
 bool FpsControls::in_ridley_fight(Region active_region) {
+  constexpr u64 kNorionWorldId = 0x6fb8ef2a9523c343;
+  constexpr u32 kRidleyFightArea = 0x16;
   LOOKUP_DYN(world_id);
   LOOKUP_DYN(area_id);
-  // World ID for Norion
-  if (read64(world_id) != 0x6fb8ef2a9523c343) {
+  if (read64(world_id) != kNorionWorldId) {
     return false;
   }
 
-  return read32(area_id) == 0x16;
+  return read32(area_id) == kRidleyFightArea;
 }
 
 void FpsControls::run_mod(Game game, Region region) {
@@ -89,29 +86,11 @@ bool FpsControls::input_disabled() const {
   return read32(menu_state) != 0;
 }
 
-void FpsControls::calculate_pitch_delta() {
-  if (input_disabled()) {
-    return;
-  }
-  const float compensated_sens = GetSensitivity() * kTurnrateRatio / 60.f;
-
-  if (CheckPitchRecentre()) {
-    calculate_pitch_to_target(0.f);
-    return;
-  } else {
-    // Cancel any interpolation that was taking place.
-    interpolating = false;
-  }
-
-  pitch += static_cast<float>(GetVerticalAxis()) * compensated_sens *
-    (InvertedY() ? 1.f : -1.f);
-  pitch = std::clamp(pitch, -1.52f, 1.52f);
-}
-
 void FpsControls::calculate_pitchyaw_delta() {
   if (input_disabled()) {
     return;
   }
+
   constexpr auto yaw_clamp = [](float t) -> float {
     constexpr float PI = 3.141592654f;
     constexpr float TWO_PI = PI * 2.f;
@@ -119,6 +98,12 @@ void FpsControls::calculate_pitchyaw_delta() {
   };
 
   const float compensated_sens = GetSensitivity() * kTurnrateRatio / 60.f;
+
+  if (CheckPitchRecentre()) {
+    calculate_pitch_to_target(0.f);
+    return;
+  }
+  interpolating = false;
 
   pitch += static_cast<float>(GetVerticalAxis()) * compensated_sens *
     (InvertedY() ? 1.f : -1.f);
@@ -129,7 +114,7 @@ void FpsControls::calculate_pitchyaw_delta() {
   yaw = yaw_clamp(yaw);
 }
 
-void FpsControls::calculate_pitch_locked(Game game, Region region) {
+void FpsControls::update_pitchyaw_locked() {
   // Calculate the pitch based on the XF matrix to allow us to write out the pitch
   // even while locked onto a target, the pitch will be written to match the lock
   // angle throughout the entire lock-on. The very first frame when the lock is
@@ -139,42 +124,22 @@ void FpsControls::calculate_pitch_locked(Game game, Region region) {
   // frame has already been rendered.
   LOOKUP_DYN(object_list);
   LOOKUP_DYN(camera_manager);
+  LOOKUP(xf_offset);
   const u16 camera_uid = read16(camera_manager);
   if (camera_uid == 0xffff) {
     return;
   }
   const u32 camera = read32(object_list + ((camera_uid & 0x3ff) << 3) + 4);
-  u32 camera_xf_offset = 0;
 
-  switch (game) {
-    case Game::PRIME_1:
-      camera_xf_offset = 0x2c;
-      break;
-    case Game::PRIME_1_GCN:
-      camera_xf_offset = 0x34;
-      break;
-    case Game::PRIME_2:
-      camera_xf_offset = 0x20;
-      break;
-    case Game::PRIME_2_GCN:
-      camera_xf_offset = 0x24;
-      break;
-    case Game::PRIME_3:
-    case Game::PRIME_3_STANDALONE:
-      camera_xf_offset = 0x3c;
-      break;
-    default:
-      break;
-  }
-
-  Transform camera_tf;
-  camera_tf.read_from(*active_guard, camera + camera_xf_offset);
-  pitch = asin(camera_tf.fwd().z);
+  Transform camera_xf;
+  camera_xf.read_from(*active_guard, camera + xf_offset);
+  const vec3 fwd = camera_xf.fwd();
+  yaw = atan2f(fwd.y, fwd.x);
+  pitch = asin(fwd.z);
   pitch = std::clamp(pitch, -1.52f, 1.52f);
 }
 
-void FpsControls::calculate_pitch_to_target(float target_pitch)
-{
+void FpsControls::calculate_pitch_to_target(float target_pitch) {
   // Smoothly transitions pitch to target through interpolation
 
   const float margin = 0.05f;
@@ -293,21 +258,18 @@ void FpsControls::run_mod_mp1(Region region) {
   LOOKUP_DYN(lockon_state);
 
   // Allows freelook in grapple, otherwise we are orbiting (locked on) to something
-  bool locked = (read32(orbit_state) != ORBIT_STATE_GRAPPLE &&
+  const bool locked = (read32(orbit_state) != ORBIT_STATE_GRAPPLE &&
     read8(lockon_state)) || beamvisor_menu_enabled;
 
+  LOOKUP(xf_offset);
+  Transform cplayer_xf;
+  cplayer_xf.read_from(*active_guard, player + xf_offset);
 
   LOOKUP_DYN(cursor);
-  LOOKUP_DYN(angular_vel);
-  LOOKUP_DYN(angular_momentum);
   LOOKUP_DYN(firstperson_pitch);
-  LOOKUP(arm_cannon_matrix);
   if (locked) {
-    write32(0, angular_momentum);
-    write32(0, angular_vel);
-    calculate_pitch_locked(Game::PRIME_1, region);
-    writef32(FpsControls::pitch, firstperson_pitch);
-    writef32(FpsControls::pitch, arm_cannon_matrix);
+    update_pitchyaw_locked();
+    writef32(pitch, firstperson_pitch);
 
     if (beamvisor_menu_enabled) {
       LOOKUP_DYN(beamvisor_menu_mode);
@@ -323,33 +285,40 @@ void FpsControls::run_mod_mp1(Region region) {
     } else if (HandleReticleLockOn()) {  // If we handle menus, this doesn't need to be ran
       handle_reticle(*active_guard, cursor + 0x9c, cursor + 0x15c, region, GetFov(Game::PRIME_1));
     }
-  } else {
-    if (menu_open) {
-      set_code_group_state("beam_change", ModState::ENABLED);
-      menu_open = false;
-    }
 
-    set_cursor_pos(0, 0);
-    write32(0, cursor + 0x9c);
-    write32(0, cursor + 0x15c);
-
-    calculate_pitch_delta();
-    writef32(FpsControls::pitch, firstperson_pitch);
-    writef32(FpsControls::pitch, arm_cannon_matrix);
-
-    LOOKUP(tweakplayer);
-    // Max pitch angle, as abs val (any higher = gimbal lock)
-    writef32(1.52f, tweakplayer + 0x134);
-
-    write32(0, angular_vel);
-    LOOKUP_DYN(ball_state);
-    if (read32(ball_state) == 0) {
-      writef32(calculate_yaw_vel(), angular_momentum);
-    }
-
-    LOOKUP_DYN(menu_state);
-    swap_alt_profiles(read32(ball_state), read32(menu_state), 0);
+    return;
   }
+
+  if (menu_open) {
+    set_code_group_state("beam_change", ModState::ENABLED);
+    menu_open = false;
+  }
+
+  set_cursor_pos(0, 0);
+  write32(0, cursor + 0x9c);
+  write32(0, cursor + 0x15c);
+
+  LOOKUP_DYN(ball_state);
+  LOOKUP_DYN(menu_state);
+  swap_alt_profiles(read32(ball_state), read32(menu_state), 0);
+
+  LOOKUP_DYN(camera_state);
+  if (read32(camera_state) != 0) {
+    vec3 fwd = cplayer_xf.fwd();
+    yaw = atan2f(fwd.y, fwd.x);
+    // Pitch is always 0 after returning from morph
+    pitch = 0;
+    return;
+  }
+
+  calculate_pitchyaw_delta();
+  writef32(pitch, firstperson_pitch);
+  cplayer_xf.build_rotation(yaw);
+  cplayer_xf.write_to(*active_guard, player + xf_offset);
+
+  LOOKUP(tweak_player);
+  // Max pitch angle, as abs val (any higher = gimbal lock)
+  writef32(1.52f, tweak_player + 0x134);
 }
 
 void FpsControls::run_mod_mp1_gc(Region region) {
@@ -366,20 +335,16 @@ void FpsControls::run_mod_mp1_gc(Region region) {
     return;
   }
 
-  LOOKUP_DYN(player_xf);
+  LOOKUP(xf_offset);
   Transform cplayer_xf;
-  cplayer_xf.read_from(*active_guard, player_xf);
+  cplayer_xf.read_from(*active_guard, player + xf_offset);
+
+  LOOKUP_DYN(firstperson_pitch);
   LOOKUP_DYN(orbit_state);
   const u32 orbit_state_val = read32(orbit_state);
-  if (orbit_state_val != ORBIT_STATE_GRAPPLE &&
-    orbit_state_val != 0) {
-    calculate_pitch_locked(Game::PRIME_1_GCN, region);
-    LOOKUP_DYN(firstperson_pitch);
-    writef32(FpsControls::pitch, firstperson_pitch);
-
-    vec3 fwd = cplayer_xf.fwd();
-    yaw = atan2f(fwd.y, fwd.x);
-
+  if (orbit_state_val != ORBIT_STATE_GRAPPLE && orbit_state_val != 0) {
+    update_pitchyaw_locked();
+    writef32(pitch, firstperson_pitch);
     return;
   }
 
@@ -387,34 +352,21 @@ void FpsControls::run_mod_mp1_gc(Region region) {
   if (read32(camera_state) != 0) {
     vec3 fwd = cplayer_xf.fwd();
     yaw = atan2f(fwd.y, fwd.x);
-    pitch = atan2f(fwd.z, sqrtf(fwd.x * fwd.x + fwd.y * fwd.y));
+    // Pitch is always 0 after returning from morph
+    pitch = 0;
     return;
   }
 
   calculate_pitchyaw_delta();
-  LOOKUP(tweak_player);
-  LOOKUP(grapple_swing_speed_offset);
-  LOOKUP_DYN(firstperson_pitch);
-  LOOKUP_DYN(angular_vel);
-  writef32(FpsControls::pitch, firstperson_pitch);
-  writef32(1.52f, tweak_player + 0x134);
-  writef32(0, angular_vel);
+  writef32(pitch, firstperson_pitch);
   cplayer_xf.build_rotation(yaw);
-  cplayer_xf.write_to(*active_guard, player_xf);
+  cplayer_xf.write_to(*active_guard, player + xf_offset);
 
-  for (int i = 0; i < 8; i++) {
-    writef32(0, (tweak_player + 0x84) + i * 4);
-    writef32(0, (tweak_player + 0x84) + i * 4 - 32);
-  }
-  writef32(1000.f, tweak_player + grapple_swing_speed_offset);
-
-  LOOKUP_DYN(freelook_rotation_speed);
-  LOOKUP_DYN(air_transitional_friction);
-
-  // Freelook rotation speed tweak
-  write32(0x4f800000, freelook_rotation_speed);
-  // Air translational friction changes to make diagonal strafe match normal speed
-  writef32(0.25f, air_transitional_friction);
+  // Tweak patches, but these don't impact normal gameplay so correcting them should be unnecessary
+  LOOKUP(tweak_player);
+  writef32(1.52f, tweak_player + 0x134);
+  writef32(1000.f, tweak_player + 0x280);
+  writef32(1000.f, tweak_player + 0x2b0);
 }
 
 void FpsControls::run_mod_mp2(Region region) {
@@ -441,18 +393,18 @@ void FpsControls::run_mod_mp2(Region region) {
   // Allows freelook in grapple, otherwise we are orbiting (locked on) to something
   LOOKUP_DYN(orbit_state);
   LOOKUP_DYN(lockon_state);
-  bool locked = (read32(orbit_state) != ORBIT_STATE_GRAPPLE &&
+  const bool locked = (read32(orbit_state) != ORBIT_STATE_GRAPPLE &&
     read8(lockon_state)) || beamvisor_menu;
 
+  LOOKUP(xf_offset);
+  Transform cplayer_xf;
+  cplayer_xf.read_from(*active_guard, player + xf_offset);
+
+  LOOKUP_DYN(firstperson_pitch);
   LOOKUP_DYN(cursor);
-  LOOKUP_DYN(angular_momentum);
   if (locked) {
-    // Angular velocity (not really, but momentum) is being messed with like mp1
-    // just being accessed relative to cplayer
-    LOOKUP_DYN(firstperson_pitch);
-    write32(0, angular_momentum);
-    calculate_pitch_locked(Game::PRIME_2, region);
-    writef32(FpsControls::pitch, firstperson_pitch);
+    update_pitchyaw_locked();
+    writef32(pitch, firstperson_pitch);
 
     if (beamvisor_menu) {
       LOOKUP_DYN(beamvisor_menu_mode);
@@ -469,46 +421,43 @@ void FpsControls::run_mod_mp2(Region region) {
     } else if (HandleReticleLockOn()) {
       handle_reticle(*active_guard, cursor + 0x9c, cursor + 0x15c, region, GetFov(Game::PRIME_2));
     }
-  } else {
-    if (menu_open) {
-      set_code_group_state("beam_change", ModState::ENABLED);
+    return;
+  }
 
-      menu_open = false;
-    }
+  if (menu_open) {
+    set_code_group_state("beam_change", ModState::ENABLED);
+    menu_open = false;
+  }
 
-    set_cursor_pos(0, 0);
-    write32(0, cursor + 0x9c);
-    write32(0, cursor + 0x15c);
+  set_cursor_pos(0, 0);
+  write32(0, cursor + 0x9c);
+  write32(0, cursor + 0x15c);
 
-    calculate_pitch_delta();
-    // Grab the arm cannon address, go to its transform field (NOT the
-    // Actor's xf @ 0x30!!)
-    LOOKUP_DYN(firstperson_pitch);
-    writef32(FpsControls::pitch, firstperson_pitch);
+  LOOKUP_DYN(ball_state);
+  LOOKUP_DYN(menu_state);
+  LOOKUP_DYN(screw_state);
+  swap_alt_profiles(read32(ball_state), read32(menu_state), read32(screw_state));
 
-    // For whatever god forsaken reason, writing pitch to the z component of the
-    // right vector for this xf makes the gun not lag. Won't fix what ain't broken
-    LOOKUP_DYN(armcannon_matrix);
-    writef32(FpsControls::pitch, armcannon_matrix + 0x24);
+  LOOKUP_DYN(camera_state);
+  if (read32(camera_state) != 0) {
+    const vec3 fwd = cplayer_xf.fwd();
+    yaw = atan2f(fwd.y, fwd.x);
+    // Pitch is always 0 after returning from morph
+    pitch = 0;
+    return;
+  }
 
-    LOOKUP(tweak_player_offset);
-    u32 tweak_player_address = read32(read32(Core::System::GetInstance().GetPPCState().gpr[13] + tweak_player_offset));
-    if (mem_check(tweak_player_address)) {
-      // This one's stored as degrees instead of radians
-      writef32(87.0896f, tweak_player_address + 0x180);
-    }
+  calculate_pitchyaw_delta();
+  writef32(pitch, firstperson_pitch);
+  cplayer_xf.build_rotation(yaw);
+  cplayer_xf.write_to(*active_guard, player + xf_offset);
 
-    LOOKUP_DYN(ball_state);
-    if (read32(ball_state) == 0) {
-      writef32(calculate_yaw_vel(), angular_momentum);
-    }
-
-    // Nothing new here
-    write32(0, angular_momentum + 0x18);
-
-    LOOKUP_DYN(menu_state);
-    LOOKUP_DYN(screw_state);
-    swap_alt_profiles(read32(ball_state), read32(menu_state), read32(screw_state));
+  LOOKUP(tweak_player_offset);
+  const u32 tweak_player_address =
+    read32(read32(Core::System::GetInstance().GetPPCState().gpr[13] + tweak_player_offset));
+  if (mem_check(tweak_player_address)) {
+    // This one's stored as degrees instead of radians
+    writef32(87.0896f, tweak_player_address + 0x180);
   }
 }
 
@@ -536,63 +485,42 @@ void FpsControls::run_mod_mp2_gc(Region region) {
     write32(crosshair_color_rgba, crosshair_color_addr);
   }
 
-  LOOKUP_DYN(player_xf);
+  LOOKUP(xf_offset);
   Transform cplayer_xf;
-  cplayer_xf.read_from(*active_guard, player_xf);
+  cplayer_xf.read_from(*active_guard, player + xf_offset);
+
   LOOKUP_DYN(orbit_state);
   LOOKUP_DYN(firstperson_pitch);
-  if (read32(orbit_state) != ORBIT_STATE_GRAPPLE &&
-      read32(orbit_state) != 0) {
-    calculate_pitch_locked(Game::PRIME_2_GCN, region);
-    writef32(FpsControls::pitch, firstperson_pitch);
-
-    vec3 fwd = cplayer_xf.fwd();
-    yaw = atan2f(fwd.y, fwd.x);
-
+  if (read32(orbit_state) != ORBIT_STATE_GRAPPLE && read32(orbit_state) != 0) {
+    update_pitchyaw_locked();
+    writef32(pitch, firstperson_pitch);
     return;
   }
 
   LOOKUP_DYN(camera_state);
-  const u32 cam_state = read32(camera_state);
-  static u32 prev_cam_state = 0;
-
-  const bool camera_is_controlled_by_game = (cam_state != 0);
-  const bool camera_was_controlled_by_game_last_frame = (prev_cam_state != 0 && cam_state == 0); // necessary to display the correct view after cutscene ends.
-  const bool sync_view_from_camera = camera_is_controlled_by_game || camera_was_controlled_by_game_last_frame;
-
-  if (sync_view_from_camera)
-  {
+  if (read32(camera_state) != 0) {
     vec3 fwd = cplayer_xf.fwd();
     yaw = atan2f(fwd.y, fwd.x);
-    pitch = atan2f(fwd.z, sqrtf(fwd.x * fwd.x + fwd.y * fwd.y));
-  }
-  if (camera_is_controlled_by_game)
-  {
-    prev_cam_state = cam_state;
+    // Pitch is always 0 after returning from morph
+    pitch = 0;
+    // Prime 2 has a flicker for one frame after unmorphing
+    writef32(pitch, firstperson_pitch);
     return;
   }
-  prev_cam_state = cam_state;
+
+  calculate_pitchyaw_delta();
+  writef32(pitch, firstperson_pitch);
+  cplayer_xf.build_rotation(yaw);
+  cplayer_xf.write_to(*active_guard, player + xf_offset);
 
   LOOKUP(tweak_player_offset);
   const u32 tweak_player_address = read32(read32(Core::System::GetInstance().GetPPCState().gpr[13] + tweak_player_offset));
   if (mem_check(tweak_player_address)) {
     // Freelook rotation speed tweak
-    write32(0x4f800000, tweak_player_address + 0x188);
+    writef32(1000.f, tweak_player_address + 0x188);
     // Freelook pitch half-angle range tweak
     writef32(87.0896f, tweak_player_address + 0x184);
-    // Air translational friction changes to make diagonal strafe match normal speed
-    writef32(0.25f, tweak_player_address + 0x88);
-    for (int i = 0; i < 8; i++) {
-      writef32(100000000.f, tweak_player_address + 0xc4 + i * 4);
-      writef32(1.f, tweak_player_address + 0xa4 + i * 4);
-    }
   }
-
-  calculate_pitchyaw_delta();
-  writef32(FpsControls::pitch, firstperson_pitch);
-  cplayer_xf.build_rotation(yaw);
-  cplayer_xf.write_to(*active_guard, player_xf);
-
 }
 
 void FpsControls::mp3_handle_lasso(u32 grapple_state_addr) {
@@ -726,24 +654,27 @@ void FpsControls::run_mod_mp3(Game active_game, Region active_region) {
     was_in_ridley_fight = false;
   }
 
-  prime::GetVariableManager()->set_variable(*active_guard, "trigger_grapple", prime::CheckGrappleCtl() ? u32{1} : u32{0});
+  prime::GetVariableManager()->set_variable(*active_guard, "trigger_grapple",
+                                            prime::CheckGrappleCtl() ? u32{1} : u32{0});
+
+  LOOKUP(xf_offset);
+  Transform cplayer_xf;
+  cplayer_xf.read_from(*active_guard, player + xf_offset);
 
   LOOKUP_DYN(firstperson_pitch);
-  LOOKUP_DYN(angular_momentum);
   LOOKUP_DYN(beamvisor_menu_state);
   LOOKUP_DYN(lockon_type);
   LOOKUP(lockon_state);
-  bool beamvisor_menu = read32(beamvisor_menu_state) == 3;
-  if ((read32(lockon_type) == 0 && read8(lockon_state)) || read32(lockon_type) == 1 || beamvisor_menu) {
-    write32(0, angular_momentum);
-    calculate_pitch_locked(active_game, active_region);
+  const bool beamvisor_menu = read32(beamvisor_menu_state) == 3;
+  if ((read32(lockon_type) == 0 && read8(lockon_state)) ||
+      read32(lockon_type) == 1 || beamvisor_menu) {
+    update_pitchyaw_locked();
 
     if (HandleReticleLockOn() || beamvisor_menu) {
       mp3_handle_cursor(false, true);
     }
 
-    writef32(FpsControls::pitch, firstperson_pitch);
-
+    writef32(pitch, firstperson_pitch);
     return;
   }
 
@@ -754,7 +685,7 @@ void FpsControls::run_mod_mp3(Game active_game, Region active_region) {
   if (prime::GetLockCamera() != Unlocked) {
     const float target_pitch = Centre == prime::GetLockCamera() ? 0.f : 0.23f;
 
-    if (FpsControls::pitch == target_pitch) {
+    if (pitch == target_pitch) {
       writef32(target_pitch, pitch);
       mp3_handle_cursor(false, false);
 
@@ -762,7 +693,7 @@ void FpsControls::run_mod_mp3(Game active_game, Region active_region) {
     }
 
     calculate_pitch_to_target(target_pitch);
-    writef32(FpsControls::pitch, firstperson_pitch);
+    writef32(pitch, firstperson_pitch);
 
     // Known edge-case, if a user were to exit a camera lock without reaching
     // the target (e.g loadstate), the next time they enter a camera lock,
@@ -772,24 +703,30 @@ void FpsControls::run_mod_mp3(Game active_game, Region active_region) {
     return;
   }
 
-
   mp3_handle_cursor(true, true);
   set_cursor_pos(0, 0);
 
-  calculate_pitch_delta();
-  // Gun damping uses its own TOC value, so screw it (I checked the binary)
-  // Byte pattern to find the offset : c0?2???? ec23082a fc60f850
-  LOOKUP(gun_lag_toc_offset);
-  u32 rtoc_gun_damp = Core::System::GetInstance().GetPPCState().gpr[2] + gun_lag_toc_offset;
-  write32(0, rtoc_gun_damp);
-  writef32(FpsControls::pitch, firstperson_pitch);
+  const vec3 fwd = cplayer_xf.fwd();
+  yaw = atan2f(fwd.y, fwd.x);
 
-  if (read32(ball_state) == 0) {
-    writef32(calculate_yaw_vel(), angular_momentum);
+  if (read32(ball_state) != 0) {
+    // Pitch is always 0 after returning from morph
+    pitch = 0;
+    return;
   }
 
-  // Nothing new here
-  write32(0, angular_momentum + 0x18);
+  LOOKUP_DYN(control_state);
+  if (read32(control_state) != 1) {
+    return;
+  }
+
+  calculate_pitchyaw_delta();
+  writef32(pitch, firstperson_pitch);
+  cplayer_xf.build_rotation(yaw);
+  cplayer_xf.write_to(*active_guard, player + xf_offset);
+  LOOKUP_DYN(angular_moment_z);
+  // Just so that the game doesn't kill itself when turning off fpscontrols
+  writef32(1e-7f, angular_moment_z);
 }
 
 void FpsControls::CheckBeamVisorSetting(Game game)
@@ -813,6 +750,8 @@ void FpsControls::CheckBeamVisorSetting(Game game)
 
 bool FpsControls::init_mod(Game game, Region region) {
   swap_alt_profiles(0, 0, 0);
+  pitch = 0;
+  yaw = 0;
 
   switch (game) {
     case Game::PRIME_1:

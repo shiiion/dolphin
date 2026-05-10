@@ -31,6 +31,15 @@ void PrimeMod::apply_instruction_changes(bool invalidate)  {
   }
 }
 
+void PrimeMod::apply_original_instructions(bool invalidate) {
+  for (CodeChange const& change : original_instructions) {
+    write32(change.var, change.address);
+    if (invalidate) {
+      Core::System::GetInstance().GetPowerPC().ScheduleInvalidateCacheThreadSafe(change.address);
+    }
+  }
+}
+
 const std::vector<CodeChange>& PrimeMod::get_changes_to_apply() const {
   if (state == ModState::DISABLED || patches_disabled) {
     return original_instructions;
@@ -39,12 +48,13 @@ const std::vector<CodeChange>& PrimeMod::get_changes_to_apply() const {
   }
 }
 
-void PrimeMod::set_code_group_state(const std::string& group_name, ModState new_state) {
-  if (code_groups.find(group_name) == code_groups.end()) {
+void PrimeMod::set_code_group_state(std::string_view group_name, ModState new_state) {
+  auto cg_it = code_groups.find(group_name);
+  if (cg_it == code_groups.end()) {
     return;
   }
 
-  group_change& cg = code_groups[std::string(group_name)];
+  group_change& cg = cg_it->second;
   if (std::get<1>(cg) == new_state) {
     return; // Can't not do anything UwU! (Shio)
     // Mangler LARPing as a furry ^
@@ -55,6 +65,20 @@ void PrimeMod::set_code_group_state(const std::string& group_name, ModState new_
   for (auto const& code_idx : std::get<0>(cg)) {
     current_active_changes[code_idx] = from_vec[code_idx];
   }
+}
+
+void PrimeMod::overlay_disable() {
+  stashed_state = state;
+  set_state(ModState::DISABLED);
+  apply_instruction_changes(true);
+}
+
+void PrimeMod::lift_overlay() {
+  if (stashed_state) {
+    set_state(*stashed_state);
+    apply_instruction_changes(true);
+  }
+  stashed_state = std::nullopt;
 }
 
 void PrimeMod::reset_mod() {
@@ -103,6 +127,16 @@ void PrimeMod::add_asm_patch(std::string_view asm_patch, std::string_view group)
   }
 }
 
+void PrimeMod::add_module_code_change(u32 reladdr, u32 code, std::string_view module) {
+  auto mc_it = pending_dyna_changes.find(module);
+  if (mc_it == pending_dyna_changes.end()) {
+    pending_dyna_changes.emplace(std::string(module), std::vector<CodeChange> {});
+    mc_it = pending_dyna_changes.find(module);
+  }
+
+  mc_it->second.emplace_back(reladdr, code);
+}
+
 void PrimeMod::set_code_change(u32 address, u32 var) {
   code_changes[address].var = var;
   current_active_changes[address].var = var;
@@ -113,6 +147,14 @@ void PrimeMod::update_original_instructions() {
     original_instructions.emplace_back(addr, readi(addr));
   }
   pending_change_backups.clear();
+}
+
+std::vector<CodeChange> const* PrimeMod::get_pending_dyna_changes(std::string_view mod_name) {
+  auto mc_it = pending_dyna_changes.find(mod_name);
+  if (mc_it == pending_dyna_changes.end()) {
+    return nullptr;
+  }
+  return &mc_it->second;
 }
 
 u32 PrimeMod::lookup_address(std::string_view name) {

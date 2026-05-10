@@ -43,15 +43,14 @@ enum class Region : int {
 
 constexpr std::string_view game_str(Game g) {
   switch (g) {
-    case Game::MENU: return "Trilogy Menu";
-    case Game::PRIME_1: return "Trilogy Prime 1";
-    case Game::PRIME_2: return "Trilogy Prime 2";
-    case Game::PRIME_3: return "Trilogy Prime 3";
-    case Game::PRIME_1_GCN: return "GCN Prime 1 Rev 0";
-    case Game::PRIME_1_GCN_R1: return "GCN Prime 1 Rev 1";
-    case Game::PRIME_1_GCN_R2: return "GCN Prime 1 Rev 1";
-    case Game::PRIME_2_GCN: return "GCN Prime 2";
-    case Game::PRIME_3_STANDALONE: return "Standalone Prime 3";
+    case Game::PRIME_1: return "Metroid Prime: Trilogy (MP1)";
+    case Game::PRIME_2: return "Metroid Prime: Trilogy (MP2)";
+    case Game::PRIME_3: return "Metroid Prime: Trilogy (MP3)";
+    case Game::PRIME_1_GCN: return "Metroid Prime Rev 0";
+    case Game::PRIME_1_GCN_R1: return "Metroid Prime Rev 1";
+    case Game::PRIME_1_GCN_R2: return "Metroid Prime Rev 2";
+    case Game::PRIME_2_GCN: return "Metroid Prime 2: Echoes";
+    case Game::PRIME_3_STANDALONE: return "Metroid Prime 3: Corruption";
     default: return "Invalid";
   }
 }
@@ -90,14 +89,17 @@ public:
 
   virtual bool should_apply_changes() const;
   void apply_instruction_changes(bool invalidate = true);
+  void apply_original_instructions(bool invalidate = true);
   // Gets the corresponding list of code changes to apply per-frame
   const std::vector<CodeChange>& get_changes_to_apply() const;
   void add_code_change(u32 addr, u32 code, std::string_view group = "");
   void add_asm_patch(std::string_view patch, std::string_view group = "");
+  void add_module_code_change(u32 reladdr, u32 code, std::string_view module = "");
   void set_code_change(u32 address, u32 var);
   void update_original_instructions();
   std::vector<CodeChange>& get_code_changes() { return code_changes; }
   std::vector<CodeChange>& get_original_instructions() { return original_instructions; }
+  std::vector<CodeChange> const* get_pending_dyna_changes(std::string_view mod_name);
 
   bool has_saved_instructions() const { return !original_instructions.empty(); }
   bool is_initialized() const { return initialized; }
@@ -107,12 +109,14 @@ public:
   ModState mod_state() const { return state; }
   void set_state(ModState new_state);
   void set_state_no_notify(ModState new_state);
-  void set_code_group_state(const std::string& group_name, ModState new_state);
+  void set_code_group_state(std::string_view group_name, ModState new_state);
 
   void set_temporary_cpu_guard(Core::CPUThreadGuard const* guard) { active_guard = guard; }
 
   void disable_patches() { patches_disabled = true; }
   void enable_patches() { patches_disabled = false; }
+  void overlay_disable();
+  void lift_overlay();
 
   static void set_address_database(const AddressDB* db_ptr) { addr_db = db_ptr; }
 
@@ -147,8 +151,10 @@ private:
   std::vector<CodeChange> original_instructions;
   std::vector<CodeChange> code_changes;
   std::vector<u32> pending_change_backups;
-  std::map<std::string, group_change> code_groups;
+  std::map<std::string, group_change, std::less<>> code_groups;
+  std::map<std::string, std::vector<CodeChange>, std::less<>> pending_dyna_changes;
   ModState state = ModState::DISABLED;
+  std::optional<ModState> stashed_state = std::nullopt;
   bool patches_disabled = false;
 
   std::vector<CodeChange> current_active_changes;

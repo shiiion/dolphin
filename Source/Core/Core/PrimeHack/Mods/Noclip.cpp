@@ -159,9 +159,10 @@ void Noclip::run_mod_mp1_gc(bool has_control) {
   if (player == 0) {
     return;
   }
-  LOOKUP_DYN(player_xf);
+
+  LOOKUP(xf_offset);
   if (!has_control) {
-    player_transform.read_from(*active_guard, player_xf);
+    player_transform.read_from(*active_guard, player + xf_offset);
     disable_patches();
     apply_instruction_changes();
     had_control = has_control;
@@ -195,9 +196,9 @@ void Noclip::run_mod_mp1_gc(bool has_control) {
 
   LOOKUP_DYN(move_state);
   player_transform.set_loc(movement_vec);
-  writef32(movement_vec.x, player_xf + 0x0c);
-  writef32(movement_vec.y, player_xf + 0x1c);
-  writef32(movement_vec.z, player_xf + 0x2c);
+  writef32(movement_vec.x, player + xf_offset + 0x0c);
+  writef32(movement_vec.y, player + xf_offset + 0x1c);
+  writef32(movement_vec.z, player + xf_offset + 0x2c);
   write32(0, move_state);
 }
 

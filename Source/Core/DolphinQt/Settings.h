@@ -13,6 +13,7 @@
 #include "Common/Config/Config.h"
 #include "Common/HookableEvent.h"
 #include "Core/Config/MainSettings.h"
+#include "Core/PrimeHack/PrimeMod.h"
 #include "DiscIO/Enums.h"
 
 namespace Core
@@ -232,6 +233,7 @@ signals:
   void DevicesChanged();
   void WiiSpeakMuteChanged(bool muted);
   void EnableGfxModsChanged(bool enabled);
+  void PrimeGameChange(prime::Game, prime::Region);
 
 private:
   Settings();

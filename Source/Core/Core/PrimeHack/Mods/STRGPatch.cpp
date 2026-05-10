@@ -13,15 +13,6 @@ constexpr u32 STR_TABLE_SIZE = 0x1000;
 namespace prime {
 namespace {
 
-std::string readin_str(PowerPC::MMU& mmu, u32 str_ptr) {
-  std::ostringstream key_readin;
-
-  for (char c = mmu.Read<u8>(str_ptr); c; c = mmu.Read<u8>(++str_ptr)) {
-    key_readin << c;
-  }
-  return key_readin.str();
-}
-
 u32 bsearch_strg_table(PowerPC::MMU& mmu, std::string const& key, u32 strg_header) {
   u32 bsearch_left = mmu.Read<u32>(strg_header + 0x14);
   int dist = mmu.Read<u32>(strg_header + 0x8);
@@ -45,7 +36,7 @@ void patch_strg_entry_mp3_and_menu(PowerPC::PowerPCState& ppc_state, PowerPC::MM
   ppc_state.gpr[0] = ppc_state.spr[SPR_LR];
 }
 
-}
+} // namespace
 
 void STRGPatch::patch_strg_entry_vmc_common(PowerPC::PowerPCState& ppc_state, PowerPC::MMU& mmu, u32 strg_header, u32 key_ptr) {
   std::string key = readin_str(mmu, key_ptr);

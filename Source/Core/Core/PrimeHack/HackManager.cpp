@@ -1,5 +1,6 @@
 #include "Core/PrimeHack/HackManager.h"
 
+#include "Common/Assembler/GekkoAssembler.h"
 #include "Core/ConfigManager.h"
 #include "Core/Config/MainSettings.h"
 #include "Core/PrimeHack/GuestAllocator.h"
@@ -22,115 +23,127 @@ namespace {
 
 #define CSEP(x) x,
 #define X(x) x
-std::tuple<MOD_LIST(CSEP, X)> mods_tuple;
+std::tuple<MOD_LIST(CSEP, X)> sModsTuple;
 #undef CSEP
 #undef X
 
-} // namespace
+// Active game tracking globals
+Game sActiveGame = Game::INVALID_GAME;
+Game sLastGame = Game::INVALID_GAME;
+Region sActiveRegion = Region::INVALID_REGION;
+Region sLastRegion = Region::INVALID_REGION;
+std::vector<GameChangeCallback> sGameChangeCbList;
 
-#define GEN_GET_MOD(ty) \
-  template <> \
-  ty* GetMod() { \
-    return &std::get<ty>(mods_tuple); \
-  }
+// Dynalib tracking globals
+std::unordered_map<std::string, u32> sModuleList;
+std::vector<CodeChange> sDynalibChanges;
+u32 sEpilogueHookStub;
+constexpr u32 kEpilogueStubSize = 0x18;
+constexpr std::string_view sEpilogueAsmStub = R"(
+.defvar StubBegin, 0x{stub_begin:x}
+.defvar VmcallInst, 0x{vmcall_inst:x}
 
-MOD_LIST(GEN_GET_MOD, GEN_GET_MOD)
+.locate StubBegin
+.4byte VmcallInst
+# This is a possibly dangerous hack: since we've hooked module loading after init
+# then it's fine to put the old epilog in place of the prolog, thus we don't have to
+# allocate memory
+lwz r12, 0x24(r3)
+cmpwi r12, 0
+beqlr
+mtctr r12
+bctr
+)";
 
-namespace {
 
-Game active_game = Game::INVALID_GAME;
-Game last_game = Game::INVALID_GAME;
-Region active_region = Region::INVALID_REGION;
-Region last_region = Region::INVALID_REGION;
-
-// Updates the active_game and active_region globals
+// Updates the sActiveGame and sActiveRegion globals
 void update_active_game_region(const Core::CPUThreadGuard& cpu_guard) {
   switch (PowerPC::MMU::HostRead_Instruction(cpu_guard, 0x8046d340)) {
     case 0x38000018:
-      active_game = Game::MENU;
-      active_region = Region::NTSC_U;
+      sActiveGame = Game::MENU;
+      sActiveRegion = Region::NTSC_U;
       break;
     case 0x7c0000d0:
-      active_game = Game::MENU;
-      active_region = Region::PAL;
+      sActiveGame = Game::MENU;
+      sActiveRegion = Region::PAL;
       break;
     case 0x4e800020:
-      active_game = Game::PRIME_1;
-      active_region = Region::NTSC_U;
+      sActiveGame = Game::PRIME_1;
+      sActiveRegion = Region::NTSC_U;
       break;
     case 0x7c962378:
-      active_game = Game::PRIME_1;
-      active_region = Region::PAL;
+      sActiveGame = Game::PRIME_1;
+      sActiveRegion = Region::PAL;
       break;
     case 0x4bff64e1:
-      active_game = Game::PRIME_2;
-      active_region = Region::NTSC_U;
+      sActiveGame = Game::PRIME_2;
+      sActiveRegion = Region::NTSC_U;
       break;
     case 0x80830000:
-      active_game = Game::PRIME_2;
-      active_region = Region::PAL;
+      sActiveGame = Game::PRIME_2;
+      sActiveRegion = Region::PAL;
       break;
     case 0x80010070:
       if (PowerPC::MMU::HostRead<u32>(cpu_guard, 0x80576ae8) == 0x7d415378) {
-        active_game = Game::PRIME_3;
-        active_region = Region::NTSC_U;
+        sActiveGame = Game::PRIME_3;
+        sActiveRegion = Region::NTSC_U;
       } else {
-        active_game = Game::INVALID_GAME;
-        active_region = Region::INVALID_REGION;
+        sActiveGame = Game::INVALID_GAME;
+        sActiveRegion = Region::INVALID_REGION;
       }
       break;
     case 0x3a800000:
       if (PowerPC::MMU::HostRead<u32>(cpu_guard, 0x805795a4) == 0x7d415378) {
-        active_game = Game::PRIME_3;
-        active_region = Region::PAL;
+        sActiveGame = Game::PRIME_3;
+        sActiveRegion = Region::PAL;
       } else {
-        active_game = Game::INVALID_GAME;
-        active_region = Region::INVALID_REGION;
+        sActiveGame = Game::INVALID_GAME;
+        sActiveRegion = Region::INVALID_REGION;
       }
       break;
     default:
       switch (PowerPC::MMU::HostRead<u32>(cpu_guard, 0x80000000)) {
         case FOURCC('G', 'M', '8', 'E'):
-          active_region = Region::NTSC_U;
+          sActiveRegion = Region::NTSC_U;
           switch (PowerPC::MMU::HostRead<u8>(cpu_guard, 0x80000007)) {
             case 0:
-              active_game = Game::PRIME_1_GCN;
+              sActiveGame = Game::PRIME_1_GCN;
               break;
             case 1:
-              active_game = Game::PRIME_1_GCN_R1;
+              sActiveGame = Game::PRIME_1_GCN_R1;
               break;
             case 2:
-              active_game = Game::PRIME_1_GCN_R2;
+              sActiveGame = Game::PRIME_1_GCN_R2;
               break;
             default:
-              active_game = Game::INVALID_GAME;
-              active_region = Region::INVALID_REGION;
+              sActiveGame = Game::INVALID_GAME;
+              sActiveRegion = Region::INVALID_REGION;
               break;
           }
           break;
         case FOURCC('G', 'M', '8', 'P'):
-          active_game = Game::PRIME_1_GCN;
-          active_region = Region::PAL;
+          sActiveGame = Game::PRIME_1_GCN;
+          sActiveRegion = Region::PAL;
           break;
         case FOURCC('G', '2', 'M', 'E'):
-          active_game = Game::PRIME_2_GCN;
-          active_region = Region::NTSC_U;
+          sActiveGame = Game::PRIME_2_GCN;
+          sActiveRegion = Region::NTSC_U;
           break;
         case FOURCC('G', '2', 'M', 'P'):
-          active_game = Game::PRIME_2_GCN;
-          active_region = Region::PAL;
+          sActiveGame = Game::PRIME_2_GCN;
+          sActiveRegion = Region::PAL;
           break;
         case FOURCC('R', 'M', '3', 'E'):
-          active_game = Game::PRIME_3_STANDALONE;
-          active_region = Region::NTSC_U;
+          sActiveGame = Game::PRIME_3_STANDALONE;
+          sActiveRegion = Region::NTSC_U;
           break;
         case FOURCC('R', 'M', '3', 'P'):
-          active_game = Game::PRIME_3_STANDALONE;
-          active_region = Region::PAL;
+          sActiveGame = Game::PRIME_3_STANDALONE;
+          sActiveRegion = Region::PAL;
           break;
         default:
-          active_game = Game::INVALID_GAME;
-          active_region = Region::INVALID_REGION;
+          sActiveGame = Game::INVALID_GAME;
+          sActiveRegion = Region::INVALID_REGION;
           break;
       }
       break;
@@ -188,7 +201,126 @@ template <typename Fn>
 void foreach_mod(Fn&& fn) {
   std::apply([fn = std::forward<Fn>(fn)](auto&&... args) {
     (fn(args), ...);
-  }, mods_tuple);
+  }, sModsTuple);
+}
+
+template <typename Mem>
+void add_rso(Mem&& mem, u32 module_base, u32 name_base) {
+  // Add a handler for the epilogue
+  u32 epilogue_addr = mem.template Read<u32>(module_base + 0x28);
+  // Haha, this is fine right?
+  mem.template Write<u32>(epilogue_addr, module_base + 0x24);
+  mem.template Write<u32>(sEpilogueHookStub, module_base + 0x28);
+
+  std::string module_name = std::filesystem::path(readin_str(mem, name_base)).filename().string();
+  sModuleList.emplace(module_name, module_base);
+
+  foreach_mod([&mem, module_base, &module_name](PrimeMod& mod) {
+    if (mod.mod_state() == ModState::DISABLED) {
+      return;
+    }
+
+    auto const* changes = mod.get_pending_dyna_changes(module_name);
+    if (changes == nullptr) {
+      return;
+    }
+
+    for (auto const& change : *changes) {
+      mem.template Write<u32>(change.var, change.address + module_base);
+    }
+  });
+}
+
+void mp3_post_rso_link(PowerPC::PowerPCState& state, PowerPC::MMU& mmu, u32) {
+  // Hook point is directly after RSO prologue is ran. RSO is in r31, filesystem path in r29
+  add_rso(mmu, state.gpr[31], state.gpr[29]);
+  // Original instruction: lbz r0, 9(r1)
+  state.gpr[0] = mmu.Read<u8>(state.gpr[1] + 9);
+}
+
+void remove_rso(PowerPC::MMU& mmu, u32 mod_base) {
+  std::erase_if(sModuleList, [mod_base](auto const& item) {
+    return item.second == mod_base;
+  });
+}
+
+void mp3_rso_unlink(PowerPC::PowerPCState& state, PowerPC::MMU& mmu, u32) {
+  // Hook point is the prolog itself, so r3 should be a pointer to the module base
+  remove_rso(mmu, state.gpr[3]);
+}
+
+void init_dynalib(Core::CPUThreadGuard const& guard, Game game, Region region) {
+  sDynalibChanges.clear();
+
+  using namespace Common::GekkoAssembler;
+  if (game != Game::PRIME_3 && game != Game::PRIME_3_STANDALONE) {
+    return;
+  }
+
+  u32 load_hook = 0;
+  if (game == Game::PRIME_3) {
+    if (region == Region::NTSC_U) {
+      load_hook = 0x8019a30c;
+    } else if (region == Region::PAL) {
+      load_hook = 0x80199dec;
+    }
+  } else if (game == Game::PRIME_3_STANDALONE) {
+    if (region == Region::NTSC_U) {
+      load_hook = 0x8019f8cc;
+    } else if (region == Region::PAL) {
+      load_hook = 0x801a05dc;
+    }
+  }
+
+  const int vmc_load_hook_mp3_idx =
+    Core::System::GetInstance().GetPowerPC().RegisterVmcall(mp3_post_rso_link);
+  const int vmc_unload_hook_mp3_idx =
+    Core::System::GetInstance().GetPowerPC().RegisterVmcall(mp3_rso_unlink);
+  const u32 unload_vmc = gen_vmcall(vmc_unload_hook_mp3_idx, 0);
+
+  sEpilogueHookStub = GuestAllocAligned(kEpilogueStubSize, 2);
+  auto result =
+    Assemble(fmt::format(fmt::runtime(sEpilogueAsmStub),
+                         fmt::arg("stub_begin", sEpilogueHookStub),
+                         fmt::arg("vmcall_inst", unload_vmc)), 0);
+  ASSERT(!IsFailure(result));
+  std::vector<CodeBlock> const& code_changes_blocks = GetT(result);
+  for (auto const& block : code_changes_blocks) {
+    for (u32 i = 0; i < block.instructions.size(); i += 4) {
+      sDynalibChanges.emplace_back(block.block_address + i,
+                                   Common::swap32(&block.instructions[i]));
+    }
+  }
+  sDynalibChanges.emplace_back(load_hook, gen_vmcall(vmc_load_hook_mp3_idx, 0));
+
+  // This is exclusively to handle savestate loads more gracefully
+  const u32 rso_list_base = GetAddressDB()->lookup_address(game, region, "rso_list_base");
+  for (u32 cur_entry = PowerPC::MMU::HostRead<u32>(guard, rso_list_base + 4);
+       cur_entry != 0 && cur_entry != rso_list_base;
+       cur_entry = PowerPC::MMU::HostRead<u32>(guard, cur_entry + 4)) {
+    const u32 rso_metadata = PowerPC::MMU::HostRead<u32>(guard, cur_entry + 0xc);
+    if (rso_metadata == 0) {
+      continue;
+    }
+
+    // Presumably the load state of the module, 1 seems to correspond with a loaded & linked mod
+    if (PowerPC::MMU::HostRead<u32>(guard, rso_metadata + 0x20) != 1) {
+      continue;
+    }
+
+    u32 module_base = PowerPC::MMU::HostRead<u32>(guard, rso_metadata + 0x18);
+    u32 name_base = PowerPC::MMU::HostRead<u32>(guard, rso_metadata);
+
+    add_rso(HostMem(guard), module_base, name_base);
+  }
+}
+
+void apply_dynalib_patch(const Core::CPUThreadGuard& cpu_guard) {
+  for (CodeChange const& cc : sDynalibChanges) {
+    if (PowerPC::MMU::HostRead<u32>(cpu_guard, cc.address) != cc.var) {
+      PowerPC::MMU::HostWrite<u32>(cpu_guard, cc.var, cc.address);
+    }
+  }
 }
 
 } // namespace
@@ -206,17 +338,22 @@ void RunActiveMods(const Core::CPUThreadGuard& cpu_guard) {
   // Before doing any mod-related code, set the cpu guard
   foreach_mod([&cpu_guard](PrimeMod& mod) { mod.set_temporary_cpu_guard(&cpu_guard); });
 
-  if (active_game != last_game || active_region != last_region) {
-    AllocSwitchGame(active_game, active_region);
+  if (sActiveGame != sLastGame || sActiveRegion != sLastRegion) {
+    AllocSwitchGame(sActiveGame, sActiveRegion);
     foreach_mod([](PrimeMod& mod) { mod.reset_mod(); });
     GetVariableManager()->reset_variables();
+    sDynalibChanges.clear();
+
+    for (auto& cb : sGameChangeCbList) {
+      cb(sActiveGame, sActiveRegion);
+    }
   }
 
   update_mod_state_from_config();
 
-  if (active_game != Game::INVALID_GAME && active_region != Region::INVALID_REGION) {
+  if (sActiveGame != Game::INVALID_GAME && sActiveRegion != Region::INVALID_REGION) {
     foreach_mod([](PrimeMod& mod) {
-      if (!mod.is_initialized() && mod.init_mod(active_game, active_region)) {
+      if (!mod.is_initialized() && mod.init_mod(sActiveGame, sActiveRegion)) {
         mod.mark_initialized();
       }
       if (mod.should_apply_changes()) {
@@ -225,12 +362,18 @@ void RunActiveMods(const Core::CPUThreadGuard& cpu_guard) {
       }
     });
 
-    last_game = active_game;
-    last_region = active_region;
+    // Initialize the dynalib AFTER mods to capture their requested changes for savestates
+    if (sDynalibChanges.empty()) {
+      init_dynalib(cpu_guard, sActiveGame, sActiveRegion);
+    }
+    apply_dynalib_patch(cpu_guard);
+
+    sLastGame = sActiveGame;
+    sLastRegion = sActiveRegion;
 
     foreach_mod([](PrimeMod& mod) {
       if (mod.mod_state() == ModState::ENABLED) {
-        mod.run_mod(active_game, active_region);
+        mod.run_mod(sActiveGame, sActiveRegion);
       }
     });
   }
@@ -243,11 +386,11 @@ void RunActiveMods(const Core::CPUThreadGuard& cpu_guard) {
 }
 
 Game GetActiveGame() {
-  return active_game;
+  return sActiveGame;
 }
 
 Region GetActiveRegion() {
-  return active_region;
+  return sActiveRegion;
 }
 
 void Shutdown() {
@@ -258,9 +401,45 @@ void Shutdown() {
     mod.reset_mod();
     mod.set_temporary_cpu_guard(nullptr);
   });
+  sDynalibChanges.clear();
+  sModuleList.clear();
 
-  last_game = Game::INVALID_GAME;
-  last_region = Region::INVALID_REGION;
+  sActiveGame = sLastGame = Game::INVALID_GAME;
+  sActiveRegion = sLastRegion = Region::INVALID_REGION;
+  for (auto& cb : sGameChangeCbList) {
+    cb(Game::INVALID_GAME, Region::INVALID_REGION);
+  }
 }
+
+void AddOnGameChangeCallback(GameChangeCallback cb) {
+  sGameChangeCbList.emplace_back(std::move(cb));
+}
+
+void StashMemoryChanges() {
+  Core::CPUThreadGuard guard(Core::System::GetInstance());
+  foreach_mod([&guard](PrimeMod& mod) {
+    mod.set_temporary_cpu_guard(&guard);
+    mod.overlay_disable();
+    mod.set_temporary_cpu_guard(nullptr);
+  });
+}
+
+void RestoreMemoryChanges() {
+  Core::CPUThreadGuard guard(Core::System::GetInstance());
+  foreach_mod([&guard](PrimeMod& mod) {
+    mod.set_temporary_cpu_guard(&guard);
+    mod.lift_overlay();
+    mod.set_temporary_cpu_guard(nullptr);
+  });
+}
+
+// Autogenerate GetMod<ty>
+#define GEN_GET_MOD(ty) \
+  template <> \
+  ty* GetMod() { \
+    return &std::get<ty>(sModsTuple); \
+  }
+
+MOD_LIST(GEN_GET_MOD, GEN_GET_MOD)
 
 } // namespace prime

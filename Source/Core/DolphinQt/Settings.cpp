@@ -39,6 +39,7 @@
 #include "Core/NetPlayServer.h"
 #include "Core/System.h"
 #include "Core/PrimeHack/HackConfig.h"
+#include "Core/PrimeHack/HackManager.h"
 
 #include "DolphinQt/QtUtils/QueueOnObject.h"
 
@@ -93,6 +94,10 @@ Settings::Settings()
 
       QueueOnObject(this, [this] { emit DevicesChanged(); });
     }
+  });
+
+  prime::AddOnGameChangeCallback([this](prime::Game game, prime::Region region) {
+    QueueOnObject(this, [this, game, region] { emit PrimeGameChange(game, region); });
   });
 }
 

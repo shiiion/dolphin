@@ -119,7 +119,6 @@ bool SpringballButton::init_mod(Game game, Region region) {
   prime::GetVariableManager()->register_variable("springball_trigger");
 
   switch (game) {
-    // TODO: Debug springball
     case Game::PRIME_1:
       if (region == Region::NTSC_U) {
         springball_code(0x801476d0);

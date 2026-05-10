@@ -27,7 +27,7 @@
 #include "Core/State.h"
 #include "Core/System.h"
 
-#include "Core/PrimeHack/HackConfig.h"
+#include "Core/PrimeHack/HackManager.h"
 
 namespace HW
 {

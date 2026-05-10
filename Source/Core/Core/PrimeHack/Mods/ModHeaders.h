@@ -1,4 +1,5 @@
 #include "Core/PrimeHack/Mods/AllDoorAnyBeam.h"
+#include "Core/PrimeHack/Mods/AutoConvertFriendVouchers.h"
 #include "Core/PrimeHack/Mods/AutoEFB.h"
 #include "Core/PrimeHack/Mods/AutoFogToggleMP3.h"
 #include "Core/PrimeHack/Mods/BloomIntensityMP3.h"

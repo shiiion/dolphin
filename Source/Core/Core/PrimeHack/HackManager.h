@@ -1,8 +1,6 @@
 #pragma once
 
 #include <concepts>
-#include <memory>
-#include <map>
 
 #include "Core/Core.h"
 #include "Core/PrimeHack/PrimeMod.h"
@@ -59,5 +57,14 @@ void RunActiveMods(const Core::CPUThreadGuard& cpu_guard);
 Game GetActiveGame();
 Region GetActiveRegion();
 void Shutdown();
+
+using GameChangeCallback = std::function<void(Game, Region)>;
+void AddOnGameChangeCallback(GameChangeCallback cb);
+
+// Used to make savestates play nicer. Must be called from CPU thread
+// Will stash all patches done by primehack, used on savestate write before RAM is saved
+void StashMemoryChanges();
+// Will restore all stashed patches done by primehack, used on savestate write after RAM is saved
+void RestoreMemoryChanges();
 
 } // namespace prime

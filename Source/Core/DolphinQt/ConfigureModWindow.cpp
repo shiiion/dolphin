@@ -66,6 +66,7 @@ private:
 
     connect(preset_load_button, &QPushButton::clicked, this, &ModConfigWidget::OnLoadPresetPressed);
     connect(preset_save_button, &QPushButton::clicked, this, &ModConfigWidget::OnSavePresetPressed);
+    // TODO: Everything else here
 
     // Top area
     top_layout->addWidget(general_box);
@@ -79,6 +80,7 @@ private:
     {
       auto* var_lbl = new QLabel(QString::fromStdString(cvar.name + ":"));
       QWidget* entry_widget;
+      QHBoxLayout* h_layout = new QHBoxLayout;
       if (cvar.type == prime::CVarType::BOOLEAN)
       {
         auto* checkbox = new QCheckBox;
@@ -99,11 +101,18 @@ private:
       help_desc_lbl->setPixmap(question_icon.pixmap(20));
       help_desc_lbl->setAlignment(Qt::AlignCenter);
       help_desc_lbl->setToolTip(QString::fromStdString(cvar.description));
+      help_desc_lbl->setToolTipDuration(0);
 
       cvar_layout->addWidget(var_lbl, row, 0);
-      cvar_layout->addWidget(entry_widget, row, 1, Qt::AlignRight);
-      cvar_layout->addWidget(curval_lbl, row, 2, Qt::AlignRight);
-      cvar_layout->addWidget(help_desc_lbl, row, 3, Qt::AlignRight);
+      curval_lbl->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+      help_desc_lbl->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+      entry_widget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+      entry_widget->setMinimumWidth(400);
+      h_layout->addWidget(curval_lbl, Qt::AlignLeft);
+      h_layout->addStretch();
+      h_layout->addWidget(entry_widget, Qt::AlignRight);
+      h_layout->addWidget(help_desc_lbl, Qt::AlignLeft);
+      cvar_layout->addLayout(h_layout, row, 1);
 
       row++;
     }
@@ -216,7 +225,8 @@ void ConfigureModWindow::CreateMainLayout()
   {
     ModConfigWidget* const mod_tab = new ModConfigWidget(&mod, this);
     QWidget* const wrapped_general = GetWrappedWidget(mod_tab);
-    auto tab_title = fmt::format("{} {}", prime::game_str(mod.game), prime::region_str(mod.region));
+    // auto tab_title = fmt::format("{} {}", prime::game_str(mod.game), prime::region_str(mod.region));
+    auto tab_title = std::string(prime::game_str(mod.game));
     tab_widget->addTab(wrapped_general, QString::fromStdString(tab_title));
   }
 

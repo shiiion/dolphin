@@ -50,7 +50,10 @@ void InitializeHack() {
   is_running = true;
   PrimeMod::set_address_database(GetAddressDB());
   init_db(*GetAddressDB());
+  EnableDefaultMods();
+}
 
+void EnableDefaultMods() {
   EnableMod<SkipCutscene>(false);
   EnableMod<ViewModifier>(false);
   EnableMod<DisableBloom>(false);
@@ -58,6 +61,7 @@ void InitializeHack() {
   EnableMod<MapController>(false);
   EnableMod<STRGPatch>(false);
   EnableMod<MetareePatch>(false);
+  EnableMod<AutoConvertFriendVouchers>(false);
 
   // Enable no PrimeHack control mods
   if (!Config::Get(Config::PRIMEHACK_ENABLE)) {

@@ -12,6 +12,7 @@
 // Naming scheme will match dolphin as this place acts as an interface between the hack & dolphin proper
 namespace prime {
 void InitializeHack();
+void EnableDefaultMods();
 
 bool CheckBeamCtl(int beam_num);
 bool CheckVisorCtl(int visor_num);

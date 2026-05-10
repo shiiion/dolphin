@@ -27,6 +27,24 @@
 #include "Core/PrimeHack/HackConfig.h"
 #include "VideoCommon/VideoConfig.h"
 
+static bool ShouldDisable(prime::Game game, int fov)
+{
+  bool should_disable = false;
+  switch (game)
+  {
+    case prime::Game::INVALID_GAME:
+      break;
+    case prime::Game::PRIME_3:
+    case prime::Game::PRIME_3_STANDALONE:
+      should_disable = fov > 94;
+      break;
+    default:
+      should_disable = fov > 101;
+      break;
+  }
+  return should_disable;
+}
+
 PrimeWidget::PrimeWidget(GraphicsPane* parent)
 {
   CreateWidgets();
@@ -67,6 +85,9 @@ void PrimeWidget::CreateWidgets()
   graphics_layout->addWidget(m_toggle_secondaryFX, 2, 0);
   graphics_layout->addWidget(m_toggle_culling, 3, 0);
   graphics_layout->addWidget(m_autofogtoggle_mp3, 4, 0);
+
+  m_toggle_culling->setEnabled(
+    !ShouldDisable(prime::GetActiveGame(), static_cast<int>(prime::GetFov(prime::GetActiveGame()))));
 
   // Bloom
   auto* bloom_box = new QGroupBox(tr("Bloom"));
@@ -218,6 +239,19 @@ void PrimeWidget::ConnectWidgets()
   connect(m_fov_toggle, &ConfigBool::clicked, this, [this](bool checked) {
     m_fov_counter->setEnabled(checked);
     m_fov_axis->setEnabled(checked);
+    if (checked)
+    {
+      m_toggle_culling->setEnabled(
+        !ShouldDisable(prime::GetActiveGame(), static_cast<int>(prime::GetFov(prime::GetActiveGame()))));
+    }
+    else
+    {
+      m_toggle_culling->setEnabled(true);
+    }
+  });
+  connect(m_fov_axis, &ConfigSlider::valueChanged, this, [this](int val) {
+    m_toggle_culling->setEnabled(
+      !ShouldDisable(prime::GetActiveGame(), static_cast<int>(prime::GetFov(prime::GetActiveGame()))));
   });
   connect(m_reduce_bloom, &ConfigBool::clicked, this, [this](bool checked) {
     m_bloom_intensity->setEnabled(checked);
@@ -234,19 +268,8 @@ void PrimeWidget::ConnectWidgets()
     m_manual_arm_position->setEnabled(checked);
     PrimeWidget::ArmPositionModeChanged(m_manual_arm_position->isChecked());
   });
-  connect(&Settings::Instance(), &Settings::EmulationStateChanged, this, [this](Core::State state) {
-    if (state != Core::State::Uninitialized)
-    {
-      m_toggle_culling->setEnabled(true);
-    }
-    else
-    {
-      if (prime::GetFov(prime::Game::PRIME_1) > 94)
-      {
-        m_toggle_culling->setEnabled(false);
-        m_toggle_culling->setChecked(true);
-      }
-    }
+  connect(&Settings::Instance(), &Settings::PrimeGameChange, this, [this](prime::Game game, prime::Region) {
+    m_toggle_culling->setEnabled(!ShouldDisable(game, static_cast<int>(prime::GetFov(game))));
   });
 
   connect(m_select_colour, &QPushButton::clicked, this, [this]() {
@@ -287,7 +310,7 @@ void PrimeWidget::AddDescriptions()
   static const char TR_TOGGLE_CULL[] =
       QT_TR_NOOP("Disables graphical culling. This allows for Field of Views above 101 in Metroid "
                  "Prime 1 and Metroid Prime 2, and above 94 in Metroid Prime 3.\n\n"
-                 "This option is forced on above FOV 96");
+                 "This option is forced if the current FOV setting would cause problems.");
   static const char TR_MANUAL_POSITION[] = QT_TR_NOOP(
       "Allows you to manually modify the XYZ positioning of Samus's arms in the viewmodel.");
   static const char TR_AUTO_POSITION[] =

@@ -333,6 +333,13 @@ void PowerPCManager::RegisterVmcallWithIndex(int index, vm_call pfn) {
 }
 
 int PowerPCManager::RegisterVmcall(vm_call pfn) {
+  // Check if already registered
+  for (size_t i = 0; i < m_ppc_state.vmcall_table.size(); i++) {
+    if (m_ppc_state.vmcall_table[i] == pfn) {
+      return static_cast<int>(i);
+    }
+  }
+
   for (size_t i = 0; i < m_ppc_state.vmcall_table.size(); i++) {
     if (m_ppc_state.vmcall_table[i] == vmcall_noop) {
       m_ppc_state.vmcall_table[i] = pfn;

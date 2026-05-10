@@ -2,6 +2,7 @@
 
 #define MOD_LIST(macro, macro_last) \
   macro(AllDoorAnyBeam) \
+  macro(AutoConvertFriendVouchers) \
   macro(AutoEFB) \
   macro(AutoFogToggleMP3) \
   macro(BloomIntensityMP3) \

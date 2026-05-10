@@ -581,6 +581,7 @@ add_library(core
   PrimeHack/HackConfig.cpp
   PrimeHack/HackManager.cpp
   PrimeHack/Mods/AllDoorAnyBeam.h
+  PrimeHack/Mods/AutoConvertFriendVouchers.cpp
   PrimeHack/Mods/AutoEFB.cpp
   PrimeHack/Mods/AutoFogToggleMP3.cpp
   PrimeHack/Mods/AutoFogToggleMP3.h
