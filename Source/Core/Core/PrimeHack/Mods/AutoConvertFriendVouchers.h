@@ -21,7 +21,7 @@ b _hook
 .locate HookBuffer
 _hook:
 cmpwi r4, 4
-beq _skip
+bne _skip
 li r4, 3
 _skip:
 # Original instruction
@@ -51,6 +51,7 @@ public:
                                     fmt::arg("hook_point", 0x802aad44),
                                     fmt::arg("hook_buffer", hook_buffer)));
         } else if (region == Region::PAL) {
+          add_module_code_change(0xac8, vmc_patch_string, "RSO_ScriptAchievement.rso");
           add_asm_patch(fmt::format(fmt::runtime(friend_voucher_converter_template),
                                     fmt::arg("hook_point", 0x802aaa1c),
                                     fmt::arg("hook_buffer", hook_buffer)));
@@ -59,10 +60,12 @@ public:
       }
       case Game::PRIME_3_STANDALONE:
         if (region == Region::NTSC_U) {
+          add_module_code_change(0xac4, vmc_patch_string, "RSO_ScriptAchievement.rso");
           add_asm_patch(fmt::format(fmt::runtime(friend_voucher_converter_template),
                                     fmt::arg("hook_point", 0x8003d278),
                                     fmt::arg("hook_buffer", hook_buffer)));
         } else if (region == Region::PAL) {
+          add_module_code_change(0xac4, vmc_patch_string, "RSO_ScriptAchievement.rso");
           add_asm_patch(fmt::format(fmt::runtime(friend_voucher_converter_template),
                                     fmt::arg("hook_point", 0x8003d360),
                                     fmt::arg("hook_buffer", hook_buffer)));
