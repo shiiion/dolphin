@@ -207,10 +207,6 @@ void ElfModLoader::CallgateData::remap() {
   // _fini_nullsub:
   //     blr
 
-  // TODO: Assembler!
-  // TODO: Assembler!
-  // TODO: Assembler!
-  // TODO: Assembler!
   u8 dispatcher_stub[] = {
     0x3d, 0x80, 0x00, 0x00, 0x61, 0x8c, 0x00, 0x00, 0x80, 0x0b, 0x00, 0x08, 0x54, 0x00, 0x3f, 0xfe,
     0x2c, 0x00, 0x00, 0x01, 0x41, 0x82, 0x00, 0x2c, 0x80, 0x0b, 0x00, 0x08, 0x54, 0x00, 0x36, 0xbe,
@@ -486,7 +482,8 @@ bool ElfModLoader::create_cleanup_hook(Game game, Region region, u32 mod_index) 
         bl_hook_addr = 0x802ee268;
         add_code_change(0x802ee270, 0x48000014);
       } else if (region == Region::PAL) {
-        // TODO: PAL MP3
+        bl_hook_addr = 0x802ef9bc;
+        add_code_change(0x802ef9c4, 0x48000014);
       }
       break;
 
