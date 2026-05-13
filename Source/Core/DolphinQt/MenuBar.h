@@ -165,7 +165,7 @@ private:
   void AddJITMenu();
   void AddSymbolsMenu();
 
-  void RebuildModSettings();
+  void RebuildPrimeModMenus();
 
   void UpdateStateSlotMenu();
 
@@ -319,6 +319,7 @@ private:
   // ModLoader
   QAction* m_modloader_enabled;
   QAction* m_import_mod;
+  QMenu* m_enabled_mods;
   QMenu* m_mod_settings;
 
   bool m_game_selected = false;

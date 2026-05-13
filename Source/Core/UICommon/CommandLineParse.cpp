@@ -124,6 +124,11 @@ std::unique_ptr<optparse::OptionParser> CreateParser(ParserOptions options)
   parser->add_option("-a", "--audio_emulation")
       .choices({"HLE", "LLE"})
       .help("Choose audio emulation from [%choices]");
+  parser->add_option("-p", "--preset")
+      .action("append")
+      .metavar("<Mod>.<Game>=<Value>")
+      .type("string")
+      .help("Set the desired preset file for a mod");
 
   return parser;
 }

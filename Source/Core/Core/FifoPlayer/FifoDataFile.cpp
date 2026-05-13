@@ -140,7 +140,8 @@ bool FifoDataFile::Save(const std::string& filename)
   header.fileId = FILE_ID;
   header.file_version = VERSION_NUMBER;
   // Maintain backwards compatibility so long as the RAM sizes aren't overridden.
-  if (Config::Get(Config::MAIN_RAM_OVERRIDE_ENABLE))
+  if (Config::Get(Config::MAIN_RAM_OVERRIDE_ENABLE) ||
+      Config::Get(Config::PRIMEHACK_MODLOADER_ENABLED))
     header.min_loader_version = MIN_LOADER_VERSION_FOR_RAM_OVERRIDE;
   else
     header.min_loader_version = MIN_LOADER_VERSION;

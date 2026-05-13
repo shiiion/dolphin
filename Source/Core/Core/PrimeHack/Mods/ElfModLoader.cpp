@@ -20,6 +20,7 @@ void ElfModLoader::run_mod(Game game, Region region) {
   if (!ModLoaderEnabled()) {
     return;
   }
+  return;
 
   // ELF is mapped into an extended memory region
   // We would do this with instruction patches but
@@ -237,11 +238,14 @@ void ElfModLoader::CallgateData::remap() {
 }
 
 void ElfModLoader::sync_mod_states() {
-  for (auto const& mod_name : GetEnabledMods()) {
+  for (auto const& modpack : GetAvailableMods()) {
+    if (!modpack.is_mod_enabled()) {
+      continue;
+    }
     bool has_entry = false;
 
     for (auto& active_mod : active_mods) {
-      if (active_mod.pack_name == mod_name) {
+      if (active_mod.pack_name == modpack.name) {
         has_entry = true;
         // If this mod was previously loaded in this session, we can turn it back on
         if (active_mod.state == State::UNLOADED) {
@@ -253,7 +257,7 @@ void ElfModLoader::sync_mod_states() {
     // If this is a new mod being added, set state to init and let load_mod figure it out
     if (!has_entry) {
       active_mods.emplace_back(LiveMod {
-        .pack_name = mod_name,
+        .pack_name = modpack.name,
         .state = State::INIT,
       });
     }
@@ -264,9 +268,9 @@ void ElfModLoader::sync_mod_states() {
   // this bitch
   for (auto& active_mod : active_mods) {
     bool deactivated = true;
-    for (auto const& mod_name : GetEnabledMods()) {
-      if (active_mod.pack_name == mod_name) {
-        deactivated = false;
+    for (auto const& modpack : GetAvailableMods()) {
+      if (active_mod.pack_name == modpack.name) {
+        deactivated = modpack.is_mod_enabled();
       }
     }
 
@@ -314,7 +318,8 @@ bool ElfModLoader::load_mod(LiveMod& mod, Game game, Region region) {
     elf_file.LoadIntoMemory(Core::System::GetInstance(), mod.load_slide, false);
     elf_file.LoadSymbols(*active_guard, symbol_db, template_pack->name, mod.load_slide);
   } else {
-    // TODO: Logger
+    ERROR_LOG_FMT(PRIMEHACK, "Failed to load mod {} for game {} {}",
+                  mod.pack_name, game_str(game), region_str(region));
     return false;
   }
 
@@ -326,7 +331,8 @@ bool ElfModLoader::load_mod(LiveMod& mod, Game game, Region region) {
     CVar const& cvar = mod.linked.base->var_list[i];
     Symbol const* sym = symbol_db.GetSymbolFromName(cvar.name);
     if (sym == nullptr) {
-      // TODO: Logger
+      ERROR_LOG_FMT(PRIMEHACK, "Failed to locate cvar symbol {} in mod {} for game {} {}",
+                    cvar.name, mod.pack_name, game_str(game), region_str(region));
       return false;
     }
     mod.linked.var_addr_list[i] = sym->address;
@@ -335,7 +341,8 @@ bool ElfModLoader::load_mod(LiveMod& mod, Game game, Region region) {
   for (auto const& vt_hook : template_mod->vt_hooks) {
     Symbol const* sym = symbol_db.GetSymbolFromName(vt_hook.first);
     if (sym == nullptr) {
-      // TODO: Logger
+      ERROR_LOG_FMT(PRIMEHACK, "Failed to locate vt hook symbol {} in mod {} for game {} {}",
+                    vt_hook.first, mod.pack_name, game_str(game), region_str(region));
       return false;
     }
     mod.linked.vt_hooks.emplace_back(sym->address, vt_hook.second);
@@ -344,7 +351,8 @@ bool ElfModLoader::load_mod(LiveMod& mod, Game game, Region region) {
   for (auto const& bl_hook : template_mod->bl_hooks) {
     Symbol const* sym = symbol_db.GetSymbolFromName(bl_hook.first);
     if (sym == nullptr) {
-      // TODO: Logger
+      ERROR_LOG_FMT(PRIMEHACK, "Failed to locate bl hook symbol {} in mod {} for game {} {}",
+                    bl_hook.first, mod.pack_name, game_str(game), region_str(region));
       return false;
     }
     mod.linked.bl_hooks.emplace_back(sym->address, bl_hook.second);
@@ -353,7 +361,8 @@ bool ElfModLoader::load_mod(LiveMod& mod, Game game, Region region) {
   for (auto const& trampoline : template_mod->trampolines) {
     Symbol const* sym = symbol_db.GetSymbolFromName(trampoline.first);
     if (sym == nullptr) {
-      // TODO: Logger
+      ERROR_LOG_FMT(PRIMEHACK, "Failed to locate trampoline symbol {} in mod {} for game {} {}",
+                    trampoline.first, mod.pack_name, game_str(game), region_str(region));
       return false;
     }
     mod.linked.trampolines.emplace_back(sym->address, trampoline.second);
@@ -361,7 +370,8 @@ bool ElfModLoader::load_mod(LiveMod& mod, Game game, Region region) {
   }
 
   if (!create_cleanup_hook(game, region, mod_idx)) {
-    // TODO: Logger
+    ERROR_LOG_FMT(PRIMEHACK, "Failed to create cleanup hook for game {} {}",
+                  game_str(game), region_str(region));
     return false;
   }
 

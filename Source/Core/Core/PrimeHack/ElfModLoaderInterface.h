@@ -10,6 +10,15 @@
 
 namespace prime {
 
+struct FCC {
+  char _arr[4];
+  FCC();
+  FCC(std::string_view sv);
+  FCC(Game game, Region region);
+  std::string to_string() const;
+  std::pair<Game, Region> to_game_region() const;
+};
+
 struct ModVersion {
   int major;
   int minor;
@@ -43,6 +52,7 @@ struct CVar {
 };
 
 std::string CVarValString(CVarVal const&);
+std::optional<CVarVal> ParseCvarValue(CVarType type, std::string const& val);
 
 struct Presets {
   Game game;
@@ -59,11 +69,10 @@ struct Presets {
 struct ElfMod {
   Game game;
   Region region;
+  std::string pack_name;
   std::string elf_path;
   std::string presets_dir;
-
   std::vector<Presets> saved_presets;
-  std::optional<size_t> persist_preset_idx;
 
   std::vector<CVar> var_list;
   std::vector<CodeChange> changes;
@@ -85,23 +94,31 @@ struct ModPack {
   std::string name;
   ModVersion version;
   std::vector<ElfMod> supported_games;
+  std::string root_dir;
 
   ElfMod* get_mod(Game game, Region region);
+  void set_mod_enabled(bool);
+  bool is_mod_enabled() const {
+    if (!enabled.has_value()) {
+      update_cache();
+    }
+    return *enabled;
+  }
+
+private:
+  void update_cache() const;
+  mutable std::optional<bool> enabled;
 };
 
+// Config launch option: select a preset for a mod+game+region to be the initial preset
+void AddInitialPreset(std::string const& mod, std::string const& gr, std::string const& file);
 // Stupid helper to check if the modloader is enabled by config
 bool ModLoaderEnabled();
-// Get the list of mods that have been enabled by UI
-std::vector<std::string> const& GetEnabledMods();
 // Get the list of mods which have been detected in the Dolphin userdata directory, as filled by
 // RefreshMods
 std::vector<ModPack> const& GetAvailableMods();
 // Find a ModPack by name
 ModPack* GetPack(std::string const& name);
-
-// Request to enable or disable a mod. Processed by next AR code event
-void EnableMod(std::string const&);
-void DisableMod(std::string const&);
 
 // Refreshes available ModPack list from the Dolphin userdata directory
 void RefreshMods();

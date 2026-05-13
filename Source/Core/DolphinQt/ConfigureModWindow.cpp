@@ -5,23 +5,44 @@
 #include "DolphinQt/QtUtils/ModalMessageBox.h"
 #include "DolphinQt/QtUtils/WrapInScrollArea.h"
 
+#include <utility>
+
 #include <QApplication>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QEnterEvent>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QLabel>
 #include <QLineEdit>
 #include <QStyle>
 #include <QTabWidget>
+#include <QToolTip>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QWidget>
 
+namespace
+{
+class InstantTooltipLabel : public QLabel
+{
+  QString m_tt_text;
+
+public:
+  InstantTooltipLabel(QString const& text) : QLabel(), m_tt_text(text) {}
+
+  void enterEvent(QEnterEvent* event) override
+  {
+    QToolTip::showText(event->globalPosition().toPoint(), m_tt_text, this);
+  }
+};
+}
+
 class ModConfigWidget : public QWidget
 {
 public:
-  explicit ModConfigWidget(prime::ElfMod* mod, QWidget* parent) : QWidget(parent), m_mod(mod)
+  explicit ModConfigWidget(prime::ElfMod* mod, QDialog* parent)
+    : QWidget(parent), m_mod(mod), m_dialog_parent(parent)
   {
     CreateMainLayout();
   }
@@ -31,51 +52,44 @@ private:
   {
     auto* const main_layout = new QVBoxLayout(this);
 
-    auto* const general_box = new QGroupBox(tr("General"));
     auto* const preset_box = new QGroupBox(tr("Presets"));
     auto* const cvar_box = new QGroupBox(tr("CVars"));
 
     auto* const top_layout = new QHBoxLayout;
     auto* const cvar_layout = new QGridLayout;
 
-    // General Box
-    auto* const general_layout = new QHBoxLayout;
-    m_enabled_checkbox = new QCheckBox;
-    auto* default_button = new QPushButton(tr("Default"));
-    general_layout->addWidget(new QLabel(tr("Enabled")));
-    general_layout->addWidget(m_enabled_checkbox, Qt::AlignLeft);
-    general_layout->addSpacing(20);
-    general_layout->addWidget(default_button);
-    general_box->setLayout(general_layout);
-    general_box->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-
     // Presets Box
     auto* const preset_layout = new QHBoxLayout;
     auto* const preset_buttons_layout = new QHBoxLayout;
     auto* preset_load_button = new QPushButton(tr("Load"));
     auto* preset_save_button = new QPushButton(tr("Save"));
+    auto* default_button = new QPushButton(tr("Default"));
     m_presets_dropdown = new QComboBox;
     m_presets_dropdown->setMinimumWidth(200);
     m_presets_dropdown->setEditable(true);
     preset_layout->addWidget(m_presets_dropdown);
     preset_buttons_layout->addWidget(preset_load_button);
     preset_buttons_layout->addWidget(preset_save_button);
+    preset_buttons_layout->addWidget(default_button);
     preset_layout->addLayout(preset_buttons_layout);
     preset_box->setLayout(preset_layout);
     RebuildPresetsDropdown();
 
     connect(preset_load_button, &QPushButton::clicked, this, &ModConfigWidget::OnLoadPresetPressed);
     connect(preset_save_button, &QPushButton::clicked, this, &ModConfigWidget::OnSavePresetPressed);
-    // TODO: Everything else here
+    connect(default_button, &QPushButton::pressed, this, [this] {
+      m_mod->load_defaults();
+      UpdateCurrentValues();
+    });
 
     // Top area
-    top_layout->addWidget(general_box);
     top_layout->addWidget(preset_box);
 
     // CVars Box
     int row = 0;
     const QIcon question_icon = QApplication::style()->standardIcon(QStyle::SP_MessageBoxQuestion);
 
+    size_t cvar_idx = 0;
     for (auto const& cvar : m_mod->var_list)
     {
       auto* var_lbl = new QLabel(QString::fromStdString(cvar.name + ":"));
@@ -84,27 +98,34 @@ private:
       if (cvar.type == prime::CVarType::BOOLEAN)
       {
         auto* checkbox = new QCheckBox;
-        m_cvar_entries.emplace_back(checkbox);
+        checkbox->setChecked(std::get<bool>(cvar.value));
+        m_cvar_entries.emplace_back(cvar_idx, checkbox);
         entry_widget = checkbox;
       }
       else
       {
         auto* text = new QLineEdit;
-        m_cvar_entries.emplace_back(text);
+        m_cvar_entries.emplace_back(cvar_idx, text);
         entry_widget = text;
       }
 
       auto* curval_lbl = new QLabel(QString::fromStdString(prime::CVarValString(cvar.value)));
       m_cvar_current_vals.emplace_back(curval_lbl);
 
-      auto* help_desc_lbl = new QLabel;
+      QString help_desc = QStringLiteral("%1\nDefault value: %2")
+        .arg(cvar.description)
+        .arg(prime::CVarValString(cvar.def));
+      auto* help_desc_lbl = new InstantTooltipLabel(help_desc);
       help_desc_lbl->setPixmap(question_icon.pixmap(20));
       help_desc_lbl->setAlignment(Qt::AlignCenter);
-      help_desc_lbl->setToolTip(QString::fromStdString(cvar.description));
-      help_desc_lbl->setToolTipDuration(0);
 
       cvar_layout->addWidget(var_lbl, row, 0);
       curval_lbl->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+      {
+        QFontMetrics fm(curval_lbl->font());
+        // Widest reasonable value with extra padding
+        curval_lbl->setMinimumWidth(fm.horizontalAdvance(QStringLiteral("0.0000000e+00")) + 10);
+      }
       help_desc_lbl->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
       entry_widget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
       entry_widget->setMinimumWidth(400);
@@ -115,12 +136,81 @@ private:
       cvar_layout->addLayout(h_layout, row, 1);
 
       row++;
+      cvar_idx++;
     }
+    cvar_layout->setVerticalSpacing(5);
+    cvar_layout->setHorizontalSpacing(5);
     cvar_box->setLayout(cvar_layout);
 
+
+    auto* button_box = new QDialogButtonBox(
+      QDialogButtonBox::Apply | QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    connect(button_box->button(QDialogButtonBox::Apply), &QPushButton::clicked, this,
+            &ModConfigWidget::ApplyChanges);
+    connect(button_box, &QDialogButtonBox::accepted, this, [this] {
+      ApplyChanges();
+      m_dialog_parent->accept();
+    });
+    connect(button_box, &QDialogButtonBox::rejected, m_dialog_parent, &QDialog::reject);
     main_layout->addLayout(top_layout);
     main_layout->addWidget(cvar_box);
     main_layout->addStretch();
+    main_layout->addWidget(button_box);
+  }
+
+  void ApplyChanges()
+  {
+    for (auto const& [var_idx, entry] : m_cvar_entries)
+    {
+      prime::CVar& cvar = m_mod->var_list[var_idx];
+      if (auto ent_bool_p = std::get_if<QCheckBox*>(&entry); ent_bool_p != nullptr)
+      {
+        ASSERT(cvar.type == prime::CVarType::BOOLEAN);
+        auto* ent_bool = *ent_bool_p;
+        cvar.value = ent_bool->isChecked();
+      }
+      else if (auto ent_str_p = std::get_if<QLineEdit*>(&entry); ent_str_p != nullptr)
+      {
+        auto* ent_str = *ent_str_p;
+        ent_str->setPalette(QPalette());
+        ent_str->setToolTip(QStringLiteral(""));
+        const std::string contents = ent_str->text().trimmed().toStdString();
+        if (contents.empty())
+        {
+          continue;
+        }
+
+        auto prs_res = prime::ParseCvarValue(cvar.type, contents);
+        if (prs_res)
+        {
+          cvar.value = *prs_res;
+        }
+        else
+        {
+          QPalette err_colors;
+          err_colors.setColor(QPalette::Base, Qt::darkRed);
+          ent_str->setPalette(err_colors);
+          switch (cvar.type)
+          {
+            case prime::CVarType::FLOAT32:
+            case prime::CVarType::FLOAT64:
+              ent_str->setToolTip(QStringLiteral("Invalid value, expected a float"));
+              break;
+            case prime::CVarType::INT8:
+            case prime::CVarType::INT16:
+            case prime::CVarType::INT32:
+            case prime::CVarType::INT64:
+              ent_str->setToolTip(QStringLiteral("Invalid value, expected a positive integer"));
+              break;
+            default:
+              break;
+          }
+        }
+      }
+    }
+
+    m_mod->flush();
+    UpdateCurrentValues();
   }
 
   void OnLoadPresetPressed()
@@ -192,21 +282,22 @@ private:
   {
     for (size_t i = 0; i < m_cvar_current_vals.size(); i++)
     {
-      m_cvar_current_vals[i]->setText(QString::fromStdString(prime::CVarValString(m_mod->var_list[i].value)));
+      m_cvar_current_vals[i]->setText(
+        QString::fromStdString(prime::CVarValString(m_mod->var_list[i].value)));
     }
   }
 
 private:
   prime::ElfMod* m_mod;
-  QCheckBox* m_enabled_checkbox;
+  QDialog* m_dialog_parent;
   QComboBox* m_presets_dropdown;
 
-  std::vector<std::variant<QCheckBox*, QLineEdit*>> m_cvar_entries;
+  std::vector<std::pair<size_t, std::variant<QCheckBox*, QLineEdit*>>> m_cvar_entries;
   std::vector<QLabel*> m_cvar_current_vals;
 };
 
 ConfigureModWindow::ConfigureModWindow(std::string const& mod_name, QWidget* parent)
-  : QDialog(parent), m_mod_name(mod_name)
+  : StackedSettingsWindow(parent, false), m_mod_name(mod_name)
 {
   CreateMainLayout();
 }
@@ -216,19 +307,13 @@ void ConfigureModWindow::CreateMainLayout()
   prime::ModPack* modpack = prime::GetPack(m_mod_name);
   ASSERT(modpack != nullptr);
 
-  auto* const main_layout = new QVBoxLayout(this);
-  auto* const tab_widget = new QTabWidget;
-
-  main_layout->addWidget(tab_widget);
-
   for (prime::ElfMod& mod : modpack->supported_games)
   {
     ModConfigWidget* const mod_tab = new ModConfigWidget(&mod, this);
-    QWidget* const wrapped_general = GetWrappedWidget(mod_tab);
-    // auto tab_title = fmt::format("{} {}", prime::game_str(mod.game), prime::region_str(mod.region));
     auto tab_title = std::string(prime::game_str(mod.game));
-    tab_widget->addTab(wrapped_general, QString::fromStdString(tab_title));
+    AddWrappedPane(mod_tab, QString::fromStdString(tab_title));
   }
+  OnDoneCreatingPanes();
 
   setWindowTitle(tr("%1 Mod Settings").arg(QString::fromStdString(modpack->name)));
 }

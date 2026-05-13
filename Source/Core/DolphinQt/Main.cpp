@@ -31,6 +31,7 @@
 #include "Core/Core.h"
 #include "Core/DolphinAnalytics.h"
 #include "Core/System.h"
+#include "Core/PrimeHack/ElfModLoaderInterface.h"
 #include "Core/PrimeHack/HackConfig.h"
 
 #include "DolphinQt/Host.h"
@@ -231,6 +232,25 @@ int main(int argc, char* argv[])
     boot = BootParameters::GenerateFromFile(
         args.front(), BootSessionData(save_state_path, DeleteSavestateAfterBoot::No));
     game_specified = true;
+  }
+
+  if (options.is_set_by_user("preset"))
+  {
+    auto preset_args = options.all("preset");
+    for (auto const& preset_arg : preset_args)
+    {
+      std::istringstream buffer(preset_arg);
+      std::string mod_str, game_str, val;
+      std::getline(buffer, mod_str, '.');
+      std::getline(buffer, game_str, '=');
+      std::getline(buffer, val, '=');
+
+      if (mod_str.empty() || game_str.empty() || val.empty())
+      {
+        continue;
+      }
+      prime::AddInitialPreset(mod_str, game_str, val);
+    }
   }
 
   int retval;

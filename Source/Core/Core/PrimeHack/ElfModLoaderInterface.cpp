@@ -26,8 +26,8 @@ namespace fs = std::filesystem;
 
 // List of mods discovered from RefreshMods
 std::vector<ModPack> sDiscoveredMods;
-// List of mods enabled by UI
-std::vector<std::string> sEnabledList;
+// List of presets to be loaded on init
+std::vector<std::pair<std::string, std::string>> sInitialPresets;
 
 std::optional<CVarType> parse_cvar_type(std::string const& str) {
   if (str == "f32") {
@@ -87,134 +87,6 @@ std::optional<CVarVal> parse_flt(std::string const& val) {
   }
   return std::nullopt;
 }
-
-std::optional<CVarVal> parse_cvar_value(CVarType type, std::string const& val) {
-  switch (type) {
-    case CVarType::INT8:
-      return parse_int<u8>(val);
-    case CVarType::INT16:
-      return parse_int<u16>(val);
-    case CVarType::INT32:
-      return parse_int<u32>(val);
-    case CVarType::INT64:
-      return parse_int<u64>(val);
-    case CVarType::FLOAT32:
-      return parse_flt<float>(val);
-    case CVarType::FLOAT64:
-      return parse_flt<double>(val);
-    case CVarType::BOOLEAN:
-      return val == "On" ? std::make_optional(true) : (val == "Off" ? std::make_optional(false) : std::nullopt);
-  }
-  return std::nullopt;
-}
-
-struct FCC {
-  char _arr[4];
-  FCC() {
-    _arr[0] = _arr[1] = _arr[2] = _arr[3] = 'X';
-  }
-  FCC(std::string_view sv) : FCC() {
-    memcpy(_arr, sv.data(), std::min(sizeof(_arr), sv.length()));
-  }
-  FCC(Game game, Region region) : FCC() {
-    switch (game) {
-      case Game::PRIME_1_GCN:
-        _arr[0] = '1';
-        _arr[1] = 'S';
-        _arr[2] = '0';
-        break;
-      case Game::PRIME_1_GCN_R1:
-        _arr[0] = '1';
-        _arr[1] = 'S';
-        _arr[2] = '1';
-        break;
-      case Game::PRIME_1_GCN_R2:
-        _arr[0] = '1';
-        _arr[1] = 'S';
-        _arr[2] = '2';
-        break;
-      case Game::PRIME_1:
-        _arr[0] = '1';
-        _arr[1] = 'T';
-        _arr[2] = '0';
-        break;
-      case Game::PRIME_2_GCN:
-        _arr[0] = '2';
-        _arr[1] = 'S';
-        _arr[2] = '0';
-        break;
-      case Game::PRIME_2:
-        _arr[0] = '2';
-        _arr[1] = 'T';
-        _arr[2] = '0';
-        break;
-      case Game::PRIME_3_STANDALONE:
-        _arr[0] = '3';
-        _arr[1] = 'S';
-        _arr[2] = '0';
-        break;
-      case Game::PRIME_3:
-        _arr[0] = '3';
-        _arr[1] = 'T';
-        _arr[2] = '0';
-        break;
-      default:
-        break;
-    }
-
-    if (region == Region::NTSC_U) {
-      _arr[3] = 'N';
-    } else if (region == Region::PAL) {
-      _arr[3] = 'P';
-    }
-  }
-
-  std::string to_string() const {
-    return std::string(_arr, 4);
-  }
-
-  std::pair<Game, Region> to_game_region() const {
-    Region region;
-    if (_arr[3] == 'N') {
-      region = Region::NTSC_U;
-    } else if (_arr[3] == 'P') {
-      region = Region::PAL;
-    } else {
-      region = Region::INVALID_REGION;
-    }
-
-    if (_arr[0] == '1') {
-      if (_arr[1] == 'S') {
-        switch (_arr[2]) {
-          case '0':
-            return std::make_pair(Game::PRIME_1_GCN, region);
-          case '1':
-            return std::make_pair(Game::PRIME_1_GCN_R1, region);
-          case '2':
-            return std::make_pair(Game::PRIME_1_GCN_R2, region);
-          default:
-            break;
-        }
-      } else if (_arr[1] == 'T') {
-        return std::make_pair(Game::PRIME_1, region);
-      }
-    } else if (_arr[0] == '2' && _arr[2] == '0') {
-      if (_arr[1] == 'S') {
-        return std::make_pair(Game::PRIME_2_GCN, region);
-      } else if (_arr[1] == 'T') {
-        return std::make_pair(Game::PRIME_2, region);
-      }
-    } else if (_arr[0] == '3' && _arr[2] == '0') {
-      if (_arr[1] == 'S') {
-        return std::make_pair(Game::PRIME_3_STANDALONE, region);
-      } else if (_arr[1] == 'T') {
-        return std::make_pair(Game::PRIME_3, region);
-      }
-    }
-
-    return std::make_pair(Game::INVALID_GAME, region);
-  }
-};
 
 std::optional<std::string> parse_elfpath(std::string const& rel_dir, std::string const& str) {
   fs::path search_name(str);
@@ -567,6 +439,7 @@ std::expected<ModPack, std::string> parse_mpk(std::string const& path) {
       auto [game, region] = game_fcc.to_game_region();
       auto parse_result = parse_game_mod(base_path, game_def->second.get<picojson::object>(), game, region);
       if (parse_result.has_value()) {
+        parse_result->pack_name = result_pack.name;
         result_pack.supported_games.emplace_back(std::move(*parse_result));
       } else {
         // Any malformed mods in a modpack should fail the entire modpack
@@ -693,7 +566,7 @@ std::string parse_preset(ModPack& pack, fs::path const& path) {
         return "Invalid preset var missing 'val' field";
       }
 
-      if (auto parsed_val = parse_cvar_value(var_type, var_val); parsed_val) {
+      if (auto parsed_val = ParseCvarValue(var_type, var_val); parsed_val) {
         result.vals.emplace_back(std::move(var_name), var_type, *parsed_val);
       } else {
         return "Preset 'val' field could not be parsed";
@@ -701,20 +574,22 @@ std::string parse_preset(ModPack& pack, fs::path const& path) {
     }
   }
 
-  result.name = path.filename().string();
+  result.name = path.stem().string();
   result.dirty = false;
-  preset_mod->saved_presets.emplace_back(std::move(result));
-  if (result.name == preset_game.to_string()) {
+  auto const& res_ref = preset_mod->saved_presets.emplace_back(std::move(result));
+
+  if (res_ref.is_persistent()) {
     // Since this is the initial loading state of this mod, set the active preset to the persist
     // preset on disk
     preset_mod->apply_preset(preset_game.to_string());
-    preset_mod->persist_preset_idx = preset_mod->saved_presets.size() - 1;
   }
 
   return "";
 }
 
 void read_modpack_data(ModPack& pack, fs::path const& root_dir) {
+  pack.root_dir = root_dir.string();
+
   const auto presets_dir = root_dir / "presets";
   // No presets to load
   if (!fs::exists(presets_dir) || !fs::is_directory(presets_dir)) {
@@ -729,7 +604,17 @@ void read_modpack_data(ModPack& pack, fs::path const& root_dir) {
 
     std::string err = parse_preset(pack, it.path());
     if (!err.empty()) {
-      // TODO: Log error
+      ERROR_LOG_FMT(PRIMEHACK, "Failed to parse preset file {}", it.path().string());
+    }
+  }
+
+  // After parsing, check if we have any initial preset settings
+  for (auto const& [modgr, file] : sInitialPresets) {
+    for (auto& mod : pack.supported_games) {
+      if (modgr == fmt::format("{}.{}", pack.name, FCC(mod.game, mod.region).to_string())) {
+        const std::string stripped_filename = fs::path(file).stem().string();
+        mod.apply_preset(stripped_filename);
+      }
     }
   }
 }
@@ -764,6 +649,113 @@ void save_preset(Presets const& preset, fs::path const& presets_dir) {
 
 } // namespace
 
+FCC::FCC() {
+  _arr[0] = _arr[1] = _arr[2] = _arr[3] = 'X';
+}
+
+FCC::FCC(std::string_view sv) : FCC() {
+  memcpy(_arr, sv.data(), std::min(sizeof(_arr), sv.length()));
+}
+
+FCC::FCC(Game game, Region region) : FCC() {
+  switch (game) {
+    case Game::PRIME_1_GCN:
+      _arr[0] = '1';
+      _arr[1] = 'S';
+      _arr[2] = '0';
+      break;
+    case Game::PRIME_1_GCN_R1:
+      _arr[0] = '1';
+      _arr[1] = 'S';
+      _arr[2] = '1';
+      break;
+    case Game::PRIME_1_GCN_R2:
+      _arr[0] = '1';
+      _arr[1] = 'S';
+      _arr[2] = '2';
+      break;
+    case Game::PRIME_1:
+      _arr[0] = '1';
+      _arr[1] = 'T';
+      _arr[2] = '0';
+      break;
+    case Game::PRIME_2_GCN:
+      _arr[0] = '2';
+      _arr[1] = 'S';
+      _arr[2] = '0';
+      break;
+    case Game::PRIME_2:
+      _arr[0] = '2';
+      _arr[1] = 'T';
+      _arr[2] = '0';
+      break;
+    case Game::PRIME_3_STANDALONE:
+      _arr[0] = '3';
+      _arr[1] = 'S';
+      _arr[2] = '0';
+      break;
+    case Game::PRIME_3:
+      _arr[0] = '3';
+      _arr[1] = 'T';
+      _arr[2] = '0';
+      break;
+    default:
+      break;
+  }
+
+  if (region == Region::NTSC_U) {
+    _arr[3] = 'N';
+  } else if (region == Region::PAL) {
+    _arr[3] = 'P';
+  }
+}
+
+std::string FCC::to_string() const {
+  return std::string(_arr, 4);
+}
+
+std::pair<Game, Region> FCC::to_game_region() const {
+  Region region;
+  if (_arr[3] == 'N') {
+    region = Region::NTSC_U;
+  } else if (_arr[3] == 'P') {
+    region = Region::PAL;
+  } else {
+    region = Region::INVALID_REGION;
+  }
+
+  if (_arr[0] == '1') {
+    if (_arr[1] == 'S') {
+      switch (_arr[2]) {
+        case '0':
+          return std::make_pair(Game::PRIME_1_GCN, region);
+        case '1':
+          return std::make_pair(Game::PRIME_1_GCN_R1, region);
+        case '2':
+          return std::make_pair(Game::PRIME_1_GCN_R2, region);
+        default:
+          break;
+      }
+    } else if (_arr[1] == 'T') {
+      return std::make_pair(Game::PRIME_1, region);
+    }
+  } else if (_arr[0] == '2' && _arr[2] == '0') {
+    if (_arr[1] == 'S') {
+      return std::make_pair(Game::PRIME_2_GCN, region);
+    } else if (_arr[1] == 'T') {
+      return std::make_pair(Game::PRIME_2, region);
+    }
+  } else if (_arr[0] == '3' && _arr[2] == '0') {
+    if (_arr[1] == 'S') {
+      return std::make_pair(Game::PRIME_3_STANDALONE, region);
+    } else if (_arr[1] == 'T') {
+      return std::make_pair(Game::PRIME_3, region);
+    }
+  }
+
+  return std::make_pair(Game::INVALID_GAME, region);
+}
+
 std::string CVarValString(CVarVal const& var) {
   if (uint8_t const* v8 = std::get_if<uint8_t>(&var); v8 != nullptr) {
     return std::to_string(static_cast<u64>(*v8));
@@ -783,6 +775,26 @@ std::string CVarValString(CVarVal const& var) {
   return "";
 }
 
+std::optional<CVarVal> ParseCvarValue(CVarType type, std::string const& val) {
+  switch (type) {
+    case CVarType::INT8:
+      return parse_int<u8>(val);
+    case CVarType::INT16:
+      return parse_int<u16>(val);
+    case CVarType::INT32:
+      return parse_int<u32>(val);
+    case CVarType::INT64:
+      return parse_int<u64>(val);
+    case CVarType::FLOAT32:
+      return parse_flt<float>(val);
+    case CVarType::FLOAT64:
+      return parse_flt<double>(val);
+    case CVarType::BOOLEAN:
+      return val == "On" ? std::make_optional(true) : (val == "Off" ? std::make_optional(false) : std::nullopt);
+  }
+  return std::nullopt;
+}
+
 bool Presets::is_persistent() const {
   return name == FCC(game, region).to_string();
 }
@@ -794,12 +806,44 @@ ElfMod* ModPack::get_mod(Game game, Region region) {
   return mod_it != supported_games.end() ? &*mod_it : nullptr;
 }
 
-bool ModLoaderEnabled() {
-  return Config::Get(Config::PRIMEHACK_MODLOADER_ENABLED);
+void ModPack::set_mod_enabled(bool en) {
+  update_cache();
+  enabled = en;
+  File::WriteStringToFile(root_dir + "/state.txt", en ? "y" : "n");
 }
 
-std::vector<std::string> const& GetEnabledMods() {
-  return sEnabledList;
+void ModPack::update_cache() const {
+  fs::path state_file = fs::path(root_dir) / "state.txt";
+  if (!fs::exists(state_file)) {
+    File::CreateEmptyFile(state_file.string());
+    File::WriteStringToFile(state_file.string(), "n");
+    enabled = false;
+  } else {
+    std::string contents;
+    File::ReadFileToString(state_file.string(), contents);
+    if (contents == "y") {
+      enabled = true;
+    } else if (contents == "n") {
+      enabled = false;
+    } else {
+      enabled = false;
+      File::WriteStringToFile(state_file.string(), "n");
+    }
+  }
+}
+
+void AddInitialPreset(std::string const& mod, std::string const& gr, std::string const& file) {
+  auto [game, region] = FCC(gr).to_game_region();
+  if (game == Game::INVALID_GAME || region == Region::INVALID_REGION) {
+    WARN_LOG_FMT(PRIMEHACK,
+                 "Invalid GameRegion '{}'. Expected FourCC of format <1/2/3><S/T><0/1/2><N/P>", gr);
+    return;
+  }
+  sInitialPresets.emplace_back(fmt::format("{}.{}", mod, gr), file);
+}
+
+bool ModLoaderEnabled() {
+  return Config::Get(Config::PRIMEHACK_MODLOADER_ENABLED);
 }
 
 std::vector<ModPack> const& GetAvailableMods() {
@@ -811,14 +855,6 @@ ModPack* GetPack(std::string const& name) {
     return pack.name == name;
   });
   return pack_it == sDiscoveredMods.end() ? nullptr : &*pack_it;
-}
-
-void EnableMod(std::string const& name) {
-  sEnabledList.emplace_back(name);
-}
-
-void DisableMod(std::string const& name) {
-  std::erase_if(sEnabledList, [&name](std::string const& en_mod) { return en_mod == name; });
 }
 
 std::optional<ModVersion> ModVersion::parse(std::string const& str) {
@@ -848,6 +884,12 @@ void ElfMod::apply_preset(std::string const& preset_name) {
       presets = &p;
       break;
     }
+  }
+
+  if (presets == nullptr) {
+    WARN_LOG_FMT(PRIMEHACK, "Preset name '{}' not found for mod '{}' with game {} {}",
+                 preset_name, pack_name, game_str(game), region_str(region));
+    return;
   }
 
   for (auto& var : var_list) {
@@ -905,7 +947,7 @@ void RefreshMods() {
   // Can't update available mods list when emulation is running
   auto& system = Core::System::GetInstance();
   if (Core::IsRunningOrStarting(system)) {
-    // TODO: Log warning
+    WARN_LOG_FMT(PRIMEHACK, "Attempted to refresh modpack list when emulation is active");
     return;
   }
 
@@ -926,7 +968,8 @@ void RefreshMods() {
           sDiscoveredMods.emplace_back(std::move(*parse_result));
           break;
         } else {
-          // TODO: Log error
+          ERROR_LOG_FMT(PRIMEHACK, "Failed to parse modpack {}, reason: {}",
+                        mod_it.path().string(), parse_result.error());
         }
       }
     }

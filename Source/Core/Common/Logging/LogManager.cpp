@@ -141,6 +141,7 @@ LogManager::LogManager()
   m_log[LogType::OSREPORT] = {"OSREPORT", "OSReport EXI"};
   m_log[LogType::OSREPORT_HLE] = {"OSREPORT_HLE", "OSReport HLE"};
   m_log[LogType::PIXELENGINE] = {"PE", "Pixel Engine"};
+  m_log[LogType::PRIMEHACK] = {"PRIMEHACK", "PrimeHack"};
   m_log[LogType::PROCESSORINTERFACE] = {"PI", "Processor Interface"};
   m_log[LogType::POWERPC] = {"PowerPC", "PowerPC IBM CPU"};
   m_log[LogType::SERIALINTERFACE] = {"SI", "Serial Interface"};

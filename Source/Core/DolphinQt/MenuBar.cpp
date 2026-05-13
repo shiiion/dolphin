@@ -698,7 +698,7 @@ void MenuBar::AddHelpMenu()
   help_menu->addAction(tr("&About"), this, &MenuBar::ShowAboutDialog);
 }
 
-void MenuBar::RebuildModSettings()
+void MenuBar::RebuildPrimeModMenus()
 {
   m_mod_settings->clear();
 
@@ -707,6 +707,15 @@ void MenuBar::RebuildModSettings()
   for (auto const& pack : avail_mods)
   {
     std::string packname = pack.name;
+    auto* en_action = m_enabled_mods->addAction(QString::fromStdString(pack.name), [packname] {
+      prime::ModPack* modpack = prime::GetPack(packname);
+      ASSERT(modpack != nullptr);
+
+      modpack->set_mod_enabled(!modpack->is_mod_enabled());
+    });
+    en_action->setCheckable(true);
+    en_action->setChecked(pack.is_mod_enabled());
+
     m_mod_settings->addAction(QString::fromStdString(pack.name), [this, packname] {
       // To avoid weird state issues, just disallow touching this UI when config opened
       m_modloader_enabled->setEnabled(false);
@@ -736,6 +745,7 @@ void MenuBar::AddPrimeHackMenu()
   connect(m_modloader_enabled, &QAction::toggled, [this](bool value) {
     Config::SetBaseOrCurrent(Config::PRIMEHACK_MODLOADER_ENABLED, value);
     m_import_mod->setEnabled(value && !m_emulation_active);
+    m_enabled_mods->setEnabled(value);
     m_mod_settings->setEnabled(value);
     emit ModLoaderToggled(value);
   });
@@ -753,7 +763,7 @@ void MenuBar::AddPrimeHackMenu()
       ModalMessageBox::information(
         this, tr("Success"), tr("Successfully imported \"%1\"").arg(zip_path),
         QMessageBox::Ok | QMessageBox::Ignore);
-      RebuildModSettings();
+      RebuildPrimeModMenus();
     }
     else
     {
@@ -762,10 +772,14 @@ void MenuBar::AddPrimeHackMenu()
   });
   m_import_mod->setEnabled(start_enabled);
 
+  m_enabled_mods = new QtUtils::NonAutodismissibleMenu(tr("Enabled Mods"));
+  primehack_menu->addMenu(m_enabled_mods);
+  m_enabled_mods->setEnabled(start_enabled);
+
   m_mod_settings = primehack_menu->addMenu(tr("Configure Mods"));
   m_mod_settings->setEnabled(start_enabled);
 
-  RebuildModSettings();
+  RebuildPrimeModMenus();
 
   primehack_menu->addSeparator();
 
@@ -780,7 +794,7 @@ void MenuBar::AddPrimeHackMenu()
   connect(&Settings::Instance(), &Settings::EmulationStateChanged, this, [this](Core::State state) {
     m_emulation_active = state == Core::State::Starting || state == Core::State::Running ||
                          state == Core::State::Paused;
-    m_modloader_enabled->setEnabled(m_emulation_active);
+    m_modloader_enabled->setEnabled(!m_emulation_active);
     // Import button is disabled both by starting emulation as well as the modloader enablement
     m_import_mod->setEnabled(!m_emulation_active &&
                              Config::Get(Config::PRIMEHACK_MODLOADER_ENABLED));

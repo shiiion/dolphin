@@ -1,10 +1,9 @@
 #pragma once
 
 #include "Common/CommonTypes.h"
+#include "DolphinQt/Config/SettingsWindow.h"
 
-#include <QDialog>
-
-class ConfigureModWindow : public QDialog
+class ConfigureModWindow : public StackedSettingsWindow
 {
   Q_OBJECT
 public:
