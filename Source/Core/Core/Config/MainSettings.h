@@ -313,6 +313,7 @@ extern const Info<bool> MAIN_GAMELIST_COLUMN_BLOCK_SIZE;
 extern const Info<bool> MAIN_GAMELIST_COLUMN_COMPRESSION;
 extern const Info<bool> MAIN_GAMELIST_COLUMN_TIME_PLAYED;
 extern const Info<bool> MAIN_GAMELIST_COLUMN_TAGS;
+extern const Info<bool> MAIN_GAMELIST_COLUMN_PHSUPPORT;
 
 // Main.FifoPlayer
 

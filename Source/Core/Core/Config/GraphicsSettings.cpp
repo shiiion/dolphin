@@ -219,7 +219,7 @@ const Info<bool> AUTO_EFB{{System::GFX, "PrimeHack Misc", "AutoEFBMP"}, true};
 const Info<bool> LOCKCAMERA_IN_PUZZLES{{System::GFX, "PrimeHack Misc", "Lock Camera in Motion Puzzles"}, true};
 const Info<bool> DISABLE_BLOOM{{System::GFX, "PrimeHack Misc", "DisableBloom"}, false};
 const Info<bool> REDUCE_BLOOM{{System::GFX, "PrimeHack Misc", "ReduceBloom"}, true};
-const Info<int> BLOOM_INTENSITY{{System::GFX, "PrimeHack Misc", "BloomIntensity"}, 100};
+const Info<int> BLOOM_INTENSITY{{System::GFX, "PrimeHack Misc", "BloomIntensity"}, 65};
 const Info<bool> TOGGLE_CULLING{{System::GFX, "PrimeHack Misc", "ToggleCulling"}, false};
 const Info<bool> ENABLE_SECONDARY_GUNFX{{System::GFX, "PrimeHack Misc", "EnableSecondaryGunFX"}, false};
 const Info<bool> GC_SHOW_CROSSHAIR{ {System::GFX, "PrimeHack Misc", "GC_ShowCrosshair"}, false };

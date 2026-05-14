@@ -265,5 +265,113 @@ void handle_reticle(Core::CPUThreadGuard const& guard, u32 x_address, u32 y_addr
 
   handle_wiimote_IR(guard, x_address, y_address, region, base_cursor_range_w, base_cursor_range_h, aspect_mode, kMetroidAr);
 }
+std::string_view GetIconNameForSupportLevel(GameSupportLevel supp_level)
+{
+  switch (supp_level)
+  {
+  case GameSupportLevel::FullySupported:
+    return "PrimeHackSupported";
+  case GameSupportLevel::LimitedSupport:
+    return "PrimeHackLimited";
+  case GameSupportLevel::Unsupported:
+    return "PrimeHackUnsupported";
+  default:
+    return "";
+  }
+}
+
+std::array<std::string_view, 14> kKnownTitles = {
+  "GM8E01", // MP1 GCN [NTSC] (all revisions)
+  "GM8P01", // MP1 GCN [PAL]
+  "GM8J01", // MP1 GCN [NTSC-J]
+  "R3IE01", // New Play Control! [NTSC-J]
+  "G2MJ01", // MP2 Dark Echoes GCN [NTSC-J]
+  "R32J01", // MP2 Dark Echoes Wii [NTSC - J]
+  "G2ME01", // MP2 GCN [NTSC]
+  "G2MP01", // MP2 GCN [PAL]
+  "P2ME01", // MP2 Bonus Disc [NTSC]
+  "RM3E01", // MP3 [NTSC]
+  "RM3P01", // MP3 [PAL]
+  "RM3J01", // MP3 [NTSC-J]
+  "R3ME01", // MPT [NTSC]
+  "R3MP01", // MPT [PAL]
+};
+
+std::array<std::string_view, 8> kSupportedTitles = {
+  "GM8E01", // MP1 GCN [NTSC] (all revisions)
+  "GM8P01", // MP1 GCN [PAL]
+  "G2ME01", // MP2 GCN [NTSC]
+  "G2MP01", // MP2 GCN [PAL]
+  "RM3E01", // MP3 [NTSC]
+  "RM3P01", // MP3 [PAL]
+  "R3ME01", // MPT [NTSC]
+  "R3MP01", // MPT [PAL]
+};
+
+GameSupportLevel GetGameSupportLevel(UICommon::GameFile const& file)
+{
+  std::string const& title = file.GetGameID();
+  bool is_known = false;
+  bool is_supported = false;
+
+  for (size_t i = 0; i < kKnownTitles.size(); i++)
+  {
+    if (title == kKnownTitles[i])
+    {
+      is_known = true;
+      break;
+    }
+  }
+
+  for (size_t i = 0; i < kSupportedTitles.size(); i++)
+  {
+    if (title == kSupportedTitles[i])
+    {
+      is_supported = true;
+      break;
+    }
+  }
+
+  if (is_known && is_supported)
+  {
+    // Korean Prime 1 has same game id as NTSC, just with a different revision
+    constexpr u16 kKoreanRevisionNum = 48;
+    if (file.GetRevision() == kKoreanRevisionNum)
+    {
+      return GameSupportLevel::Unsupported;
+    }
+    if (file.IsNKit() || file.GetBlobType() == DiscIO::BlobType::WBFS)
+    {
+      return GameSupportLevel::LimitedSupport;
+    }
+    else
+    {
+      return GameSupportLevel::FullySupported;
+    }
+  }
+  else if (is_known)
+  {
+    return GameSupportLevel::Unsupported;
+  }
+  else
+  {
+    return GameSupportLevel::NotApplicable;
+  }
+}
+
+std::string_view SupportLevelToolTip(GameSupportLevel supp_level)
+{
+  switch (supp_level)
+  {
+  case GameSupportLevel::FullySupported:
+    return "This game is fully supported by PrimeHack!";
+  case GameSupportLevel::Unsupported:
+    return "This game isn't supported by PrimeHack.";
+  case GameSupportLevel::LimitedSupport:
+    return "This game is compressed with .nkit or .wbfs, unexpected behavior may occur.";
+  default:
+    return "";
+  }
+}
 
 } // namespace prime

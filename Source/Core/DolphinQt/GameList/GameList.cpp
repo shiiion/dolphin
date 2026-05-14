@@ -35,8 +35,10 @@
 #include <QListView>
 #include <QMap>
 #include <QMenu>
+#include <QPainter>
 #include <QShortcut>
 #include <QSortFilterProxyModel>
+#include <QStyledItemDelegate>
 #include <QTableView>
 #include <QUrl>
 
@@ -73,6 +75,7 @@
 
 namespace
 {
+
 class GameListTableView : public QTableView
 {
 public:
@@ -232,6 +235,7 @@ void GameList::MakeListView()
     SetResizeMode(Column::Compression, Mode::Fixed);
     SetResizeMode(Column::TimePlayed, Mode::Interactive);
     SetResizeMode(Column::Tags, Mode::Interactive);
+    SetResizeMode(Column::PrimeHackSupport, Mode::Fixed);
 
     // Cells have 3 pixels of padding, so the width of these needs to be image width + 6. Banners
     // are 96 pixels wide, platform and country icons are 32 pixels wide.
@@ -241,7 +245,6 @@ void GameList::MakeListView()
     m_list->setColumnWidth(static_cast<int>(Column::Size), 85);
     m_list->setColumnWidth(static_cast<int>(Column::ID), 70);
   }
-
   // There's some odd platform-specific behavior with default minimum section size
   hor_header->setMinimumSectionSize(38);
 
@@ -298,6 +301,7 @@ void GameList::UpdateColumnVisibility()
   SetVisiblity(Column::Compression, Config::Get(Config::MAIN_GAMELIST_COLUMN_COMPRESSION));
   SetVisiblity(Column::TimePlayed, Config::Get(Config::MAIN_GAMELIST_COLUMN_TIME_PLAYED));
   SetVisiblity(Column::Tags, Config::Get(Config::MAIN_GAMELIST_COLUMN_TAGS));
+  SetVisiblity(Column::PrimeHackSupport, Config::Get(Config::MAIN_GAMELIST_COLUMN_PHSUPPORT));
 }
 
 void GameList::MakeEmptyView()
@@ -1034,6 +1038,7 @@ void GameList::OnColumnVisibilityToggled(const QString& row, bool visible)
       {tr("Compression"), Column::Compression},
       {tr("Time Played"), Column::TimePlayed},
       {tr("Tags"), Column::Tags},
+      {tr("PrimeHack Support"), Column::PrimeHackSupport},
   };
 
   m_list->setColumnHidden(static_cast<int>(rowname_to_column[row]), !visible);

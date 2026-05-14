@@ -9,12 +9,16 @@
 #include <QSize>
 
 #include "DolphinQt/GameList/GameListModel.h"
+#include "DolphinQt/Resources.h"
 
 #include "Core/Config/UISettings.h"
+#include "Core/PrimeHack/PrimeUtils.h"
 
 #include "UICommon/GameFile.h"
 
 const QSize LARGE_BANNER_SIZE(144, 48);
+
+using namespace prime;
 
 GridProxyModel::GridProxyModel(QObject* parent) : QSortFilterProxyModel(parent)
 {
@@ -23,7 +27,10 @@ GridProxyModel::GridProxyModel(QObject* parent) : QSortFilterProxyModel(parent)
 
 QVariant GridProxyModel::data(const QModelIndex& i, int role) const
 {
+  auto* model = static_cast<GameListModel*>(sourceModel());
   QModelIndex source_index = mapToSource(i);
+
+  auto support_level = GetGameSupportLevel(*model->GetGameFile(source_index.row()));
   if (role == Qt::DisplayRole)
   {
     return sourceModel()->data(
@@ -32,12 +39,21 @@ QVariant GridProxyModel::data(const QModelIndex& i, int role) const
   }
   else if (role == Qt::DecorationRole)
   {
-    auto* model = static_cast<GameListModel*>(sourceModel());
-
     const auto& buffer = model->GetGameFile(source_index.row())->GetCoverImage().buffer;
 
     QSize size = Config::Get(Config::MAIN_USE_GAME_COVERS) ? QSize(160, 224) : LARGE_BANNER_SIZE;
     QPixmap pixmap(size * model->GetScale() * QPixmap().devicePixelRatio());
+
+    constexpr auto draw_supp_pixmap =
+      [](QPainter& painter, QPixmap& canvas, GameSupportLevel supp_level) {
+      int supp_width = canvas.width() / 5;
+      int supp_height = supp_width;
+      int supp_x = canvas.width() - supp_width;
+      int supp_y = canvas.height() - supp_height;
+      QPixmap supp_pixmap = Resources::GetResourceIcon(GetIconNameForSupportLevel(supp_level))
+        .pixmap(supp_width, supp_height);
+      painter.drawPixmap(supp_x, supp_y, supp_width, supp_height, supp_pixmap);
+    };
 
     if (buffer.empty() || !Config::Get(Config::MAIN_USE_GAME_COVERS))
     {
@@ -55,6 +71,7 @@ QVariant GridProxyModel::data(const QModelIndex& i, int role) const
 
       painter.drawPixmap(0, pixmap.height() / 2 - banner.height() / 2, banner.width(),
                          banner.height(), banner);
+      draw_supp_pixmap(painter, pixmap, support_level);
 
       return pixmap;
     }
@@ -63,8 +80,18 @@ QVariant GridProxyModel::data(const QModelIndex& i, int role) const
       pixmap = QPixmap::fromImage(QImage::fromData(
           reinterpret_cast<const unsigned char*>(&buffer[0]), static_cast<int>(buffer.size())));
 
+      QPainter painter(&pixmap);
+      draw_supp_pixmap(painter, pixmap, support_level);
+
       return pixmap.scaled(QSize(160, 224) * model->GetScale() * pixmap.devicePixelRatio(),
                            Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    }
+  }
+  else if (role == Qt::ToolTipRole)
+  {
+    if (support_level != GameSupportLevel::NotApplicable)
+    {
+      return QString::fromStdString(std::string(SupportLevelToolTip(support_level)));
     }
   }
   return QVariant();

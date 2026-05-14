@@ -12,6 +12,7 @@
 #include "InputCommon/GenericMouse.h"
 #include "VideoCommon/Present.h"
 #include "VideoCommon/VideoCommon.h"
+#include "UICommon/GameFile.h"
 
 extern std::string info_str;
 
@@ -90,5 +91,17 @@ std::string readin_str(Mem&& mem, u32 str_ptr) {
   }
   return key_readin.str();
 }
+
+enum class GameSupportLevel : int
+{
+  FullySupported,
+  Unsupported,
+  LimitedSupport,
+  NotApplicable,
+};
+
+std::string_view GetIconNameForSupportLevel(GameSupportLevel supp_level);
+GameSupportLevel GetGameSupportLevel(UICommon::GameFile const& file);
+std::string_view SupportLevelToolTip(GameSupportLevel supp_level);
 
 }  // namespace prime
