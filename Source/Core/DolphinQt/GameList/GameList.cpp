@@ -75,6 +75,17 @@
 
 namespace
 {
+class CenterStyle : public QStyledItemDelegate {
+public:
+  CenterStyle(QWidget* parent) : QStyledItemDelegate(parent) {}
+  void paint(QPainter* painter, QStyleOptionViewItem const& option, QModelIndex const& index) const {
+    QRect rect = option.rect;
+    QPixmap pix = qvariant_cast<QPixmap>(index.data(Qt::DecorationRole));
+
+    QPoint p = QPoint((rect.width() - pix.width()) / 2, (rect.height() - pix.height()) / 2);
+    painter->drawPixmap(rect.topLeft() + p, pix);
+  }
+};
 
 class GameListTableView : public QTableView
 {
@@ -235,7 +246,7 @@ void GameList::MakeListView()
     SetResizeMode(Column::Compression, Mode::Fixed);
     SetResizeMode(Column::TimePlayed, Mode::Interactive);
     SetResizeMode(Column::Tags, Mode::Interactive);
-    SetResizeMode(Column::PrimeHackSupport, Mode::Fixed);
+    SetResizeMode(Column::PrimeHackSupport, Mode::Interactive);
 
     // Cells have 3 pixels of padding, so the width of these needs to be image width + 6. Banners
     // are 96 pixels wide, platform and country icons are 32 pixels wide.
@@ -245,6 +256,9 @@ void GameList::MakeListView()
     m_list->setColumnWidth(static_cast<int>(Column::Size), 85);
     m_list->setColumnWidth(static_cast<int>(Column::ID), 70);
   }
+
+  m_list->setItemDelegateForColumn(static_cast<int>(GameListModel::Column::PrimeHackSupport),
+                                   new CenterStyle(this));
   // There's some odd platform-specific behavior with default minimum section size
   hor_header->setMinimumSectionSize(38);
 

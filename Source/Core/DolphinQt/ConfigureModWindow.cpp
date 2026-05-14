@@ -128,7 +128,7 @@ private:
       }
       help_desc_lbl->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
       entry_widget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-      entry_widget->setMinimumWidth(400);
+      entry_widget->setMinimumWidth(250);
       h_layout->addWidget(curval_lbl, Qt::AlignLeft);
       h_layout->addStretch();
       h_layout->addWidget(entry_widget, Qt::AlignRight);

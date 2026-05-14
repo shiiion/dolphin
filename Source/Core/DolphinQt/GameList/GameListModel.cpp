@@ -228,7 +228,7 @@ QVariant GameListModel::data(const QModelIndex& index, int role) const
       GameSupportLevel supp_level = GetGameSupportLevel(game);
       if (supp_level != GameSupportLevel::NotApplicable)
       {
-        return Resources::GetResourceIcon(GetIconNameForSupportLevel(supp_level));
+        return Resources::GetResourceIcon(GetIconNameForSupportLevel(supp_level)).pixmap(25);
       }
     }
     if (role == SORT_ROLE)
