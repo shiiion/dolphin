@@ -20,7 +20,6 @@ void ElfModLoader::run_mod(Game game, Region region) {
   if (!ModLoaderEnabled()) {
     return;
   }
-  return;
 
   // ELF is mapped into an extended memory region
   // We would do this with instruction patches but
@@ -28,9 +27,15 @@ void ElfModLoader::run_mod(Game game, Region region) {
   // being assigned!
   update_bat_regs();
 
-  // Block loading any mods until the callgate region is mapped in
+  // Block loading any mods until the callgate region is mapped in and cleanup is hooked
   if (!cg.valid) {
     cg.remap();
+    return;
+  }
+
+  if (!cleanup_hooked) {
+    init_cleanup(game, region);
+    cleanup_hooked = true;
     return;
   }
 
@@ -46,6 +51,7 @@ void ElfModLoader::run_mod(Game game, Region region) {
         write8(kGuestStateActive, cg.state_table_base + mod.state_tbl_idx);
       }
     } else if (mod.state == State::REINIT) {
+      set_code_group_state(mod.pack_name, ModState::ENABLED);
       mod.state = State::ACTIVE;
       write8(kGuestStateActive, cg.state_table_base + mod.state_tbl_idx);
     }
@@ -64,6 +70,7 @@ void ElfModLoader::run_mod(Game game, Region region) {
 
       case State::UNLOAD_PEND:
         if (read8(cg.state_table_base + mod.state_tbl_idx) == kGuestStateAckOff) {
+          set_code_group_state(mod.pack_name, ModState::DISABLED);
           mod.state = State::UNLOADED;
         }
         break;
@@ -84,6 +91,7 @@ bool ElfModLoader::init_mod(Game game, Region region) {
   symbol_db.Clear();
   debug_output_addr = 0;
   next_load_slide = 0;
+  cleanup_hooked = false;
   return true;
 }
 
@@ -93,139 +101,142 @@ void ElfModLoader::on_reset() {
   symbol_db.Clear();
   debug_output_addr = 0;
   next_load_slide = 0;
+  cleanup_hooked = false;
 }
-
-// Callgate Region Breakdown
-//
-// |    ....  |
-// +----------+ -> 0x81ff7f4c
-// |          |
-// | sentinel | Sentinel value to check the callgate region has been mapped in
-// |          |
-// +----------+ -> dispatcher_base = 0x81ff7f50
-// |          |
-// | dispatch | Stub which is invoked by all entries in the callgate table
-// |   stub   | will load target address from r11 based on shutdown_signal value and jump
-// |          |
-// +----------+ -> shutdown_signal_addr = dispatcher_base + 0x70
-// |          |
-// |  state   | Table of state values for each mod
-// |  table   | All dispatch table entries will refer to its corresponding mod's state table
-// |          |
-// +----------+ -> cg_table_base = state_table_base + 0x40 * 0x1
-// |          |
-// | callgate | Table of entrypoints from hooks, loads address in dispatch table
-// |  table   | into r11 then jumps to dispatcher_base
-// |          |
-// +----------+ -> dp_table_base = cg_table_base + 0x400 * 0xc
-// |          |
-// | dispatch | Table of address pairs, stored as (original address, hook address, state)
-// |  table   |
-// |          |
-// +----------+ -> tr_table_base = dp_table_base + 0x400 * 0xc
-// |          |
-// |trampoline| Table of stubs containing the original instruction to be ran, alongside with
-// |  table   | a branch back to after the patched instruction
-// |          |
-// +----------+ -> 0x82000000 = tr_table_base + 0x400 * 0x8
 
 constexpr u32 kStateEntSize = 1;
 constexpr u32 kCgEntSize = 12;
 constexpr u32 kDpEntSize = 12;
 constexpr u32 kTrEntSize = 8;
+constexpr u32 kClEntSize = 8;
 
 void ElfModLoader::CallgateData::remap() {
   constexpr u32 kSentinelSize = 4;
-  constexpr u32 kDispatcherSize = 28 * 4;
-  constexpr u32 kFiniNullsubOffset = 27 * 4;
+  // 11 Instructions
+  constexpr u32 kDispatcherSize = 11 * 4;
+  // 27 Instructions
+  constexpr u32 kCleanupSize = 30 * 4;
+  // BLR of Cleanup
+  constexpr u32 kFiniNullsubOffset = 26 * 4;
   constexpr u32 kStateTableSize = kStateEntSize * kMaxMods;
-  constexpr u32 kTableLen = 1024;
-  constexpr u32 kCgTableSize = kCgEntSize * kTableLen;
-  constexpr u32 kDpTableSize = kDpEntSize * kTableLen;
-  constexpr u32 kTrTableSize = kTrEntSize * kTableLen;
+  // Cleanup table takes an extra entry which is never touched
+  constexpr u32 kClTableSize = kClEntSize * (kMaxMods + 1);
+  constexpr u32 kMaxHooks = 1024;
+  constexpr u32 kCgTableSize = kCgEntSize * kMaxHooks;
+  constexpr u32 kDpTableSize = kDpEntSize * kMaxHooks;
+  constexpr u32 kTrTableSize = kTrEntSize * kMaxHooks;
 
   constexpr u32 kRegionSz =
-    kSentinelSize + kDispatcherSize + kStateTableSize + kCgTableSize + kDpTableSize + kTrTableSize;
+    kSentinelSize + kDispatcherSize + kCleanupSize + kStateTableSize + kClTableSize +
+    kCgTableSize + kDpTableSize + kTrTableSize;
+
   sentinel_base = 0x82000000 - kRegionSz;
   dispatcher_base = sentinel_base + kSentinelSize;
-  fini_nullsub_base = dispatcher_base + kFiniNullsubOffset;
-  state_table_base = dispatcher_base + kDispatcherSize;
-  cg_table_base = state_table_base + kStateTableSize;
+  cleanup_base = dispatcher_base + kDispatcherSize;
+  fini_nullsub_base = cleanup_base + kFiniNullsubOffset;
+  state_table_base = cleanup_base + kCleanupSize;
+  cl_table_base = state_table_base + kStateTableSize;
+  cg_table_base = cl_table_base + kClTableSize;
   dp_table_base = cg_table_base + kCgTableSize;
   tr_table_base = dp_table_base + kDpTableSize;
 
   state_free_idx = 0;
+  cl_free_idx = 0;
   cg_free_idx = 0;
   dp_free_idx = 0;
   tr_free_idx = 0;
 
+  // # INPUT: r11 = dispatch table entry
   // _callgate_dispatch:
-  //     .cfi_startproc
-  //     # INPUT: r11 = dispatch ptr
-  //     lis r12, state_table_base@ha
-  //     ori r12, r12, state_table_base@l
-  //     lwz r0, 8(r11)
-  //     extrwi r0, r0, 1, 6
-  //     cmpwi r0, 1
-  //     beq _callgate_fini_dispatcher
-  //
-  //     # Normal callgate dispatcher
-  //     lwz r0, 8(r11)
-  //     extrwi r0, r0, 6, 0
-  //     lbzx r0, r12, r0
-  //     cmpwi r0, 0
-  //     beq _callgate_dispatch_runhook
+  //   lis r12, state_table_base@ha
+  //   ori r12, r12, state_table_base@l
+  //   lwz r0, 8(r11)
+  //   lbzx r0, r12, r0
+  //   cmpwi r0, 0
+  //   beq _callgate_dispatch_runhook
   //
   // _callgate_dispatch_runorig:
-  //     lwz r11, 0(r11)
-  //     b _callgate_dispatch_end
+  //   lwz r11, 0(r11)
+  //   b _callgate_dispatch_end
   //
   // _callgate_dispatch_runhook:
-  //     lwz r11, 4(r11)
+  //   lwz r11, 4(r11)
   //
   // _callgate_dispatch_end:
-  //     mtctr r11
-  //     bctr
+  //   mtctr r11
+  //   bctr
   //
-  // _callgate_fini_dispatcher:
-  //     # INPUT: r12 = Mod State, r11 = dispatch ptr
-  //     lwz r0, 8(r11)
-  //     extrwi r0, r0, 6, 0
-  //     lbzx r0, r12, r0
-  //     # state_table[mod_idx] == GuestState::RequestFini
-  //     cmpwi r0, 1
-  //     bne _callgate_dispatch_runorig
-  //     # In the case we dispatch to run FINI, also update the mod state for dolphin
-  //     lwz r0, 8(r11)
-  //     extrwi r0, r0, 6, 0
-  //     add r12, r12, r0
-  //     li r0, 2
-  //     # state_table[mod_idx] = GuestState::Inactive
-  //     stw r0, 0(r12)
-  //     b _callgate_dispatch_runhook
-  //
-  // _fini_nullsub:
-  //     blr
+  // _cleanup_dispatch:
+  //   stwu r1, -0x10(r1)
+  //   mflr r0
+  //   stw r0, 0x14(r1)
+  //   stw r30, 0x8(r1)
+  //   stw r31, 0xc(r1)
+  //   lis r30, cleanup_table_base@ha
+  //   ori r30, r30, cleanup_table_base@l
+  //   lis r31, state_table_base@ha
+  //   ori r31, r31, state_table_base@l
+  // # Cleanup dispatcher loop: Table is always terminated by a null routine ptr, including the last
+  // _cleanup_dispatch_loop:
+  //   lwz r12, 0(r30)
+  //   cmpwi r12, 0
+  //   beq _cleanup_dispatch_end
+  //   lwz r0, 4(r30)
+  //   lbzx r0, r31, r0
+  //   # state_table[mod_idx] == GuestState::RequestFini
+  //   cmpwi r0, 1
+  //   # Cleanup always hooks a useless function, thus it's safe to return
+  //   beq _cleanup_dispatch_loop_iter
+  //   mtctr r12
+  //   bctrl
+  // _cleanup_dispatch_loop_iter:
+  //   addi r30, r30, 8
+  //   addi r31, r31, 1
+  //   b _cleanup_dispatch_loop
+  // _cleanup_dispatch_end:
+  //   lwz r0, 0x14(r1)
+  //   lwz r30, 0x8(r1)
+  //   lwz r31, 0xc(r1)
+  //   addi r1, r1, 0x10
+  //   mtlr r0
+  //   blr
 
-  u8 dispatcher_stub[] = {
-    0x3d, 0x80, 0x00, 0x00, 0x61, 0x8c, 0x00, 0x00, 0x80, 0x0b, 0x00, 0x08, 0x54, 0x00, 0x3f, 0xfe,
-    0x2c, 0x00, 0x00, 0x01, 0x41, 0x82, 0x00, 0x2c, 0x80, 0x0b, 0x00, 0x08, 0x54, 0x00, 0x36, 0xbe,
-    0x7c, 0x0c, 0x00, 0xae, 0x2c, 0x00, 0x00, 0x00, 0x41, 0x82, 0x00, 0x0c, 0x81, 0x6b, 0x00, 0x00,
-    0x48, 0x00, 0x00, 0x08, 0x81, 0x6b, 0x00, 0x04, 0x7d, 0x69, 0x03, 0xa6, 0x4e, 0x80, 0x04, 0x20,
-    0x80, 0x0b, 0x00, 0x08, 0x54, 0x00, 0x36, 0xbe, 0x7c, 0x0c, 0x00, 0xae, 0x2c, 0x00, 0x00, 0x01,
-    0x40, 0x82, 0xff, 0xdc, 0x80, 0x0b, 0x00, 0x08, 0x54, 0x00, 0x36, 0xbe, 0x7d, 0x8c, 0x02, 0x14,
-    0x38, 0x00, 0x00, 0x02, 0x90, 0x0c, 0x00, 0x00, 0x4b, 0xff, 0xff, 0xcc, 0x4e, 0x80, 0x00, 0x20,
+  const u8 stb0 = (state_table_base >> 24) & 0xff;
+  const u8 stb1 = (state_table_base >> 16) & 0xff;
+  const u8 stb2 = (state_table_base >> 8) & 0xff;
+  const u8 stb3 = state_table_base & 0xff;
+  const u8 clb0 = (cl_table_base >> 24) & 0xff;
+  const u8 clb1 = (cl_table_base >> 16) & 0xff;
+  const u8 clb2 = (cl_table_base >> 8) & 0xff;
+  const u8 clb3 = cl_table_base & 0xff;
+  const u8 dispatcher_stub[] = {
+    0x3d, 0x80, stb0, stb1, 0x61, 0x8c, stb2, stb3, 0x80, 0x0b, 0x00,
+    0x08, 0x7c, 0x0c, 0x00, 0xae, 0x2c, 0x00, 0x00, 0x00, 0x41, 0x82,
+    0x00, 0x0c, 0x81, 0x6b, 0x00, 0x00, 0x48, 0x00, 0x00, 0x08, 0x81,
+    0x6b, 0x00, 0x04, 0x7d, 0x69, 0x03, 0xa6, 0x4e, 0x80, 0x04, 0x20,
   };
-  dispatcher_stub[2] = (state_table_base >> 24) & 0xff;
-  dispatcher_stub[3] = (state_table_base >> 16) & 0xff;
-  dispatcher_stub[6] = (state_table_base >> 8) & 0xff;
-  dispatcher_stub[7] = state_table_base & 0xff;
+  const u8 cleanup_stub[] = {
+    0x94, 0x21, 0xff, 0xf0, 0x7c, 0x08, 0x02, 0xa6, 0x90, 0x01, 0x00, 0x14,
+    0x93, 0xc1, 0x00, 0x08, 0x93, 0xe1, 0x00, 0x0c, 0x3f, 0xc0, clb0, clb1,
+    0x63, 0xde, clb2, clb3, 0x3f, 0xe0, stb0, stb1, 0x63, 0xff, stb2, stb3,
+    0x81, 0x9e, 0x00, 0x00, 0x2c, 0x0c, 0x00, 0x00, 0x41, 0x82, 0x00, 0x34,
+    0x80, 0x1e, 0x00, 0x04, 0x7c, 0x1f, 0x00, 0xae, 0x2c, 0x00, 0x00, 0x01,
+    0x40, 0x82, 0x00, 0x18, 0x7d, 0x89, 0x03, 0xa6, 0x4e, 0x80, 0x04, 0x21,
+    0x38, 0x00, 0x00, 0x02, 0x80, 0x7e, 0x00, 0x04, 0x7c, 0x1f, 0x19, 0xae,
+    0x3b, 0xde, 0x00, 0x08, 0x3b, 0xff, 0x00, 0x01, 0x4b, 0xff, 0xff, 0xc8,
+    0x80, 0x01, 0x00, 0x14, 0x83, 0xc1, 0x00, 0x08, 0x83, 0xe1, 0x00, 0x0c,
+    0x38, 0x21, 0x00, 0x10, 0x7c, 0x08, 0x03, 0xa6, 0x4e, 0x80, 0x00, 0x20,
+  };
   auto& memory = Core::System::GetInstance().GetMemory();
 
+  static_assert(sizeof(dispatcher_stub) == kDispatcherSize);
+  static_assert(sizeof(cleanup_stub) == kCleanupSize);
   constexpr u32 kSentinel = 0xea7f00d5;
   memory.Write_U32(kSentinel, sentinel_base);
   memory.CopyToEmu(dispatcher_base, dispatcher_stub, kDispatcherSize);
+  memory.CopyToEmu(cleanup_base, cleanup_stub, kCleanupSize);
   memory.Memset(state_table_base, 0, kStateTableSize);
+  memory.Memset(cl_table_base, 0, kClTableSize);
   memory.Memset(cg_table_base, 0, kCgTableSize);
   memory.Memset(dp_table_base, 0, kDpTableSize);
   memory.Memset(tr_table_base, 0, kTrTableSize);
@@ -266,7 +277,7 @@ void ElfModLoader::sync_mod_states() {
     bool deactivated = true;
     for (auto const& modpack : GetAvailableMods()) {
       if (active_mod.pack_name == modpack.name) {
-        deactivated = modpack.is_mod_enabled();
+        deactivated = !modpack.is_mod_enabled();
       }
     }
 
@@ -290,144 +301,9 @@ void ElfModLoader::update_bat_regs() {
   }
 }
 
-bool ElfModLoader::load_mod(LiveMod& mod, Game game, Region region) {
-  ModPack const* template_pack = GetPack(mod.pack_name);
+void ElfModLoader::init_cleanup(Game game, Region region) {
+  ASSERT(cg.valid);
 
-  ElfMod const* template_mod = nullptr;
-  for (auto const& game_mod : template_pack->supported_games) {
-    if (game_mod.game == game && game_mod.region == region) {
-      template_mod = &game_mod;
-      break;
-    }
-  }
-
-  if (template_mod == nullptr) {
-    mod.state = State::NOT_FOUND;
-    return false;
-  }
-
-  mod.load_slide = next_load_slide;
-
-  ElfReader elf_file(template_mod->elf_path);
-
-  if (elf_file.IsValid()) {
-    elf_file.LoadIntoMemory(Core::System::GetInstance(), mod.load_slide, false);
-    elf_file.LoadSymbols(*active_guard, symbol_db, template_pack->name, mod.load_slide);
-  } else {
-    ERROR_LOG_FMT(PRIMEHACK, "Failed to load mod {} for game {} {}",
-                  mod.pack_name, game_str(game), region_str(region));
-    return false;
-  }
-
-  const u32 mod_idx = cg.state_free_idx++;
-
-  mod.state_tbl_idx = mod_idx;
-  mod.linked.var_addr_list.resize(template_mod->var_list.size());
-  for (size_t i = 0; i < mod.linked.base->var_list.size(); i++) {
-    CVar const& cvar = mod.linked.base->var_list[i];
-    Symbol const* sym = symbol_db.GetSymbolFromName(cvar.name);
-    if (sym == nullptr) {
-      ERROR_LOG_FMT(PRIMEHACK, "Failed to locate cvar symbol {} in mod {} for game {} {}",
-                    cvar.name, mod.pack_name, game_str(game), region_str(region));
-      return false;
-    }
-    mod.linked.var_addr_list[i] = sym->address;
-  }
-
-  for (auto const& vt_hook : template_mod->vt_hooks) {
-    Symbol const* sym = symbol_db.GetSymbolFromName(vt_hook.first);
-    if (sym == nullptr) {
-      ERROR_LOG_FMT(PRIMEHACK, "Failed to locate vt hook symbol {} in mod {} for game {} {}",
-                    vt_hook.first, mod.pack_name, game_str(game), region_str(region));
-      return false;
-    }
-    mod.linked.vt_hooks.emplace_back(sym->address, vt_hook.second);
-    create_vthook_callgated(sym->address, vt_hook.second, mod_idx);
-  }
-  for (auto const& bl_hook : template_mod->bl_hooks) {
-    Symbol const* sym = symbol_db.GetSymbolFromName(bl_hook.first);
-    if (sym == nullptr) {
-      ERROR_LOG_FMT(PRIMEHACK, "Failed to locate bl hook symbol {} in mod {} for game {} {}",
-                    bl_hook.first, mod.pack_name, game_str(game), region_str(region));
-      return false;
-    }
-    mod.linked.bl_hooks.emplace_back(sym->address, bl_hook.second);
-    create_blhook_callgated(sym->address, bl_hook.second, mod_idx);
-  }
-  for (auto const& trampoline : template_mod->trampolines) {
-    Symbol const* sym = symbol_db.GetSymbolFromName(trampoline.first);
-    if (sym == nullptr) {
-      ERROR_LOG_FMT(PRIMEHACK, "Failed to locate trampoline symbol {} in mod {} for game {} {}",
-                    trampoline.first, mod.pack_name, game_str(game), region_str(region));
-      return false;
-    }
-    mod.linked.trampolines.emplace_back(sym->address, trampoline.second);
-    create_trampoline_callgated(sym->address, trampoline.second, mod_idx);
-  }
-
-  if (!create_cleanup_hook(game, region, mod_idx)) {
-    ERROR_LOG_FMT(PRIMEHACK, "Failed to create cleanup hook for game {} {}",
-                  game_str(game), region_str(region));
-    return false;
-  }
-
-  // Slide for next mod is below the current one, rounded to nearest 32 bit boundary
-  next_load_slide += (elf_file.MappedSize() + 3) & ~0x3;
-  return true;
-}
-
-u32 ElfModLoader::add_callgate_entry(u32 hook_target, u32 original_target, u32 mod_index) {
-  // Fill in the dispatch table with original target and hook target
-  const u32 dispatch_loc = kDpEntSize * cg.dp_free_idx + cg.dp_table_base;
-  const u32 callgate_fn_table_loc = kCgEntSize * cg.cg_free_idx + cg.cg_table_base;
-  write32(original_target, dispatch_loc + 0);
-  write32(hook_target, dispatch_loc + 4);
-  write32(mod_index, dispatch_loc + 8);
-
-  // Set up the callgate (put the (original,hook) pair into r11, jump to dispatcher)
-  const u32 r11_dispatch_lis = gen_lis(11, static_cast<u16>(dispatch_loc >> 16));
-  const u32 r11_dispatch_ori = gen_ori(11, 11, static_cast<u16>(dispatch_loc));
-  const u32 branch_to_cg_dispatch = gen_branch(callgate_fn_table_loc + 8, cg.dispatcher_base);
-  write32(r11_dispatch_lis, callgate_fn_table_loc + 0);
-  write32(r11_dispatch_ori, callgate_fn_table_loc + 4);
-  write32(branch_to_cg_dispatch, callgate_fn_table_loc + 8);
-  cg.dp_free_idx++;
-  cg.cg_free_idx++;
-
-  return callgate_fn_table_loc;
-}
-
-u32 ElfModLoader::add_trampoline_restore_entry(u32 func_start) {
-  const u32 trampoline_restore_loc = kTrEntSize * cg.tr_free_idx + cg.tr_table_base;
-  const u32 original_instruction = readi(func_start);
-  const u32 branch_to_after_trampoline = gen_branch(trampoline_restore_loc + 4, func_start + 4);
-  write32(original_instruction, trampoline_restore_loc + 0);
-  write32(branch_to_after_trampoline, trampoline_restore_loc + 4);
-  cg.tr_free_idx++;
-
-  return trampoline_restore_loc;
-}
-
-void ElfModLoader::create_vthook_callgated(u32 hook_target, u32 vfte_addr, u32 mod_index) {
-  const u32 callgate_fn_table_loc = add_callgate_entry(hook_target, read32(vfte_addr), mod_index);
-  // VTable now redirects to our callgate func, leading to dispatcher
-  add_code_change(vfte_addr, callgate_fn_table_loc);
-}
-
-void ElfModLoader::create_blhook_callgated(u32 hook_target, u32 bl_addr, u32 mod_index) {
-  const u32 bl_target = bl_addr + get_branch_offset(readi(bl_addr));
-  const u32 callgate_fn_table_loc = add_callgate_entry(hook_target, bl_target, mod_index);
-  // BL will now redirect to the callgate func, leading to the dispatcher
-  add_code_change(bl_addr, gen_branch_link(bl_addr, callgate_fn_table_loc));
-}
-
-void ElfModLoader::create_trampoline_callgated(u32 hook_target, u32 func_start, u32 mod_index) {
-  const u32 trampoline_restore_loc = add_trampoline_restore_entry(func_start);
-  const u32 callgate_fn_table_loc = add_callgate_entry(hook_target, trampoline_restore_loc, mod_index);
-  add_code_change(func_start, gen_branch(func_start, callgate_fn_table_loc));
-}
-
-bool ElfModLoader::create_cleanup_hook(Game game, Region region, u32 mod_index) {
   u32 bl_hook_addr = 0;
   switch (game) {
     case Game::PRIME_1_GCN:
@@ -502,17 +378,157 @@ bool ElfModLoader::create_cleanup_hook(Game game, Region region, u32 mod_index) 
   }
 
   if (bl_hook_addr != 0) {
-    Symbol const* sym = symbol_db.GetSymbolFromName("mod_fini");
-
-    // If no cleanup exists, run a nullsub in the callgate region
-    const u32 fini_address = sym != nullptr ? sym->address : cg.fini_nullsub_base;
-
-    // Flag in the index field of the callgate entry to denote that this is a hook for the fini func
-    // which gets dispatched under different rules
-    constexpr u32 kIndexFiniFlag = 0x40;
-    create_blhook_callgated(fini_address, bl_hook_addr, mod_index | kIndexFiniFlag);
+    add_code_change(bl_hook_addr, gen_branch_link(bl_hook_addr, cg.cleanup_base));
   }
-  return bl_hook_addr != 0;
+}
+
+bool ElfModLoader::load_mod(LiveMod& mod, Game game, Region region) {
+  ModPack const* template_pack = GetPack(mod.pack_name);
+
+  ElfMod const* template_mod = nullptr;
+  for (auto const& game_mod : template_pack->supported_games) {
+    if (game_mod.game == game && game_mod.region == region) {
+      template_mod = &game_mod;
+      break;
+    }
+  }
+
+  if (template_mod == nullptr) {
+    mod.state = State::NOT_FOUND;
+    return false;
+  }
+  mod.linked.base = template_mod;
+  mod.load_slide = next_load_slide;
+
+  ElfReader elf_file(template_mod->elf_path);
+
+  if (elf_file.IsValid()) {
+    elf_file.LoadIntoMemory(Core::System::GetInstance(), mod.load_slide, false);
+    elf_file.LoadSymbols(*active_guard, symbol_db, template_pack->name, mod.load_slide);
+  } else {
+    ERROR_LOG_FMT(PRIMEHACK, "Failed to load mod {} for game {} {}",
+                  mod.pack_name, game_str(game), region_str(region));
+    return false;
+  }
+
+  const u32 mod_idx = cg.state_free_idx++;
+
+  mod.state_tbl_idx = mod_idx;
+  mod.linked.var_addr_list.resize(template_mod->var_list.size());
+  for (size_t i = 0; i < mod.linked.base->var_list.size(); i++) {
+    CVar const& cvar = mod.linked.base->var_list[i];
+    Symbol const* sym = symbol_db.GetSymbolFromName(cvar.name);
+    if (sym == nullptr) {
+      ERROR_LOG_FMT(PRIMEHACK, "Failed to locate cvar symbol {} in mod {} for game {} {}",
+                    cvar.name, mod.pack_name, game_str(game), region_str(region));
+      return false;
+    }
+    mod.linked.var_addr_list[i] = sym->address;
+  }
+
+  for (auto const& vt_hook : template_mod->vt_hooks) {
+    Symbol const* sym = symbol_db.GetSymbolFromName(vt_hook.first);
+    if (sym == nullptr) {
+      ERROR_LOG_FMT(PRIMEHACK, "Failed to locate vt hook symbol {} in mod {} for game {} {}",
+                    vt_hook.first, mod.pack_name, game_str(game), region_str(region));
+      return false;
+    }
+    mod.linked.vt_hooks.emplace_back(sym->address, vt_hook.second);
+    create_vthook_callgated(sym->address, vt_hook.second, mod_idx);
+  }
+  for (auto const& bl_hook : template_mod->bl_hooks) {
+    Symbol const* sym = symbol_db.GetSymbolFromName(bl_hook.first);
+    if (sym == nullptr) {
+      ERROR_LOG_FMT(PRIMEHACK, "Failed to locate bl hook symbol {} in mod {} for game {} {}",
+                    bl_hook.first, mod.pack_name, game_str(game), region_str(region));
+      return false;
+    }
+    mod.linked.bl_hooks.emplace_back(sym->address, bl_hook.second);
+    create_blhook_callgated(sym->address, bl_hook.second, mod_idx);
+  }
+  for (auto const& trampoline : template_mod->trampolines) {
+    Symbol const* sym = symbol_db.GetSymbolFromName(trampoline.first);
+    if (sym == nullptr) {
+      ERROR_LOG_FMT(PRIMEHACK, "Failed to locate trampoline symbol {} in mod {} for game {} {}",
+                    trampoline.first, mod.pack_name, game_str(game), region_str(region));
+      return false;
+    }
+    mod.linked.trampolines.emplace_back(sym->address, trampoline.second);
+    create_trampoline_callgated(sym->address, trampoline.second, mod_idx);
+  }
+
+  create_cleanup_entry(mod_idx);
+
+  for (auto const& change : template_mod->changes) {
+    add_code_change(change.address, change.var, template_mod->pack_name);
+  }
+
+  // Slide for next mod is below the current one, rounded to nearest 32 bit boundary
+  next_load_slide += (elf_file.MappedSize() + 3) & ~0x3;
+  return true;
+}
+
+u32 ElfModLoader::add_callgate_entry(u32 hook_target, u32 original_target, u32 mod_index) {
+  // Fill in the dispatch table with original target and hook target
+  const u32 dispatch_loc = kDpEntSize * cg.dp_free_idx + cg.dp_table_base;
+  const u32 callgate_fn_table_loc = kCgEntSize * cg.cg_free_idx + cg.cg_table_base;
+  write32(original_target, dispatch_loc + 0);
+  write32(hook_target, dispatch_loc + 4);
+  write32(mod_index, dispatch_loc + 8);
+
+  // Set up the callgate (put the (original,hook) pair into r11, jump to dispatcher)
+  const u32 r11_dispatch_lis = gen_lis(11, static_cast<u16>(dispatch_loc >> 16));
+  const u32 r11_dispatch_ori = gen_ori(11, 11, static_cast<u16>(dispatch_loc));
+  const u32 branch_to_cg_dispatch = gen_branch(callgate_fn_table_loc + 8, cg.dispatcher_base);
+  write32(r11_dispatch_lis, callgate_fn_table_loc + 0);
+  write32(r11_dispatch_ori, callgate_fn_table_loc + 4);
+  write32(branch_to_cg_dispatch, callgate_fn_table_loc + 8);
+  cg.dp_free_idx++;
+  cg.cg_free_idx++;
+
+  return callgate_fn_table_loc;
+}
+
+u32 ElfModLoader::add_trampoline_restore_entry(u32 func_start) {
+  const u32 trampoline_restore_loc = kTrEntSize * cg.tr_free_idx + cg.tr_table_base;
+  const u32 original_instruction = readi(func_start);
+  const u32 branch_to_after_trampoline = gen_branch(trampoline_restore_loc + 4, func_start + 4);
+  write32(original_instruction, trampoline_restore_loc + 0);
+  write32(branch_to_after_trampoline, trampoline_restore_loc + 4);
+  cg.tr_free_idx++;
+
+  return trampoline_restore_loc;
+}
+
+void ElfModLoader::create_vthook_callgated(u32 hook_target, u32 vfte_addr, u32 mod_index) {
+  const u32 callgate_fn_table_loc = add_callgate_entry(hook_target, read32(vfte_addr), mod_index);
+  // VTable now redirects to our callgate func, leading to dispatcher
+  add_code_change(vfte_addr, callgate_fn_table_loc);
+}
+
+void ElfModLoader::create_blhook_callgated(u32 hook_target, u32 bl_addr, u32 mod_index) {
+  const u32 bl_target = bl_addr + get_branch_offset(readi(bl_addr));
+  const u32 callgate_fn_table_loc = add_callgate_entry(hook_target, bl_target, mod_index);
+  // BL will now redirect to the callgate func, leading to the dispatcher
+  add_code_change(bl_addr, gen_branch_link(bl_addr, callgate_fn_table_loc));
+}
+
+void ElfModLoader::create_trampoline_callgated(u32 hook_target, u32 func_start, u32 mod_index) {
+  const u32 trampoline_restore_loc = add_trampoline_restore_entry(func_start);
+  const u32 callgate_fn_table_loc = add_callgate_entry(hook_target, trampoline_restore_loc, mod_index);
+  add_code_change(func_start, gen_branch(func_start, callgate_fn_table_loc));
+}
+
+void ElfModLoader::create_cleanup_entry(u32 mod_index) {
+  Symbol const* sym = symbol_db.GetSymbolFromName("mod_fini");
+
+  // If no cleanup exists, run a nullsub in the callgate region
+  const u32 fini_address = sym != nullptr ? sym->address : cg.fini_nullsub_base;
+
+  const u32 cleanup_ent = kClEntSize * cg.cl_free_idx + cg.cl_table_base;
+  write32(fini_address, cleanup_ent + 0);
+  write32(mod_index, cleanup_ent + 4);
+  cg.cl_free_idx++;
 }
 
 void ElfModLoader::write_cvar_val(CVarVal var, u32 addr) {
