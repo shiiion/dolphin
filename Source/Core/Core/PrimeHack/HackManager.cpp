@@ -47,7 +47,7 @@ constexpr std::string_view kEpilogueAsmStub = R"(
 
 .locate StubBegin
 .4byte VmcallInst
-# The above vmcall will place the epilogue address into r12 for us
+# The above vmcall will fix the epilogue address for us
 lwz r12, 0x28(r3)
 cmpwi r12, 0
 beqlr
