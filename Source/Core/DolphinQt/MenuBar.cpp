@@ -700,6 +700,7 @@ void MenuBar::AddHelpMenu()
 
 void MenuBar::RebuildPrimeModMenus()
 {
+  m_enabled_mods->clear();
   m_mod_settings->clear();
 
   prime::RefreshMods();

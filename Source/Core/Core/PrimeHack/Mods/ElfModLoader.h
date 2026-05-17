@@ -59,16 +59,16 @@ private:
   // Callgate Region Breakdown
   //
   // |   ....   |
-  // +----------+ -> 0x81ff7d10
+  // +----------+ -> 0x81ff7d08
   // |          |
   // | sentinel | Sentinel value to check the callgate region has been mapped in
   // |          |
-  // +----------+ -> dispatcher_base = 0x81ff7d10 + 0x4
+  // +----------+ -> dispatcher_base = 0x81ff7d08 + 0x4
   // |          |
   // | dispatch | Stub which is invoked by all entries in the callgate table
   // |   stub   | will load target address from r11 based on shutdown_signal value and jump
   // |          |
-  // +----------+ -> cleanup_base = dispatcher_base + 0xb * 4
+  // +----------+ -> cleanup_base = dispatcher_base + 0xd * 4
   // |          |
   // | clean up | Stub which is invoked at a specific point in each game.
   // |   stub   | Will go through all mapped mods and invoke mod_fini for requested unloads

@@ -472,9 +472,15 @@ bool CBoot::SetupWiiMemory(Core::System& system, IOS::HLE::IOSC::ConsoleType con
   0x80000060  Copyright code
   */
 
+  // PrimeHack wants to hide its memory region from the apploader, otherwise we'll collide
+  // as some of them choose the end of memory as a space to map in data which collides with us
+  const u32 ram_size = Config::Get(Config::PRIMEHACK_MODLOADER_ENABLED) ?
+                       Memory::MEM1_SIZE_RETAIL :
+                       memory.GetRamSizeReal();
+
   memory.Write_U32(0x0D15EA5E, 0x00000020);               // Another magic word
   memory.Write_U32(0x00000001, 0x00000024);               // Unknown
-  memory.Write_U32(memory.GetRamSizeReal(), 0x00000028);  // MEM1 size 24MB
+  memory.Write_U32(ram_size, 0x00000028);                 // MEM1 size 24MB
   const Core::ConsoleType board_model = console_type == IOS::HLE::IOSC::ConsoleType::RVT ?
                                             Core::ConsoleType::NDEV2_1 :
                                             Core::ConsoleType::RVL_Retail3;
@@ -483,7 +489,7 @@ bool CBoot::SetupWiiMemory(Core::System& system, IOS::HLE::IOSC::ConsoleType con
   memory.Write_U32(0x817FEC60, 0x00000034);                     // Init
   // 38, 3C should get start, size of FST through apploader
   memory.Write_U32(0x8008f7b8, 0x000000e4);               // Thread Init
-  memory.Write_U32(memory.GetRamSizeReal(), 0x000000f0);  // "Simulated memory size" (debug mode?)
+  memory.Write_U32(ram_size, 0x000000f0);                 // "Simulated memory size" (debug mode?)
   memory.Write_U32(0x8179b500, 0x000000f4);               // __start
   memory.Write_U32(0x0e7be2c0, 0x000000f8);               // Bus speed
   memory.Write_U32(0x2B73A840, 0x000000fc);               // CPU speed

@@ -221,8 +221,8 @@ static void ReleasePPCAncast(Core::System& system)
 void RAMOverrideForIOSMemoryValues(Memory::MemoryManager& memory, MemorySetupType setup_type)
 {
   // Don't touch anything if the feature isn't enabled.
-  if (!Config::Get(Config::MAIN_RAM_OVERRIDE_ENABLE) &&
-      !Config::Get(Config::PRIMEHACK_MODLOADER_ENABLED))
+  // NOTE: PrimeHack wants to hide extended memory from the guest OS (IOS)
+  if (!Config::Get(Config::MAIN_RAM_OVERRIDE_ENABLE))
     return;
 
   // Some unstated constants that can be inferred.

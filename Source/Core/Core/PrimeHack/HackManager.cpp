@@ -35,26 +35,25 @@ Region sLastRegion = Region::INVALID_REGION;
 std::vector<GameChangeCallback> sGameChangeCbList;
 
 // Dynalib tracking globals
-std::unordered_map<std::string, u32> sModuleList;
+std::unordered_map<std::string, std::pair<u32, u32>> sModuleList;
+std::vector<CodeChange> sDynalibOriginal;
 std::vector<CodeChange> sDynalibChanges;
 u32 sEpilogueHookStub;
+constexpr u32 kModuleEpilogueOffset = 0x28;
 constexpr u32 kEpilogueStubSize = 0x18;
-constexpr std::string_view sEpilogueAsmStub = R"(
+constexpr std::string_view kEpilogueAsmStub = R"(
 .defvar StubBegin, 0x{stub_begin:x}
 .defvar VmcallInst, 0x{vmcall_inst:x}
 
 .locate StubBegin
 .4byte VmcallInst
-# This is a possibly dangerous hack: since we've hooked module loading after init
-# then it's fine to put the old epilog in place of the prolog, thus we don't have to
-# allocate memory
-lwz r12, 0x24(r3)
+# The above vmcall will place the epilogue address into r12 for us
+lwz r12, 0x28(r3)
 cmpwi r12, 0
 beqlr
 mtctr r12
 bctr
 )";
-
 
 // Updates the sActiveGame and sActiveRegion globals
 void update_active_game_region(const Core::CPUThreadGuard& cpu_guard) {
@@ -207,13 +206,11 @@ void foreach_mod(Fn&& fn) {
 template <typename Mem>
 void add_rso(Mem&& mem, u32 module_base, u32 name_base) {
   // Add a handler for the epilogue
-  u32 epilogue_addr = mem.template Read<u32>(module_base + 0x28);
-  // Haha, this is fine right?
-  mem.template Write<u32>(epilogue_addr, module_base + 0x24);
-  mem.template Write<u32>(sEpilogueHookStub, module_base + 0x28);
+  u32 old_epilogue_addr = mem.template Read<u32>(module_base + kModuleEpilogueOffset);
+  mem.template Write<u32>(sEpilogueHookStub, module_base + kModuleEpilogueOffset);
 
   std::string module_name = std::filesystem::path(readin_str(mem, name_base)).filename().string();
-  sModuleList.emplace(module_name, module_base);
+  sModuleList.emplace(module_name, std::make_pair(module_base, old_epilogue_addr));
 
   foreach_mod([&mem, module_base, &module_name](PrimeMod& mod) {
     if (mod.mod_state() == ModState::DISABLED) {
@@ -238,19 +235,28 @@ void mp3_post_rso_link(PowerPC::PowerPCState& state, PowerPC::MMU& mmu, u32) {
   state.gpr[0] = mmu.Read<u8>(state.gpr[1] + 9);
 }
 
-void remove_rso(PowerPC::MMU& mmu, u32 mod_base) {
-  std::erase_if(sModuleList, [mod_base](auto const& item) {
-    return item.second == mod_base;
+u32 remove_rso(PowerPC::MMU& mmu, u32 mod_base) {
+  u32 epilogue = 0;
+  std::erase_if(sModuleList, [&epilogue, mod_base](auto const& item) {
+    if (item.second.first == mod_base) {
+      epilogue = item.second.second;
+      return true;
+    }
+    return false;
   });
+  return epilogue;
 }
 
 void mp3_rso_unlink(PowerPC::PowerPCState& state, PowerPC::MMU& mmu, u32) {
   // Hook point is the prolog itself, so r3 should be a pointer to the module base
-  remove_rso(mmu, state.gpr[3]);
+  const u32 epilogue = remove_rso(mmu, state.gpr[3]);
+  // Write the old epilogue back so that savestating doesn't shit itself
+  mmu.Write<u32>(epilogue, state.gpr[3] + kModuleEpilogueOffset);
 }
 
 void init_dynalib(Core::CPUThreadGuard const& guard, Game game, Region region) {
   sDynalibChanges.clear();
+  sDynalibOriginal.clear();
 
   using namespace Common::GekkoAssembler;
   if (game != Game::PRIME_3 && game != Game::PRIME_3_STANDALONE) {
@@ -280,7 +286,7 @@ void init_dynalib(Core::CPUThreadGuard const& guard, Game game, Region region) {
 
   sEpilogueHookStub = GuestAllocAligned(kEpilogueStubSize, 2);
   auto result =
-    Assemble(fmt::format(fmt::runtime(sEpilogueAsmStub),
+    Assemble(fmt::format(fmt::runtime(kEpilogueAsmStub),
                          fmt::arg("stub_begin", sEpilogueHookStub),
                          fmt::arg("vmcall_inst", unload_vmc)), 0);
   ASSERT(!IsFailure(result));
@@ -292,6 +298,10 @@ void init_dynalib(Core::CPUThreadGuard const& guard, Game game, Region region) {
     }
   }
   sDynalibChanges.emplace_back(load_hook, gen_vmcall(vmc_load_hook_mp3_idx, 0));
+
+  for (CodeChange const& cc : sDynalibChanges) {
+    sDynalibOriginal.emplace_back(cc.address, PowerPC::MMU::HostRead<u32>(guard, cc.address));
+  }
 
   // This is exclusively to handle savestate loads more gracefully
   const u32 rso_list_base = GetAddressDB()->lookup_address(game, region, "rso_list_base");
@@ -315,8 +325,8 @@ void init_dynalib(Core::CPUThreadGuard const& guard, Game game, Region region) {
   }
 }
 
-void apply_dynalib_patch(const Core::CPUThreadGuard& cpu_guard) {
-  for (CodeChange const& cc : sDynalibChanges) {
+void apply_cc_list(const Core::CPUThreadGuard& cpu_guard, std::vector<CodeChange> const& cc_list) {
+  for (CodeChange const& cc : cc_list) {
     if (PowerPC::MMU::HostRead<u32>(cpu_guard, cc.address) != cc.var) {
       PowerPC::MMU::HostWrite<u32>(cpu_guard, cc.var, cc.address);
     }
@@ -343,6 +353,7 @@ void RunActiveMods(const Core::CPUThreadGuard& cpu_guard) {
     foreach_mod([](PrimeMod& mod) { mod.reset_mod(); });
     GetVariableManager()->reset_variables();
     sDynalibChanges.clear();
+    sDynalibOriginal.clear();
 
     for (auto& cb : sGameChangeCbList) {
       cb(sActiveGame, sActiveRegion);
@@ -366,7 +377,7 @@ void RunActiveMods(const Core::CPUThreadGuard& cpu_guard) {
     if (sDynalibChanges.empty()) {
       init_dynalib(cpu_guard, sActiveGame, sActiveRegion);
     }
-    apply_dynalib_patch(cpu_guard);
+    apply_cc_list(cpu_guard, sDynalibChanges);
 
     sLastGame = sActiveGame;
     sLastRegion = sActiveRegion;
@@ -402,6 +413,7 @@ void Shutdown() {
     mod.set_temporary_cpu_guard(nullptr);
   });
   sDynalibChanges.clear();
+  sDynalibOriginal.clear();
   sModuleList.clear();
 
   sActiveGame = sLastGame = Game::INVALID_GAME;
@@ -422,6 +434,11 @@ void StashMemoryChanges() {
     mod.overlay_disable();
     mod.set_temporary_cpu_guard(nullptr);
   });
+  apply_cc_list(guard, sDynalibOriginal);
+  for (auto const& module : sModuleList) {
+    PowerPC::MMU::HostWrite<u32>(guard, module.second.second,
+                                 module.second.first + kModuleEpilogueOffset);
+  }
 }
 
 void RestoreMemoryChanges() {
@@ -431,6 +448,11 @@ void RestoreMemoryChanges() {
     mod.lift_overlay();
     mod.set_temporary_cpu_guard(nullptr);
   });
+  apply_cc_list(guard, sDynalibChanges);
+  for (auto const& module : sModuleList) {
+    PowerPC::MMU::HostWrite<u32>(guard, sEpilogueHookStub,
+                                 module.second.first + kModuleEpilogueOffset);
+  }
 }
 
 // Autogenerate GetMod<ty>

@@ -18,6 +18,7 @@ extern std::string info_str;
 
 namespace prime {
 constexpr u32 kBranchOffsetMask = 0x3fffffc;
+constexpr u32 kBctrlEncoding = 0x4e800421;
 constexpr u32 gen_branch(const u32 src, const u32 dst) { return 0x48000000 | (((dst) - (src)) & kBranchOffsetMask); }
 constexpr u32 gen_branch_link(const u32 src, const u32 dst) { return gen_branch(src, dst) | (u32{1}); }
 constexpr u32 gen_lis(const u32 dst_gpr, const u16 val) {

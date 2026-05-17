@@ -66,11 +66,11 @@ void ElfModLoader::run_mod(Game game, Region region) {
       case State::UNLOAD_REQ:
         write8(kGuestStateSignalOff, cg.state_table_base + mod.state_tbl_idx);
         mod.state = State::UNLOAD_PEND;
+        set_code_group_state(mod.pack_name, ModState::DISABLED);
         break;
 
       case State::UNLOAD_PEND:
         if (read8(cg.state_table_base + mod.state_tbl_idx) == kGuestStateAckOff) {
-          set_code_group_state(mod.pack_name, ModState::DISABLED);
           mod.state = State::UNLOADED;
         }
         break;
@@ -113,7 +113,7 @@ constexpr u32 kClEntSize = 8;
 void ElfModLoader::CallgateData::remap() {
   constexpr u32 kSentinelSize = 4;
   // 11 Instructions
-  constexpr u32 kDispatcherSize = 11 * 4;
+  constexpr u32 kDispatcherSize = 13 * 4;
   // 27 Instructions
   constexpr u32 kCleanupSize = 30 * 4;
   // BLR of Cleanup
@@ -157,13 +157,17 @@ void ElfModLoader::CallgateData::remap() {
   //
   // _callgate_dispatch_runorig:
   //   lwz r11, 0(r11)
-  //   b _callgate_dispatch_end
+  //   cmpwi r11, 0
+  //   # Loader encodes a 0 for any callsite hooks of a bctrl
+  //   beq _callgate_dispatch_forward
+  //   b _callgate_dispatch_mtctr
   //
   // _callgate_dispatch_runhook:
   //   lwz r11, 4(r11)
   //
-  // _callgate_dispatch_end:
+  // _callgate_dispatch_mtctr:
   //   mtctr r11
+  // _callgate_dispatch_forward:
   //   bctr
   //
   // _cleanup_dispatch:
@@ -210,10 +214,11 @@ void ElfModLoader::CallgateData::remap() {
   const u8 clb2 = (cl_table_base >> 8) & 0xff;
   const u8 clb3 = cl_table_base & 0xff;
   const u8 dispatcher_stub[] = {
-    0x3d, 0x80, stb0, stb1, 0x61, 0x8c, stb2, stb3, 0x80, 0x0b, 0x00,
-    0x08, 0x7c, 0x0c, 0x00, 0xae, 0x2c, 0x00, 0x00, 0x00, 0x41, 0x82,
-    0x00, 0x0c, 0x81, 0x6b, 0x00, 0x00, 0x48, 0x00, 0x00, 0x08, 0x81,
-    0x6b, 0x00, 0x04, 0x7d, 0x69, 0x03, 0xa6, 0x4e, 0x80, 0x04, 0x20,
+    0x3d, 0x80, stb0, stb1, 0x61, 0x8c, stb2, stb3, 0x80, 0x0b, 0x00, 0x08,
+    0x7c, 0x0c, 0x00, 0xae, 0x2c, 0x00, 0x00, 0x00, 0x41, 0x82, 0x00, 0x14,
+    0x81, 0x6b, 0x00, 0x00, 0x2c, 0x0b, 0x00, 0x00, 0x41, 0x82, 0x00, 0x10,
+    0x48, 0x00, 0x00, 0x08, 0x81, 0x6b, 0x00, 0x04, 0x7d, 0x69, 0x03, 0xa6,
+    0x4e, 0x80, 0x04, 0x20
   };
   const u8 cleanup_stub[] = {
     0x94, 0x21, 0xff, 0xf0, 0x7c, 0x08, 0x02, 0xa6, 0x90, 0x01, 0x00, 0x14,
@@ -274,10 +279,12 @@ void ElfModLoader::sync_mod_states() {
   // Obviously this could be done more efficiently but chances are there's only ever 1 mod running
   // this bitch
   for (auto& active_mod : active_mods) {
-    bool deactivated = true;
+    bool deactivated = false;
     for (auto const& modpack : GetAvailableMods()) {
-      if (active_mod.pack_name == modpack.name) {
-        deactivated = !modpack.is_mod_enabled();
+      if (active_mod.pack_name == modpack.name &&
+          active_mod.state == State::ACTIVE &&
+          !modpack.is_mod_enabled()) {
+        deactivated = true;
       }
     }
 
@@ -507,7 +514,13 @@ void ElfModLoader::create_vthook_callgated(u32 hook_target, u32 vfte_addr, u32 m
 }
 
 void ElfModLoader::create_blhook_callgated(u32 hook_target, u32 bl_addr, u32 mod_index) {
-  const u32 bl_target = bl_addr + get_branch_offset(readi(bl_addr));
+  const u32 insn = readi(bl_addr);
+  u32 bl_target;
+  if (insn == kBctrlEncoding) {
+    bl_target = 0;
+  } else {
+    bl_target = bl_addr + get_branch_offset(readi(bl_addr));
+  }
   const u32 callgate_fn_table_loc = add_callgate_entry(hook_target, bl_target, mod_index);
   // BL will now redirect to the callgate func, leading to the dispatcher
   add_code_change(bl_addr, gen_branch_link(bl_addr, callgate_fn_table_loc));
