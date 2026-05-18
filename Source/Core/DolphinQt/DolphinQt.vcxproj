@@ -155,6 +155,7 @@
     <ClCompile Include="Config\VerifyWidget.cpp" />
     <ClCompile Include="Config\WiimoteControllersWidget.cpp" />
     <ClCompile Include="ConvertDialog.cpp" />
+    <ClCompile Include="CVarDataModel.cpp" />
     <ClCompile Include="Debugger\AssembleInstructionDialog.cpp" />
     <ClCompile Include="Debugger\AssemblerWidget.cpp" />
     <ClCompile Include="Debugger\AssemblyEditor.cpp" />
@@ -479,6 +480,7 @@
     <QtMoc Include="ToolBar.h" />
     <QtMoc Include="Updater.h" />
     <QtMoc Include="ConfigureModWindow.h" />
+    <QtMoc Include="CVarDataModel.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt" />
