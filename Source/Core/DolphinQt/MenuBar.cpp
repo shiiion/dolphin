@@ -736,7 +736,7 @@ void MenuBar::RebuildPrimeModMenus()
 
 void MenuBar::AddPrimeHackMenu()
 {
-  auto* const primehack_menu{new QtUtils::NonAutodismissibleMenu(tr("PrimeHack"), this)};
+  auto* const primehack_menu{new QtUtils::NonAutodismissibleMenu(tr("&PrimeHack"), this)};
   addMenu(primehack_menu);
 
   const bool start_enabled = Config::Get(Config::PRIMEHACK_MODLOADER_ENABLED);

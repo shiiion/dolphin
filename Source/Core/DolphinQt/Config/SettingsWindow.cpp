@@ -32,7 +32,7 @@
 #include "DolphinQt/Settings/TriforcePane.h"
 #include "DolphinQt/Settings/WiiPane.h"
 
-StackedSettingsWindow::StackedSettingsWindow(QWidget* parent, bool with_reject) : QDialog{parent}
+StackedSettingsWindow::StackedSettingsWindow(QWidget* parent) : QDialog{parent}
 {
   // This eliminates the ugly line between the title bar and window contents with KDE Plasma.
   setStyleSheet(QStringLiteral("QDialog { border: none; }"));
@@ -88,17 +88,14 @@ StackedSettingsWindow::StackedSettingsWindow(QWidget* parent, bool with_reject) 
 
   right_side->addWidget(m_stacked_panes);
 
-  if (with_reject)
-  {
-    // The QFrame gives us some padding around the button.
-    auto* const button_frame = new QFrame;
-    auto* const button_layout = new QGridLayout{button_frame};
-    auto* const button_box = new QDialogButtonBox(QDialogButtonBox::Close);
-    right_side->addWidget(button_frame);
-    button_layout->addWidget(button_box);
+  // The QFrame gives us some padding around the button.
+  auto* const button_frame = new QFrame;
+  auto* const button_layout = new QGridLayout{button_frame};
+  auto* const button_box = new QDialogButtonBox(QDialogButtonBox::Close);
+  right_side->addWidget(button_frame);
+  button_layout->addWidget(button_box);
 
-    connect(button_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
-  }
+  connect(button_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
   connect(m_navigation_list, &QListWidget::currentRowChanged, m_stacked_panes,
           &QStackedWidget::setCurrentIndex);
@@ -187,6 +184,11 @@ void StackedSettingsWindow::AddWrappedPane(QWidget* widget, const QString& name)
 void StackedSettingsWindow::ActivatePane(int index)
 {
   m_navigation_list->setCurrentRow(index);
+}
+
+QWidget* StackedSettingsWindow::GetActivePane()
+{
+  return m_stacked_panes->currentWidget();
 }
 
 SettingsWindow::SettingsWindow(MainWindow* parent) : StackedSettingsWindow{parent}

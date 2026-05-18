@@ -2,61 +2,69 @@
 
 #include "Common/Assert.h"
 #include "Core/PrimeHack/ElfModLoaderInterface.h"
+#include "Core/PrimeHack/HackManager.h"
+#include "DolphinQt/CVarDataModel.h"
 #include "DolphinQt/QtUtils/ModalMessageBox.h"
-#include "DolphinQt/QtUtils/WrapInScrollArea.h"
+#include "DolphinQt/SearchBar.h"
 
-#include <utility>
-
-#include <QApplication>
-#include <QCheckBox>
 #include <QComboBox>
-#include <QEnterEvent>
-#include <QGridLayout>
 #include <QGroupBox>
-#include <QLabel>
-#include <QLineEdit>
-#include <QStyle>
-#include <QTabWidget>
-#include <QToolTip>
+#include <QHeaderView>
+#include <QKeyEvent>
 #include <QPushButton>
+#include <QTableView>
 #include <QVBoxLayout>
 #include <QWidget>
 
-namespace
+template <int Rows>
+class SizedTableView : public QTableView
 {
-class InstantTooltipLabel : public QLabel
-{
-  QString m_tt_text;
-
 public:
-  InstantTooltipLabel(QString const& text) : QLabel(), m_tt_text(text) {}
+  SizedTableView(QWidget* parent = nullptr) : QTableView(parent) {}
 
-  void enterEvent(QEnterEvent* event) override
+  QSize sizeHint() const override
   {
-    QToolTip::showText(event->globalPosition().toPoint(), m_tt_text, this);
+    QSize base_size = QTableView::sizeHint();
+    int height = (std::min(model()->rowCount() + 1, Rows)) * horizontalHeader()->height();
+    return QSize(base_size.width(), height);
   }
 };
-}
+
+using DefaultSizedTableView = SizedTableView<15>;
 
 class ModConfigWidget : public QWidget
 {
 public:
   explicit ModConfigWidget(prime::ElfMod* mod, QDialog* parent)
-    : QWidget(parent), m_mod(mod), m_dialog_parent(parent)
+    : QWidget(parent), m_model(nullptr), m_mod(mod)
   {
     CreateMainLayout();
   }
 
+  void ShowSearchBar()
+  {
+    m_search_bar->Show();
+  }
+
+  void HideSearchBar()
+  {
+    m_search_bar->Hide();
+  }
+
+  void FlushChanges()
+  {
+    m_mod->flush();
+  }
+
 private:
+  using Column = CVarDataModel::Column;
+
   void CreateMainLayout()
   {
     auto* const main_layout = new QVBoxLayout(this);
 
     auto* const preset_box = new QGroupBox(tr("Presets"));
     auto* const cvar_box = new QGroupBox(tr("CVars"));
-
-    auto* const top_layout = new QHBoxLayout;
-    auto* const cvar_layout = new QGridLayout;
 
     // Presets Box
     auto* const preset_layout = new QHBoxLayout;
@@ -73,144 +81,74 @@ private:
     preset_buttons_layout->addWidget(default_button);
     preset_layout->addLayout(preset_buttons_layout);
     preset_box->setLayout(preset_layout);
+    preset_load_button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    preset_save_button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    default_button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    preset_box->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     RebuildPresetsDropdown();
 
     connect(preset_load_button, &QPushButton::clicked, this, &ModConfigWidget::OnLoadPresetPressed);
     connect(preset_save_button, &QPushButton::clicked, this, &ModConfigWidget::OnSavePresetPressed);
     connect(default_button, &QPushButton::pressed, this, [this] {
       m_mod->load_defaults();
-      UpdateCurrentValues();
+      m_model->DataChanged();
     });
-
-    // Top area
-    top_layout->addWidget(preset_box);
 
     // CVars Box
-    int row = 0;
-    const QIcon question_icon = QApplication::style()->standardIcon(QStyle::SP_MessageBoxQuestion);
+    auto cvar_layout = new QHBoxLayout;
+    m_model = new CVarDataModel(m_mod);
+    m_table = new DefaultSizedTableView;
+    m_table->setModel(m_model);
+    m_table->setShowGrid(false);
+    m_table->setCurrentIndex(QModelIndex());
+    m_table->setSortingEnabled(false);
+    m_table->setFrameStyle(QFrame::NoFrame);
+    m_table->setSelectionMode(QAbstractItemView::NoSelection);
+    m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_table->setAlternatingRowColors(true);
 
-    size_t cvar_idx = 0;
-    for (auto const& cvar : m_mod->var_list)
-    {
-      auto* var_lbl = new QLabel(QString::fromStdString(cvar.name + ":"));
-      QWidget* entry_widget;
-      QHBoxLayout* h_layout = new QHBoxLayout;
-      if (cvar.type == prime::CVarType::BOOLEAN)
-      {
-        auto* checkbox = new QCheckBox;
-        checkbox->setChecked(std::get<bool>(cvar.value));
-        m_cvar_entries.emplace_back(cvar_idx, checkbox);
-        entry_widget = checkbox;
-      }
-      else
-      {
-        auto* text = new QLineEdit;
-        m_cvar_entries.emplace_back(cvar_idx, text);
-        entry_widget = text;
-      }
-
-      auto* curval_lbl = new QLabel(QString::fromStdString(prime::CVarValString(cvar.value)));
-      m_cvar_current_vals.emplace_back(curval_lbl);
-
-      QString help_desc = QStringLiteral("%1\nDefault value: %2")
-        .arg(cvar.description)
-        .arg(prime::CVarValString(cvar.def));
-      auto* help_desc_lbl = new InstantTooltipLabel(help_desc);
-      help_desc_lbl->setPixmap(question_icon.pixmap(20));
-      help_desc_lbl->setAlignment(Qt::AlignCenter);
-
-      cvar_layout->addWidget(var_lbl, row, 0);
-      curval_lbl->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-      {
-        QFontMetrics fm(curval_lbl->font());
-        // Widest reasonable value with extra padding
-        curval_lbl->setMinimumWidth(fm.horizontalAdvance(QStringLiteral("0.0000000e+00")) + 10);
-      }
-      help_desc_lbl->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-      entry_widget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-      entry_widget->setMinimumWidth(250);
-      h_layout->addWidget(curval_lbl, Qt::AlignLeft);
-      h_layout->addStretch();
-      h_layout->addWidget(entry_widget, Qt::AlignRight);
-      h_layout->addWidget(help_desc_lbl, Qt::AlignLeft);
-      cvar_layout->addLayout(h_layout, row, 1);
-
-      row++;
-      cvar_idx++;
-    }
-    cvar_layout->setVerticalSpacing(5);
-    cvar_layout->setHorizontalSpacing(5);
+    m_table->horizontalHeader()->setSectionResizeMode(
+      static_cast<int>(Column::Name), QHeaderView::ResizeToContents);
+    m_table->horizontalHeader()->setSectionResizeMode(
+      static_cast<int>(Column::Value), QHeaderView::Stretch);
+    m_table->setColumnWidth(static_cast<int>(Column::Value), 250);
+    m_table->verticalHeader()->hide();
+    cvar_layout->addWidget(m_table);
     cvar_box->setLayout(cvar_layout);
+    cvar_box->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Expanding);
 
+    // Search Bar
+    m_search_bar = new SearchBar(this);
+    m_search_bar->SetPlaceholderText(tr("Search CVars..."));
+    connect(m_search_bar, &SearchBar::Search, this, &ModConfigWidget::UpdateFilter);
 
-    auto* button_box = new QDialogButtonBox(
-      QDialogButtonBox::Apply | QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    connect(button_box->button(QDialogButtonBox::Apply), &QPushButton::clicked, this,
-            &ModConfigWidget::ApplyChanges);
-    connect(button_box, &QDialogButtonBox::accepted, this, [this] {
-      ApplyChanges();
-      m_dialog_parent->accept();
-    });
-    connect(button_box, &QDialogButtonBox::rejected, m_dialog_parent, &QDialog::reject);
-    main_layout->addLayout(top_layout);
+    main_layout->addWidget(preset_box);
     main_layout->addWidget(cvar_box);
-    main_layout->addStretch();
-    main_layout->addWidget(button_box);
+    main_layout->addWidget(m_search_bar);
   }
 
-  void ApplyChanges()
+  void UpdateFilter(const QString& filter)
   {
-    for (auto const& [var_idx, entry] : m_cvar_entries)
-    {
-      prime::CVar& cvar = m_mod->var_list[var_idx];
-      if (auto ent_bool_p = std::get_if<QCheckBox*>(&entry); ent_bool_p != nullptr)
-      {
-        ASSERT(cvar.type == prime::CVarType::BOOLEAN);
-        auto* ent_bool = *ent_bool_p;
-        cvar.value = ent_bool->isChecked();
-      }
-      else if (auto ent_str_p = std::get_if<QLineEdit*>(&entry); ent_str_p != nullptr)
-      {
-        auto* ent_str = *ent_str_p;
-        ent_str->setPalette(QPalette());
-        ent_str->setToolTip(QStringLiteral(""));
-        const std::string contents = ent_str->text().trimmed().toStdString();
-        if (contents.empty())
-        {
-          continue;
-        }
+    m_var_filter = filter;
+    RefreshFilter();
+  }
 
-        auto prs_res = prime::ParseCvarValue(cvar.type, contents);
-        if (prs_res)
-        {
-          cvar.value = *prs_res;
-        }
-        else
-        {
-          QPalette err_colors;
-          err_colors.setColor(QPalette::Base, Qt::darkRed);
-          ent_str->setPalette(err_colors);
-          switch (cvar.type)
-          {
-            case prime::CVarType::FLOAT32:
-            case prime::CVarType::FLOAT64:
-              ent_str->setToolTip(QStringLiteral("Invalid value, expected a float"));
-              break;
-            case prime::CVarType::INT8:
-            case prime::CVarType::INT16:
-            case prime::CVarType::INT32:
-            case prime::CVarType::INT64:
-              ent_str->setToolTip(QStringLiteral("Invalid value, expected a positive integer"));
-              break;
-            default:
-              break;
-          }
-        }
+  void RefreshFilter()
+  {
+    if (m_var_filter.isEmpty())
+    {
+      for (int i = 0; i < m_model->NumRows(); i++)
+      {
+        m_table->setRowHidden(i, false);
       }
     }
-
-    m_mod->flush();
-    UpdateCurrentValues();
+    else
+    {
+      for (int i = 0; i < m_model->NumRows(); i++)
+      {
+        m_table->setRowHidden(i, !m_model->ShouldDisplayCVar(m_var_filter, i));
+      }
+    }
   }
 
   void OnLoadPresetPressed()
@@ -222,14 +160,16 @@ private:
       ModalMessageBox error(this);
       error.setIcon(QMessageBox::Critical);
       error.setWindowTitle(tr("Error"));
-      error.setText(tr("The profile '%1' does not exist").arg(m_presets_dropdown->currentText()));
+      error.setText(tr("The preset '%1' does not exist").arg(m_presets_dropdown->currentText()));
       error.exec();
       return;
     }
 
     m_mod->apply_preset(m_presets_dropdown->currentText().toStdString());
+    m_model->DataChanged();
 
-    UpdateCurrentValues();
+    // Probe the table view to update its values
+    m_table->update();
   }
 
   void OnSavePresetPressed()
@@ -278,28 +218,33 @@ private:
     }
   }
 
-  void UpdateCurrentValues()
-  {
-    for (size_t i = 0; i < m_cvar_current_vals.size(); i++)
-    {
-      m_cvar_current_vals[i]->setText(
-        QString::fromStdString(prime::CVarValString(m_mod->var_list[i].value)));
-    }
-  }
-
 private:
+  CVarDataModel* m_model;
+  DefaultSizedTableView* m_table;
   prime::ElfMod* m_mod;
-  QDialog* m_dialog_parent;
   QComboBox* m_presets_dropdown;
-
-  std::vector<std::pair<size_t, std::variant<QCheckBox*, QLineEdit*>>> m_cvar_entries;
-  std::vector<QLabel*> m_cvar_current_vals;
+  SearchBar* m_search_bar;
+  QString m_var_filter;
 };
 
 ConfigureModWindow::ConfigureModWindow(std::string const& mod_name, QWidget* parent)
-  : StackedSettingsWindow(parent, false), m_mod_name(mod_name)
+  : StackedSettingsWindow(parent), m_mod_name(mod_name)
 {
   CreateMainLayout();
+}
+
+void ConfigureModWindow::keyPressEvent(QKeyEvent* event)
+{
+  if (event->key() == Qt::Key_Escape)
+  {
+    auto* cfg_widget = static_cast<ModConfigWidget*>(GetActivePane());
+    cfg_widget->HideSearchBar();
+    event->accept();
+  }
+  else
+  {
+    event->ignore();
+  }
 }
 
 void ConfigureModWindow::CreateMainLayout()
@@ -307,13 +252,35 @@ void ConfigureModWindow::CreateMainLayout()
   prime::ModPack* modpack = prime::GetPack(m_mod_name);
   ASSERT(modpack != nullptr);
 
+  int active_index = 0;
+  int current_index = 0;
+  const prime::Game active_game = prime::GetActiveGame();
+  const prime::Region active_region = prime::GetActiveRegion();
   for (prime::ElfMod& mod : modpack->supported_games)
   {
+    if (mod.game == active_game && mod.region == active_region)
+    {
+      active_index = current_index;
+    }
     ModConfigWidget* const mod_tab = new ModConfigWidget(&mod, this);
+    connect(this, &ConfigureModWindow::accepted, mod_tab, &ModConfigWidget::FlushChanges);
+    connect(this, &ConfigureModWindow::rejected, mod_tab, &ModConfigWidget::FlushChanges);
     auto tab_title = std::string(prime::game_str(mod.game));
-    AddWrappedPane(mod_tab, QString::fromStdString(tab_title));
+    AddPane(mod_tab, QString::fromStdString(tab_title));
+    current_index++;
   }
   OnDoneCreatingPanes();
+  // Set active pane to the currently active game (or first if not present)
+  ActivatePane(active_index);
+
+  addAction(tr("Search"), QKeySequence::Find, this, &ConfigureModWindow::ShowSearch);
+  addAction(tr("Close"), QKeySequence::Close, this, &ConfigureModWindow::reject);
 
   setWindowTitle(tr("%1 Mod Settings").arg(QString::fromStdString(modpack->name)));
+}
+
+void ConfigureModWindow::ShowSearch()
+{
+  auto* cfg_widget = static_cast<ModConfigWidget*>(GetActivePane());
+  cfg_widget->ShowSearchBar();
 }

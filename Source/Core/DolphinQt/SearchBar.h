@@ -16,6 +16,7 @@ public:
 
   void Show();
   void Hide();
+  void SetPlaceholderText(const QString& str);
 
 signals:
   void Search(const QString& search);

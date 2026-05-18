@@ -15,7 +15,7 @@ class StackedSettingsWindow : public QDialog
 {
   Q_OBJECT
 public:
-  explicit StackedSettingsWindow(QWidget* parent = nullptr, bool with_reject = true);
+  explicit StackedSettingsWindow(QWidget* parent = nullptr);
 
   void ActivatePane(int index);
 
@@ -29,6 +29,8 @@ protected:
   void OnDoneCreatingPanes();
 
   void changeEvent(QEvent* event) override;
+
+  QWidget* GetActivePane();
 
 private:
   void UpdateNavigationListStyle();

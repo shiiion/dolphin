@@ -58,6 +58,11 @@ void SearchBar::Hide()
   hide();
 }
 
+void SearchBar::SetPlaceholderText(const QString& str)
+{
+  m_search_edit->setPlaceholderText(str);
+}
+
 void SearchBar::ConnectWidgets()
 {
   connect(m_search_edit, &QLineEdit::textChanged, this, &SearchBar::Search);

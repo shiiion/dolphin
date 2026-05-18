@@ -304,7 +304,6 @@ void init_db(AddressDB& addr_db) {
 
   addr_db.register_dynamic_address(Game::PRIME_3_STANDALONE, "angular_moment_z", "player", {mrp1(0x174)});
   addr_db.register_dynamic_address(Game::PRIME_3_STANDALONE, "move_state", "player", {mrp1(0x29c)});
-  addr_db.register_dynamic_address(Game::PRIME_3_STANDALONE, "ball_state", "player", {mrp1(0x354)});
   addr_db.register_dynamic_address(Game::PRIME_3_STANDALONE, "ball_state", "player", {mrp1(0x358)});
   addr_db.register_dynamic_address(Game::PRIME_3_STANDALONE, "screw_state", "player", {mrp1(0x35c)});
   addr_db.register_dynamic_address(Game::PRIME_3_STANDALONE, "lockon_type", "player", {mrp1(0x370)});

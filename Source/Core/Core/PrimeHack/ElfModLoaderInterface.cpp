@@ -312,6 +312,9 @@ parse_game_mod(std::string const& root_path, picojson::object const& root, Game 
 
       mod_out.var_list.emplace_back(std::move(new_cvar));
     }
+
+    std::sort(mod_out.var_list.begin(), mod_out.var_list.end(),
+              [](CVar const& lhs, CVar const& rhs) { return lhs.name < rhs.name; });
   } // CVars optional
 
   if (auto const& hooks = root.find("hooks"); hooks != root.end() &&
