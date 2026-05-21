@@ -1196,6 +1196,7 @@
     <ClCompile Include="Core\PrimeHack\EmuVariableManager.cpp" />
     <ClCompile Include="Core\PrimeHack\Quaternion.cpp" />
     <ClCompile Include="Core\PrimeHack\Transform.cpp" />
+    <ClCompile Include="Core\PrimeHack\Mods\AutoConvertFriendVouchers.cpp" />
     <ClCompile Include="Core\PrimeHack\Mods\AutoEFB.cpp" />
     <ClCompile Include="Core\PrimeHack\Mods\BloomIntensityMP3.cpp" />
     <ClCompile Include="Core\PrimeHack\Mods\ContextSensitiveControls.cpp" />

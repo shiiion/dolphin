@@ -36,7 +36,7 @@ void PrimeCheatsWidget::CreateWidgets()
   m_checkbox_skipportalmp2 = new QCheckBox(tr("Skip MP2 Portal Cutscenes"));
   m_checkbox_hypermode = new QCheckBox(tr("Unlock Hypermode (Hard) Difficulty"));
   m_checkbox_friendvouchers = new QCheckBox(tr("Bypass Friend Vouchers (Trilogy Only)"));
-  m_checkbox_anybeam = new QCheckBox(tr("Any Beam on All Doors (MP1 Only)"));
+  m_checkbox_anybeam = new QCheckBox(tr("Beam Door Requirement Bypass"));
   m_warning = new CheatWarningWidget(m_game_id, m_restart_required, this);
 
   layout->addWidget(m_warning);
@@ -93,28 +93,29 @@ void PrimeCheatsWidget::OnLoadConfig()
   m_checkbox_friendvouchers->setChecked(Config::Get(Config::PRIMEHACK_FRIENDVOUCHERS));
   m_checkbox_hudmemo->setChecked(Config::Get(Config::PRIMEHACK_DISABLE_HUDMEMO));
   m_checkbox_hypermode->setChecked(Config::Get(Config::PRIMEHACK_UNLOCK_HYPERMODE));
+  m_checkbox_anybeam->setChecked(Config::Get(Config::PRIMEHACK_ANYBEAM_DOOR));
 }
 
 void PrimeCheatsWidget::AddDescriptions()
 {
   static const char TR_NOCLIP[] =
-    QT_TR_NOOP("Source Engine style noclip, fly through walls using the movement keys!");
+    QT_TR_NOOP("Disables player collision for all solid objects.");
   static const char TR_INVULNERABILITY[] =
-    QT_TR_NOOP("Become resistant to all sources of damage. Projectiles literally will bounce off you!");
+    QT_TR_NOOP("Become invulnerable to most types of damage.");
   static const char TR_SKIPCUTSCENES[] =
-    QT_TR_NOOP("Make most cutscenes skippable. The button to do so varies from each game. It is usually the Jump key or the Menu button.");
+    QT_TR_NOOP("Make most cutscenes skippable.\n*The skip button varies from each game (usually the Jump or Menu button).");
   static const char TR_SCANDASH[] =
-    QT_TR_NOOP("Re-enable the ability to dash with the scan visor. This is a speed-running trick in the original release, and was subsequently patched in later releases.");
+    QT_TR_NOOP("Restores the scan dashing glitch from rev 0 to later revisions.");
   static const char TR_SKIPPORTAL[] =
-    QT_TR_NOOP("Skips having to watch the portal cutscenes in Metroid Prime 2 (Trilogy), allowing you to teleport immediately.");
+    QT_TR_NOOP("Skips portal activation cutscenes in Metroid Prime 2.");
   static const char TR_FRIENDVOUCHERS[] =
-    QT_TR_NOOP("Removes the friend voucher cost from all purchasable extras. This is on by default as friend-vouchers are impossible to obtain.");
+    QT_TR_NOOP("Bypasses the friend voucher requirement for all unlockables.");
   static const char TR_HUDMEMO[] =
-    QT_TR_NOOP("Removes the item pickup screen and explanation screen for powerups.");
+    QT_TR_NOOP("Automatically skips the item pickup screen and explanation screen for powerups.");
   static const char TR_HYPERMODE[] =
-    QT_TR_NOOP("Unlock Hypermode (Hard) Difficulty.");
+    QT_TR_NOOP("Bypasses completed save requirement to unlock Hypermode (Hard) difficulty.");
   static const char TR_ANYBEAM[] =
-    QT_TR_NOOP("Makes all doors which you have the beam for unlockable by any beam. MP1 Only.");
+    QT_TR_NOOP("MP1: Doors can be opened by any beam as long as the correspoding beam has been obtained.\nMP2: Annihilator Beam can open Dark or Light Beam doors.");
 
   m_checkbox_noclip->setToolTip(tr(TR_NOCLIP));
   m_checkbox_invulnerability->setToolTip(tr(TR_INVULNERABILITY));

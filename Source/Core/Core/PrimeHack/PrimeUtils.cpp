@@ -275,42 +275,48 @@ std::string_view GetIconNameForSupportLevel(GameSupportLevel supp_level)
     return "PrimeHackLimited";
   case GameSupportLevel::Unsupported:
     return "PrimeHackUnsupported";
+  case GameSupportLevel::QuestionableSupport:
+    return "PrimeHackQuestionable";
   default:
     return "";
   }
 }
 
 std::array<std::string_view, 14> kKnownTitles = {
-  "GM8E01", // MP1 GCN [NTSC] (all revisions)
-  "GM8P01", // MP1 GCN [PAL]
-  "GM8J01", // MP1 GCN [NTSC-J]
-  "R3IE01", // New Play Control! [NTSC-J]
-  "G2MJ01", // MP2 Dark Echoes GCN [NTSC-J]
-  "R32J01", // MP2 Dark Echoes Wii [NTSC - J]
-  "G2ME01", // MP2 GCN [NTSC]
-  "G2MP01", // MP2 GCN [PAL]
-  "P2ME01", // MP2 Bonus Disc [NTSC]
-  "RM3E01", // MP3 [NTSC]
-  "RM3P01", // MP3 [PAL]
-  "RM3J01", // MP3 [NTSC-J]
-  "R3ME01", // MPT [NTSC]
-  "R3MP01", // MPT [PAL]
+  "GM8E", // MP1 GCN [NTSC] (all revisions)
+  "GM8P", // MP1 GCN [PAL]
+  "GM8J", // MP1 GCN [NTSC-J]
+  "R3IE", // New Play Control! [NTSC-J]
+  "G2MJ", // MP2 Dark Echoes GCN [NTSC-J]
+  "R32J", // MP2 Dark Echoes Wii [NTSC - J]
+  "G2ME", // MP2 GCN [NTSC]
+  "G2MP", // MP2 GCN [PAL]
+  "P2ME", // MP2 Bonus Disc [NTSC]
+  "RM3E", // MP3 [NTSC]
+  "RM3P", // MP3 [PAL]
+  "RM3J", // MP3 [NTSC-J]
+  "R3ME", // MPT [NTSC]
+  "R3MP", // MPT [PAL]
 };
 
 std::array<std::string_view, 8> kSupportedTitles = {
-  "GM8E01", // MP1 GCN [NTSC] (all revisions)
-  "GM8P01", // MP1 GCN [PAL]
-  "G2ME01", // MP2 GCN [NTSC]
-  "G2MP01", // MP2 GCN [PAL]
-  "RM3E01", // MP3 [NTSC]
-  "RM3P01", // MP3 [PAL]
-  "R3ME01", // MPT [NTSC]
-  "R3MP01", // MPT [PAL]
+  "GM8E", // MP1 GCN [NTSC] (all revisions)
+  "GM8P", // MP1 GCN [PAL]
+  "G2ME", // MP2 GCN [NTSC]
+  "G2MP", // MP2 GCN [PAL]
+  "RM3E", // MP3 [NTSC]
+  "RM3P", // MP3 [PAL]
+  "R3ME", // MPT [NTSC]
+  "R3MP", // MPT [PAL]
 };
 
 GameSupportLevel GetGameSupportLevel(UICommon::GameFile const& file)
 {
-  std::string const& title = file.GetGameID();
+  std::string const& title = file.GetGameID().substr(0, 4);
+  std::string const& publisher = file.GetGameID().substr(4, 2);
+  // [GM8E][01]
+  //  0..3 4..5
+  //  game pub.
   bool is_known = false;
   bool is_supported = false;
 
@@ -336,9 +342,14 @@ GameSupportLevel GetGameSupportLevel(UICommon::GameFile const& file)
   {
     // Korean Prime 1 has same game id as NTSC, just with a different revision
     constexpr u16 kKoreanRevisionNum = 48;
+    constexpr std::string_view kOfficialPublisherId = "01";
     if (file.GetRevision() == kKoreanRevisionNum)
     {
       return GameSupportLevel::Unsupported;
+    }
+    if (publisher != kOfficialPublisherId)
+    {
+      return GameSupportLevel::QuestionableSupport;
     }
     if (file.IsNKit() || file.GetBlobType() == DiscIO::BlobType::WBFS)
     {
@@ -364,11 +375,13 @@ std::string_view SupportLevelToolTip(GameSupportLevel supp_level)
   switch (supp_level)
   {
   case GameSupportLevel::FullySupported:
-    return "This game is fully supported by PrimeHack!";
+    return "This title is supported!";
   case GameSupportLevel::Unsupported:
-    return "This game isn't supported by PrimeHack.";
+    return "This title is not supported.";
   case GameSupportLevel::LimitedSupport:
-    return "This game is compressed with .nkit or .wbfs, unexpected behavior may occur.";
+    return "Only RVZ compression is considered suppored.\n*Other formats are known to have issues.";
+  case GameSupportLevel::QuestionableSupport:
+    return "Randovania is known to work, but compatibility is incidental.\n*Results may vary.";
   default:
     return "";
   }

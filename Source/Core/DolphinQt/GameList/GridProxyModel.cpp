@@ -51,7 +51,7 @@ QVariant GridProxyModel::data(const QModelIndex& i, int role) const
       int supp_x = canvas.width() - supp_width;
       int supp_y = canvas.height() - supp_height;
       QPixmap supp_pixmap = Resources::GetResourceIcon(GetIconNameForSupportLevel(supp_level))
-        .pixmap(supp_width, supp_height);
+        .pixmap(QSize(supp_width, supp_height), 1);
       painter.drawPixmap(supp_x, supp_y, supp_width, supp_height, supp_pixmap);
     };
 

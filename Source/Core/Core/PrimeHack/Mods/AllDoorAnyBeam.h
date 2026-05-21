@@ -7,8 +7,35 @@
 
 namespace prime {
 
+  constexpr std::string_view door_override_template_mp2 = R"(
+.defvar IsWii, {wii_version}
+.defvar VTableLoc, 0x{vt_hook_addr:x}
+.defvar HookBuffer, 0x{hook_buffer_addr:x}
+
+.if IsWii
+.defvar DamageVulnOff, 0x42c
+.defvar ChargeVulnTable, 0x15
+.defvar ComboVulnTable, 0x19
+.else
+.defvar DamageVulnOff, 0x43c
+.defvar ChargeVulnTable, 0x18
+.defvar ComboVulnTable, 0x1c
+.endif
+
+.locate VTableLoc
+.4byte HookBuffer
+
+.locate HookBuffer
+li r0, 1
+stb r0, (DamageVulnOff+0x3)(r3) # Regular projectile
+stb r0, (DamageVulnOff+ChargeVulnTable+0x3)(r3) # Charge shot
+stb r0, (DamageVulnOff+ComboVulnTable+0x3)(r3) # Missile combo
+addi r3, r3, DamageVulnOff
+blr
+)";
+
 // Wii needs 4 less bytes but, whatever
-constexpr u32 kDoorOverrideHookBufferSizeMax = 0xfc;
+constexpr u32 kDoorOverrideHookBufferSizeMax = 0x17c;
 constexpr std::string_view door_override_template = R"(
 .defvar IsWii, {wii_version}
 .defvar VTableLoc, 0x{vt_hook_addr:x}
@@ -51,6 +78,14 @@ stw r0, 0xc(r10) # set vulnerable to plasma beam
 stw r0, 0x10(r10) # set vulnerable to bombs
 stw r0, 0x14(r10) # set vulnerable to power bombs
 stw r0, 0x18(r10) # set vulnerable to missiles
+stw r0, 0x3c(r10) # set vulnerable to power charge
+stw r0, 0x40(r10) # set vulnerable to ice charge
+stw r0, 0x44(r10) # set vulnerable to wave charge
+stw r0, 0x48(r10) # set vulnerable to plasma charge
+stw r0, 0x4c(r10) # set vulnerable to super missile
+stw r0, 0x50(r10) # set vulnerable to ice spreader
+stw r0, 0x54(r10) # set vulnerable to wavebuster
+stw r0, 0x58(r10) # set vulnerable to flame thrower
 0:
 
 lwz r11, 0x8(r10) # Check if trigger is vulnerable to wave beam
@@ -67,6 +102,14 @@ stw r0, 0xc(r10) # set vulnerable to plasma beam
 stw r0, 0x10(r10) # set vulnerable to bombs
 stw r0, 0x14(r10) # set vulnerable to power bombs
 stw r0, 0x18(r10) # set vulnerable to missiles
+stw r0, 0x3c(r10) # set vulnerable to power charge
+stw r0, 0x40(r10) # set vulnerable to ice charge
+stw r0, 0x44(r10) # set vulnerable to wave charge
+stw r0, 0x48(r10) # set vulnerable to plasma charge
+stw r0, 0x4c(r10) # set vulnerable to super missile
+stw r0, 0x50(r10) # set vulnerable to ice spreader
+stw r0, 0x54(r10) # set vulnerable to wavebuster
+stw r0, 0x58(r10) # set vulnerable to flame thrower
 0:
 
 lwz r11, 0xc(r10) # Check if trigger is vulnerable to plasma beam
@@ -83,6 +126,14 @@ stw r0, 0xc(r10) # set vulnerable to plasma beam
 stw r0, 0x10(r10) # set vulnerable to bombs
 stw r0, 0x14(r10) # set vulnerable to power bombs
 stw r0, 0x18(r10) # set vulnerable to missiles
+stw r0, 0x3c(r10) # set vulnerable to power charge
+stw r0, 0x40(r10) # set vulnerable to ice charge
+stw r0, 0x44(r10) # set vulnerable to wave charge
+stw r0, 0x48(r10) # set vulnerable to plasma charge
+stw r0, 0x4c(r10) # set vulnerable to super missile
+stw r0, 0x50(r10) # set vulnerable to ice spreader
+stw r0, 0x54(r10) # set vulnerable to wavebuster
+stw r0, 0x58(r10) # set vulnerable to flame thrower
 0:
 
 lwz r11, 0x18(r10) # Check if trigger is vulnerable to missiles
@@ -99,6 +150,14 @@ stw r0, 0xc(r10) # set vulnerable to plasma beam
 stw r0, 0x10(r10) # set vulnerable to bombs
 stw r0, 0x14(r10) # set vulnerable to power bombs
 stw r0, 0x18(r10) # set vulnerable to missiles
+stw r0, 0x3c(r10) # set vulnerable to power charge
+stw r0, 0x40(r10) # set vulnerable to ice charge
+stw r0, 0x44(r10) # set vulnerable to wave charge
+stw r0, 0x48(r10) # set vulnerable to plasma charge
+stw r0, 0x4c(r10) # set vulnerable to super missile
+stw r0, 0x50(r10) # set vulnerable to ice spreader
+stw r0, 0x54(r10) # set vulnerable to wavebuster
+stw r0, 0x58(r10) # set vulnerable to flame thrower
 0:
 
 addi r3, r3, DamageVulnOff
@@ -111,12 +170,44 @@ public:
   bool init_mod(Game game, Region region) override {
     LOOKUP(state_manager);
     if (game != Game::PRIME_1_GCN && game != Game::PRIME_1_GCN_R1 &&
-        game != Game::PRIME_1_GCN_R2 && game != Game::PRIME_1) {
+        game != Game::PRIME_1_GCN_R2 && game != Game::PRIME_1 && game != Game::PRIME_2_GCN && game != Game::PRIME_2) {
       return true;
     }
 
     const u32 hook_buffer = GuestAllocAligned(kDoorOverrideHookBufferSizeMax, 2);
     switch (game) {
+      case Game::PRIME_2_GCN:
+        if (region == Region::NTSC_U) {
+          add_asm_patch(fmt::format(fmt::runtime(door_override_template_mp2),
+            fmt::arg("wii_version", 0),
+            fmt::arg("vt_hook_addr", 0x803b26d8),
+            fmt::arg("hook_buffer_addr", hook_buffer)
+          ));
+        }
+        else if (region == Region::PAL) {
+          add_asm_patch(fmt::format(fmt::runtime(door_override_template_mp2),
+            fmt::arg("wii_version", 0),
+            fmt::arg("vt_hook_addr", 0x803b3a58),
+            fmt::arg("hook_buffer_addr", hook_buffer)
+          ));
+        }
+        break;
+      case Game::PRIME_2:
+        if (region == Region::NTSC_U) {
+          add_asm_patch(fmt::format(fmt::runtime(door_override_template_mp2),
+            fmt::arg("wii_version", 1),
+            fmt::arg("vt_hook_addr", 0x804b8168),
+            fmt::arg("hook_buffer_addr", hook_buffer)
+          ));
+        }
+        else if (region == Region::PAL) {
+          add_asm_patch(fmt::format(fmt::runtime(door_override_template_mp2),
+            fmt::arg("wii_version", 1),
+            fmt::arg("vt_hook_addr", 0x804be968),
+            fmt::arg("hook_buffer_addr", hook_buffer)
+          ));
+        }
+        break;
       case Game::PRIME_1_GCN:
         if (region == Region::NTSC_U) {
           add_asm_patch(fmt::format(fmt::runtime(door_override_template),

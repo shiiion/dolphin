@@ -12,8 +12,8 @@ QVariant CVarDataModel::data(const QModelIndex& index, int role) const
   if (role == Qt::ToolTipRole)
   {
     return QString(QStringLiteral("%1\nDefault: %2"))
-      .arg(cvar.description)
-      .arg(prime::CVarValString(cvar.def));
+      .arg(QString::fromStdString(cvar.description))
+      .arg(QString::fromStdString(prime::CVarValString(cvar.def)));
   }
 
   switch (static_cast<Column>(index.column()))

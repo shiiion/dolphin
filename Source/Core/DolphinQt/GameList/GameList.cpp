@@ -73,6 +73,8 @@
 
 #include "UICommon/GameFile.h"
 
+#include "Common/Logging/Log.h"
+
 namespace
 {
 class CenterStyle : public QStyledItemDelegate {
@@ -80,8 +82,8 @@ public:
   CenterStyle(QWidget* parent) : QStyledItemDelegate(parent) {}
   void paint(QPainter* painter, QStyleOptionViewItem const& option, QModelIndex const& index) const {
     QRect rect = option.rect;
-    QPixmap pix = qvariant_cast<QPixmap>(index.data(Qt::DecorationRole));
-
+    QIcon icon = qvariant_cast<QIcon>(index.data(Qt::DecorationRole));
+    QPixmap pix = icon.pixmap(QSize(25, 25), 1);
     QPoint p = QPoint((rect.width() - pix.width()) / 2, (rect.height() - pix.height()) / 2);
     painter->drawPixmap(rect.topLeft() + p, pix);
   }

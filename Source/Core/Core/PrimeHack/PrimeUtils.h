@@ -98,6 +98,7 @@ enum class GameSupportLevel : int
   FullySupported,
   Unsupported,
   LimitedSupport,
+  QuestionableSupport,
   NotApplicable,
 };
 

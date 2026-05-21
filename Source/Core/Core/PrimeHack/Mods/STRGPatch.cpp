@@ -83,11 +83,11 @@ bool STRGPatch::init_mod(Game game, Region region) {
 
       add_table_entry("NunchukRequired", GetMotd());
       add_table_entry("DifficultyMenu_Easiest",
-        "&link=[starteasiest]?typewrite=reverse;&wholepane;&rollover=menu2_hl;[ Easy (Normal) ]&endlink;");
+        "&link=[starteasiest]?typewrite=reverse;&wholepane;&rollover=menu2_hl;[ Normal (Easy) ]&endlink;");
       add_table_entry("DifficultyMenu_Medium",
-        "&link=[startmedium]?typewrite=reverse;&wholepane;&rollover=menu3_hl;[ Normal (Veteran) ]&endlink;");
+        "&link=[startmedium]?typewrite=reverse;&wholepane;&rollover=menu3_hl;[ Veteran (Normal) ]&endlink;");
       add_table_entry("DifficultyMenu_Hardest",
-        "&if=HypermodeUnlocked;&link=[starthardest]?typewrite=reverse;&wholepane;&rollover=menu4_hl;[ Hard (Hypermode) ]&endlink;&endif;");
+        "&if=HypermodeUnlocked;&link=[starthardest]?typewrite=reverse;&wholepane;&rollover=menu4_hl;[ Hypermode (Hard) ]&endlink;&endif;");
       int vmc_id = Core::System::GetInstance().GetPowerPC().RegisterVmcall(patch_strg_entry_mp3_and_menu);
       if (region == Region::NTSC_U) {
         add_code_change(0x8037e510, gen_vmcall(vmc_id, 0));
