@@ -977,6 +977,13 @@ void RefreshMods() {
       }
     }
   }
+
+  // This should update the persistent preset
+  for (auto& pack : sDiscoveredMods) {
+    for (auto& mod : pack.supported_games) {
+      mod.flush();
+    }
+  }
 }
 
 std::string ImportNewMod(std::string const& path) {

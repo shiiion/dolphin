@@ -349,6 +349,7 @@ void RunActiveMods(const Core::CPUThreadGuard& cpu_guard) {
   foreach_mod([&cpu_guard](PrimeMod& mod) { mod.set_temporary_cpu_guard(&cpu_guard); });
 
   if (sActiveGame != sLastGame || sActiveRegion != sLastRegion) {
+    UpdateHackSettings();
     AllocSwitchGame(sActiveGame, sActiveRegion);
     foreach_mod([](PrimeMod& mod) { mod.reset_mod(); });
     GetVariableManager()->reset_variables();
