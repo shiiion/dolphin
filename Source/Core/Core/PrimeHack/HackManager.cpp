@@ -152,9 +152,9 @@ void update_active_game_region(const Core::CPUThreadGuard& cpu_guard) {
   }
 }
 
-bool update_hardcore_enabled() {
+void update_hardcore_enabled() {
 #ifdef USE_RETRO_ACHIEVEMENTS
-  return sHardcoreEnabled = AchievementManager::GetInstance().IsHardcoreModeActive();
+  sHardcoreEnabled = AchievementManager::GetInstance().IsHardcoreModeActive();
 #endif
 }
 
