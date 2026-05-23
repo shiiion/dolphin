@@ -5,6 +5,7 @@
 
 namespace prime {
 
+// MOD PURPOSE: Disables the garish bloom prime 3 added, alongside trilogy prime 1 & 2
 class DisableBloom : public PrimeMod {
 public:
   void run_mod(Game game, Region region) override {
@@ -48,6 +49,7 @@ public:
     return true;
   }
   void on_state_change(ModState) override {}
+  bool is_cheat() const override { return false; }
   GEN_NAME(DisableBloom)
 };
 

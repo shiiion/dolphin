@@ -12,6 +12,7 @@ public:
   explicit PrimeCheatsWidget(std::string game_id, bool restart_required);
 signals:
   void OpenGeneralSettings();
+  void OpenAchievementSettings();
 protected:
   void showEvent(QShowEvent*);
 private:
@@ -20,6 +21,7 @@ private:
   void OnSaveConfig();
   void OnLoadConfig();
   void AddDescriptions();
+  void UpdateHardcoreChange();
 
   QCheckBox* m_checkbox_noclip;
   QCheckBox* m_checkbox_invulnerability;

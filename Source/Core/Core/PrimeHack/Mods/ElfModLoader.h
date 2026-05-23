@@ -39,6 +39,7 @@ struct LiveMod {
   } linked;
 };
 
+// MOD PURPOSE: Loading external mod binaries provided a .mpk metadata file
 class ElfModLoader : public PrimeMod {
 public:
   inline static constexpr u32 kMaxMods = 64;
@@ -47,6 +48,7 @@ public:
   bool init_mod(Game game, Region region) override;
   void on_state_change(ModState old_state) override {}
   void on_reset() override;
+  bool is_cheat() const override { return true; }
   GEN_NAME(ElfModLoader)
 
 private:

@@ -1,6 +1,7 @@
 #include "Core/PrimeHack/HackManager.h"
 
 #include "Common/Assembler/GekkoAssembler.h"
+#include "Core/AchievementManager.h"
 #include "Core/ConfigManager.h"
 #include "Core/Config/MainSettings.h"
 #include "Core/PrimeHack/GuestAllocator.h"
@@ -33,6 +34,8 @@ Game sLastGame = Game::INVALID_GAME;
 Region sActiveRegion = Region::INVALID_REGION;
 Region sLastRegion = Region::INVALID_REGION;
 std::vector<GameChangeCallback> sGameChangeCbList;
+
+bool sHardcoreEnabled = false;
 
 // Dynalib tracking globals
 std::unordered_map<std::string, std::pair<u32, u32>> sModuleList;
@@ -147,6 +150,12 @@ void update_active_game_region(const Core::CPUThreadGuard& cpu_guard) {
       }
       break;
   }
+}
+
+bool update_hardcore_enabled() {
+#ifdef USE_RETRO_ACHIEVEMENTS
+  return sHardcoreEnabled = AchievementManager::GetInstance().IsHardcoreModeActive();
+#endif
 }
 
 void update_mod_state_from_config() {
@@ -359,12 +368,19 @@ void RunActiveMods(const Core::CPUThreadGuard& cpu_guard) {
     for (auto& cb : sGameChangeCbList) {
       cb(sActiveGame, sActiveRegion);
     }
+    // Cache hardcore state at each game change
+    update_hardcore_enabled();
   }
 
   update_mod_state_from_config();
 
   if (sActiveGame != Game::INVALID_GAME && sActiveRegion != Region::INVALID_REGION) {
     foreach_mod([](PrimeMod& mod) {
+      // Skip any "cheat" mods
+      if (mod.is_cheat() && sHardcoreEnabled) {
+        return;
+      }
+
       if (!mod.is_initialized() && mod.init_mod(sActiveGame, sActiveRegion)) {
         mod.mark_initialized();
       }
@@ -384,6 +400,10 @@ void RunActiveMods(const Core::CPUThreadGuard& cpu_guard) {
     sLastRegion = sActiveRegion;
 
     foreach_mod([](PrimeMod& mod) {
+      if (mod.is_cheat() && sHardcoreEnabled) {
+        return;
+      }
+
       if (mod.mod_state() == ModState::ENABLED) {
         mod.run_mod(sActiveGame, sActiveRegion);
       }
@@ -454,6 +474,10 @@ void RestoreMemoryChanges() {
     PowerPC::MMU::HostWrite<u32>(guard, sEpilogueHookStub,
                                  module.second.first + kModuleEpilogueOffset);
   }
+}
+
+bool CachedHardcoreEnabled() {
+  return sHardcoreEnabled;
 }
 
 // Autogenerate GetMod<ty>

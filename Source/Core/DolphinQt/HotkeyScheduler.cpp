@@ -620,13 +620,13 @@ void HotkeyScheduler::Run()
       Config::SetCurrent(Config::GFX_STEREO_CONVERGENCE,
                          std::min(stereo_convergence + 5, Config::GFX_STEREO_CONVERGENCE_MAXIMUM));
 
+    const bool hardcore = AchievementManager::GetInstance().IsHardcoreModeActive();
     // Free Look
     if (IsHotkey(HK_FREELOOK_TOGGLE))
     {
       const bool new_value = !Config::Get(Config::FREE_LOOK_ENABLED);
       Config::SetCurrent(Config::FREE_LOOK_ENABLED, new_value);
 
-      const bool hardcore = AchievementManager::GetInstance().IsHardcoreModeActive();
       if (hardcore)
         OSD::AddMessage("Free Look is Disabled in Hardcore Mode");
       else
@@ -640,7 +640,10 @@ void HotkeyScheduler::Run()
         const bool new_value = !Config::Get(Config::PRIMEHACK_NOCLIP);
         Config::SetBaseOrCurrent(Config::PRIMEHACK_NOCLIP, new_value);
 
-        OSD::AddMessage(StringFromFormat("Noclip: %s", new_value ? "Enabled" : "Disabled"));
+        if (hardcore)
+          OSD::AddMessage("Noclip is Disabled in Hardcore Mode");
+        else
+          OSD::AddMessage(StringFromFormat("Noclip: %s", new_value ? "Enabled" : "Disabled"));
       }
 
       if (IsHotkey(HK_INVULNERABILITY_TOGGLE))
@@ -648,7 +651,10 @@ void HotkeyScheduler::Run()
         const bool new_value = !Config::Get(Config::PRIMEHACK_INVULNERABILITY);
         Config::SetBaseOrCurrent(Config::PRIMEHACK_INVULNERABILITY, new_value);
 
-        OSD::AddMessage(StringFromFormat("Invulnerability: %s", new_value ? "Enabled" : "Disabled"));
+        if (hardcore)
+          OSD::AddMessage("Invulnerability is Disabled in Hardcore Mode");
+        else
+          OSD::AddMessage(StringFromFormat("Invulnerability: %s", new_value ? "Enabled" : "Disabled"));
       }
 
       if (IsHotkey(HK_SKIP_CUTSCENE))
@@ -656,7 +662,10 @@ void HotkeyScheduler::Run()
         const bool new_value = !Config::Get(Config::PRIMEHACK_SKIPPABLE_CUTSCENES);
         Config::SetBaseOrCurrent(Config::PRIMEHACK_SKIPPABLE_CUTSCENES, new_value);
 
-        OSD::AddMessage(StringFromFormat("Skippable Cutscenes: %s", new_value ? "Enabled" : "Disabled"));
+        if (hardcore)
+          OSD::AddMessage("Skip Cutscene is Disabled in Hardcore Mode");
+        else
+          OSD::AddMessage(StringFromFormat("Skippable Cutscenes: %s", new_value ? "Enabled" : "Disabled"));
       }
 
       if (IsHotkey(HK_RESTORE_DASHING))
@@ -664,7 +673,10 @@ void HotkeyScheduler::Run()
         const bool new_value = !Config::Get(Config::PRIMEHACK_RESTORE_SCANDASH);
         Config::SetBaseOrCurrent(Config::PRIMEHACK_RESTORE_SCANDASH, new_value);
 
-        OSD::AddMessage(StringFromFormat("Restore Dashing: %s", new_value ? "Enabled" : "Disabled"));
+        if (hardcore)
+          OSD::AddMessage("Restore Dashing is Disabled in Hardcore Mode");
+        else
+          OSD::AddMessage(StringFromFormat("Restore Dashing: %s", new_value ? "Enabled" : "Disabled"));
       }
     }
 

@@ -88,6 +88,10 @@ public:
   virtual std::string_view mod_name() const = 0;
 
   virtual bool should_apply_changes() const;
+
+  // Used for RA's Hardcore mode
+  virtual bool is_cheat() const = 0;
+
   void apply_instruction_changes(bool invalidate = true);
   void apply_original_instructions(bool invalidate = true);
   // Gets the corresponding list of code changes to apply per-frame

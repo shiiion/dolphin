@@ -11,6 +11,9 @@
 namespace prime {
 
 bool PrimeMod::should_apply_changes() const {
+  if (is_cheat() && CachedHardcoreEnabled()) {
+    return false;
+  }
   std::vector<CodeChange> const& cc_vec = get_changes_to_apply();
 
   for (CodeChange const& change : cc_vec) {
@@ -22,6 +25,10 @@ bool PrimeMod::should_apply_changes() const {
 }
 
 void PrimeMod::apply_instruction_changes(bool invalidate)  {
+  if (is_cheat() && CachedHardcoreEnabled()) {
+    return;
+  }
+
   auto active_changes = get_changes_to_apply();
   for (CodeChange const& change : active_changes) {
     write32(change.var, change.address);
@@ -32,6 +39,10 @@ void PrimeMod::apply_instruction_changes(bool invalidate)  {
 }
 
 void PrimeMod::apply_original_instructions(bool invalidate) {
+  if (is_cheat() && CachedHardcoreEnabled()) {
+    return;
+  }
+
   for (CodeChange const& change : original_instructions) {
     write32(change.var, change.address);
     if (invalidate) {
@@ -94,6 +105,10 @@ void PrimeMod::reset_mod() {
 
 void PrimeMod::set_state(ModState new_state) {
   ModState original = this->state;
+  if (is_cheat() && CachedHardcoreEnabled()) {
+    return;
+  }
+
   this->state = new_state;
   if (original != new_state) {
     on_state_change(original);

@@ -5,10 +5,16 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
+#include "Core/AchievementManager.h"
 #include "Core/ConfigManager.h"
 #include "Core/Config/MainSettings.h"
 #include "Common/Config/Config.h"
 #include "DolphinQt/Config/CheatWarningWidget.h"
+#include "DolphinQt/Settings.h"
+
+#ifdef USE_RETRO_ACHIEVEMENTS
+#include "DolphinQt/Config/HardcoreWarningWidget.h"
+#endif
 
 PrimeCheatsWidget::PrimeCheatsWidget(std::string game_id, bool restart_required)
   : m_game_id(game_id), m_restart_required(restart_required)
@@ -17,6 +23,9 @@ PrimeCheatsWidget::PrimeCheatsWidget(std::string game_id, bool restart_required)
   OnLoadConfig();
   ConnectWidgets();
   AddDescriptions();
+
+  connect(&Settings::Instance(), &Settings::EmulationStateChanged, this,
+          [this] { UpdateHardcoreChange(); });
 }
 
 void PrimeCheatsWidget::CreateWidgets()
@@ -38,6 +47,15 @@ void PrimeCheatsWidget::CreateWidgets()
   m_checkbox_friendvouchers = new QCheckBox(tr("Bypass Friend Vouchers (Trilogy Only)"));
   m_checkbox_anybeam = new QCheckBox(tr("Beam Door Requirement Bypass"));
   m_warning = new CheatWarningWidget(m_game_id, m_restart_required, this);
+
+#ifdef USE_RETRO_ACHIEVEMENTS
+  UpdateHardcoreChange();
+
+  auto hc_warning = new HardcoreWarningWidget(this);
+  layout->addWidget(hc_warning);
+  connect(hc_warning, &HardcoreWarningWidget::OpenAchievementSettings, this,
+          &PrimeCheatsWidget::OpenAchievementSettings);
+#endif
 
   layout->addWidget(m_warning);
   layout->addWidget(m_checkbox_noclip);
@@ -72,6 +90,12 @@ void PrimeCheatsWidget::ConnectWidgets()
 
 void PrimeCheatsWidget::OnSaveConfig()
 {
+#ifdef USE_RETRO_ACHIEVEMENTS
+  if (AchievementManager::GetInstance().IsHardcoreModeActive())
+  {
+    return;
+  }
+#endif
   Config::SetBaseOrCurrent(Config::PRIMEHACK_NOCLIP, m_checkbox_noclip->isChecked());
   Config::SetBaseOrCurrent(Config::PRIMEHACK_INVULNERABILITY, m_checkbox_invulnerability->isChecked());
   Config::SetBaseOrCurrent(Config::PRIMEHACK_SKIPPABLE_CUTSCENES, m_checkbox_skipcutscenes->isChecked());
@@ -85,6 +109,12 @@ void PrimeCheatsWidget::OnSaveConfig()
 
 void PrimeCheatsWidget::OnLoadConfig()
 {
+#ifdef USE_RETRO_ACHIEVEMENTS
+  if (AchievementManager::GetInstance().IsHardcoreModeActive())
+  {
+    return;
+  }
+#endif
   m_checkbox_noclip->setChecked(Config::Get(Config::PRIMEHACK_NOCLIP));
   m_checkbox_invulnerability->setChecked(Config::Get(Config::PRIMEHACK_INVULNERABILITY));
   m_checkbox_skipcutscenes->setChecked(Config::Get(Config::PRIMEHACK_SKIPPABLE_CUTSCENES));
@@ -126,6 +156,39 @@ void PrimeCheatsWidget::AddDescriptions()
   m_checkbox_hudmemo->setToolTip(tr(TR_HUDMEMO));
   m_checkbox_hypermode->setToolTip(tr(TR_HYPERMODE));
   m_checkbox_anybeam->setToolTip(tr(TR_ANYBEAM));
+}
+
+void PrimeCheatsWidget::UpdateHardcoreChange()
+{
+#ifdef USE_RETRO_ACHIEVEMENTS
+  bool enabled = AchievementManager::GetInstance().IsHardcoreModeActive();
+  m_checkbox_noclip->setEnabled(!enabled);
+  m_checkbox_invulnerability->setEnabled(!enabled);
+  m_checkbox_scandash->setEnabled(!enabled);
+  m_checkbox_hudmemo->setEnabled(!enabled);
+  m_checkbox_skipcutscenes->setEnabled(!enabled);
+  m_checkbox_skipportalmp2->setEnabled(!enabled);
+  m_checkbox_hypermode->setEnabled(!enabled);
+  m_checkbox_friendvouchers->setEnabled(!enabled);
+  m_checkbox_anybeam->setEnabled(!enabled);
+
+  if (enabled)
+  {
+    m_checkbox_noclip->setChecked(false);
+    m_checkbox_invulnerability->setChecked(false);
+    m_checkbox_scandash->setChecked(false);
+    m_checkbox_hudmemo->setChecked(false);
+    m_checkbox_skipcutscenes->setChecked(false);
+    m_checkbox_skipportalmp2->setChecked(false);
+    m_checkbox_hypermode->setChecked(false);
+    m_checkbox_friendvouchers->setChecked(false);
+    m_checkbox_anybeam->setChecked(false);
+  }
+  else
+  {
+    OnLoadConfig();
+  }
+#endif
 }
 
 void PrimeCheatsWidget::showEvent(QShowEvent*)

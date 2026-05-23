@@ -4,6 +4,8 @@
 
 namespace prime {
 
+// MOD PURPOSE: Ensure that Ice Shriekbats don't disappear after defeating thardus by retaining
+// older layer bits
 class MetareePatch : public PrimeMod {
 public:
   void run_mod(Game game, Region region) override {
@@ -44,6 +46,7 @@ public:
 
   void on_state_change(ModState) override {}
 
+  bool is_cheat() const override { return false; }
   GEN_NAME(MetareePatch)
 };
 

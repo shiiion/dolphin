@@ -67,4 +67,6 @@ void StashMemoryChanges();
 // Will restore all stashed patches done by primehack, used on savestate write after RAM is saved
 void RestoreMemoryChanges();
 
+bool CachedHardcoreEnabled();
+
 } // namespace prime

@@ -5,6 +5,7 @@
 
 namespace prime {
 
+// MOD PURPOSE: Restore scandashing bug to other versions of metroid prime
 class RestoreDashing : public PrimeMod {
 public:
   void run_mod(Game, Region) override {}
@@ -100,6 +101,7 @@ public:
 
   void on_state_change(ModState) override {}
 
+  bool is_cheat() const override { return true; }
   GEN_NAME(RestoreDashing)
 };
 

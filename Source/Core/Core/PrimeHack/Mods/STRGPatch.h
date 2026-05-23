@@ -7,11 +7,16 @@
 
 namespace prime {
 
+// Generic STRG table patcher to allow PrimeHack to dynamically change named string table entries
+// Currently used for
+//   - Modifying "Nunchuk Required" message
+//   - Modifying "Shake Wiimote" message for Gandrayda fight
 class STRGPatch : public PrimeMod {
 public:
   void run_mod(Game game, Region region) override;
   bool init_mod(Game game, Region region) override;
   void on_state_change(ModState) override {}
+  bool is_cheat() const override { return false; }
   GEN_NAME(STRGPatch)
 
   void patch_strg_entry_vmc_common(PowerPC::PowerPCState& ppc_state, PowerPC::MMU& mmu, u32 strg_header, u32 key_ptr);

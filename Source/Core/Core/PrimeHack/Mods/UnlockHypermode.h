@@ -7,6 +7,7 @@
 
 namespace prime {
 
+// MOD PURPOSE: Unlock hypermode difficulty for trilogy
 class UnlockHypermode : public PrimeMod {
 public:
   void run_mod(Game game, Region region) override {
@@ -32,6 +33,7 @@ public:
 
   void on_state_change(ModState) override {}
 
+  bool is_cheat() const override { return true; }
   GEN_NAME(UnlockHypermode)
 
 private:

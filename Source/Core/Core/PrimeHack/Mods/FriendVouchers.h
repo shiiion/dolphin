@@ -5,6 +5,7 @@
 
 namespace prime {
 
+// MOD PURPOSE: Make friend voucher credit purchases possible
 class FriendVouchers : public PrimeMod {
 public:
   void run_mod(Game game, Region region) override {
@@ -36,6 +37,7 @@ public:
 
   void on_state_change(ModState) override {}
 
+  bool is_cheat() const override { return true; }
   GEN_NAME(FriendVouchers)
 
 private:

@@ -4,11 +4,13 @@
 
 namespace prime {
 
+// MOD PURPOSE: Add a direct control in emulator for activating springball to all games
 class SpringballButton : public PrimeMod {
 public:
   void run_mod(Game game, Region region) override;
   bool init_mod(Game game, Region region) override;
   void on_state_change(ModState) override {}
+  bool is_cheat() const override { return false; }
   GEN_NAME(SpringballButton)
 
 private:

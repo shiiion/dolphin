@@ -31,6 +31,8 @@ b `HookPoint + 4`
 
 void patch_script_achieve_string(PowerPC::PowerPCState& ppc_state, PowerPC::MMU& mmu, u32 job);
 
+// MOD PURPOSE: Convert Friend Vouchers directly into green credits on acquisition
+// I don't think this should be considered a cheat but to play it safe, it probably is
 class AutoConvertFriendVouchers : public PrimeMod {
 public:
   void run_mod(Game, Region) override {}
@@ -79,6 +81,7 @@ public:
   }
   void on_state_change(ModState) override {}
 
+  bool is_cheat() const override { return true; }
   GEN_NAME(AutoConvertFriendVouchers)
 };
 

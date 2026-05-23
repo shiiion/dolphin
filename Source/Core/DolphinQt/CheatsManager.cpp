@@ -129,7 +129,7 @@ void CheatsManager::CreateWidgets()
   m_button_box = new QDialogButtonBox(QDialogButtonBox::Close);
 
   int tab_index = 0;
-  
+
   m_primehack_cheats= new PrimeCheatsWidget(m_game_id, false);
   tab_index = m_tab_widget->addTab(m_primehack_cheats, tr("PrimeHack"));
   m_tab_widget->setTabUnclosable(tab_index);
@@ -184,6 +184,8 @@ void CheatsManager::ConnectWidgets()
   connect(m_ar_code, &ARCodeWidget::OpenAchievementSettings, this,
           &CheatsManager::OpenAchievementSettings);
   connect(m_gecko_code, &GeckoCodeWidget::OpenAchievementSettings, this,
+          &CheatsManager::OpenAchievementSettings);
+  connect(m_primehack_cheats, &PrimeCheatsWidget::OpenAchievementSettings, this,
           &CheatsManager::OpenAchievementSettings);
 #endif  // USE_RETRO_ACHIEVEMENTS
   connect(m_primehack_cheats, &PrimeCheatsWidget::OpenGeneralSettings, this, &CheatsManager::OpenGeneralSettings);

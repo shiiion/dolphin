@@ -739,7 +739,12 @@ void MenuBar::AddPrimeHackMenu()
   auto* const primehack_menu{new QtUtils::NonAutodismissibleMenu(tr("&PrimeHack"), this)};
   addMenu(primehack_menu);
 
-  const bool start_enabled = Config::Get(Config::PRIMEHACK_MODLOADER_ENABLED);
+#ifdef USE_RETRO_ACHIEVEMENTS
+    bool hardcore_on = AchievementManager::GetInstance().IsHardcoreModeActive();
+#else
+    bool hardcore_on = false;
+#endif
+  const bool start_enabled = Config::Get(Config::PRIMEHACK_MODLOADER_ENABLED) && !hardcore_on;
   m_modloader_enabled = primehack_menu->addAction(tr("Enable Mod Loader"));
   m_modloader_enabled->setCheckable(true);
   m_modloader_enabled->setChecked(start_enabled);
@@ -793,12 +798,19 @@ void MenuBar::AddPrimeHackMenu()
   });
 
   connect(&Settings::Instance(), &Settings::EmulationStateChanged, this, [this](Core::State state) {
+#ifdef USE_RETRO_ACHIEVEMENTS
+    bool hardcore = AchievementManager::GetInstance().IsHardcoreModeActive();
+#else
+    bool hardcore = false;
+#endif
+    const bool loader_enabled = Config::Get(Config::PRIMEHACK_MODLOADER_ENABLED);
     m_emulation_active = state == Core::State::Starting || state == Core::State::Running ||
                          state == Core::State::Paused;
-    m_modloader_enabled->setEnabled(!m_emulation_active);
+    m_modloader_enabled->setEnabled(!m_emulation_active && !hardcore);
     // Import button is disabled both by starting emulation as well as the modloader enablement
-    m_import_mod->setEnabled(!m_emulation_active &&
-                             Config::Get(Config::PRIMEHACK_MODLOADER_ENABLED));
+    m_import_mod->setEnabled(!m_emulation_active && loader_enabled && !hardcore);
+    m_enabled_mods->setEnabled(loader_enabled && !hardcore);
+    m_mod_settings->setEnabled(loader_enabled && !hardcore);
   });
 }
 

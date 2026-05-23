@@ -7,7 +7,7 @@
 
 namespace prime {
 
-  constexpr std::string_view door_override_template_mp2 = R"(
+constexpr std::string_view door_override_template_mp2 = R"(
 .defvar IsWii, {wii_version}
 .defvar VTableLoc, 0x{vt_hook_addr:x}
 .defvar HookBuffer, 0x{hook_buffer_addr:x}
@@ -164,6 +164,9 @@ addi r3, r3, DamageVulnOff
 blr
 )";
 
+// MOD PURPOSE:
+//  MP1 - Allow all X doors to be opened by any beam as long as you have X beam
+//  MP2 - Allow all doors to be opened by annihilator, does not include door locks
 class AllDoorAnyBeam : public PrimeMod {
 public:
   void run_mod(Game, Region) override {}
@@ -272,6 +275,7 @@ public:
   }
   void on_state_change(ModState) override {}
 
+  bool is_cheat() const override { return true; }
   GEN_NAME(AllDoorAnyBeam)
 };
 

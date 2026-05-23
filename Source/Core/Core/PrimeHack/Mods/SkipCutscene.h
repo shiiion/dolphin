@@ -4,6 +4,8 @@
 
 namespace prime {
 
+// MOD PURPOSE: Forcibly allow for cutscene skipping, regardless of whether the game has been
+// completed before
 class SkipCutscene : public PrimeMod {
 public:
   void run_mod(Game game, Region region) override { }
@@ -63,6 +65,7 @@ public:
     return true;
   }
   void on_state_change(ModState) override {}
+  bool is_cheat() const override { return true; }
   GEN_NAME(SkipCutscene)
 
 private:
