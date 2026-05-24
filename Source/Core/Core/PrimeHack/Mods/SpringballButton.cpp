@@ -19,7 +19,7 @@ stb r5, 0(r4)
 cmpwi r3, 0
 )";
 
-constexpr u32 kSpringballHookBufferSizeGC = 0xc8;
+constexpr u32 kSpringballHookBufferSizeGC = 0xf0;
 constexpr std::string_view spring_ball_template_gc = R"(
 .defvar HookStart, 0x{hook_start_addr:x}
 .defvar HookBuffer, 0x{hook_buffer_addr:x}
@@ -27,6 +27,7 @@ constexpr std::string_view spring_ball_template_gc = R"(
 .defvar BombPowerupId, {bomb_pup_id}
 .defsym HasPowerup, 0x{has_power_up_addr:x}
 .defvar TransformOff, 0x{transform_off:x}
+.defvar VelOff, 0x{vel_off:x}
 .defsym BombJumpSub, 0x{bomb_jump_addr:x}
 .defsym HookReturn, 0x{hook_return_addr:x}
 
@@ -34,8 +35,8 @@ constexpr std::string_view spring_ball_template_gc = R"(
 b _hook_start
 
 .locate HookBuffer
-.defvar var_back_chain, 40
-.defvar var_saved_lr, 36
+.defvar var_back_chain, 48
+.defvar var_saved_lr, 44
 .defvar var_morphball, 8
 .defvar var_finalinput, 12
 .defvar var_state_mgr, 16
@@ -43,6 +44,8 @@ b _hook_start
 .defvar var_position_x, 24
 .defvar var_position_y, 28
 .defvar var_position_z, 32
+.defvar var_hor_vel_x, 36
+.defvar var_hor_vel_y, 40
 
 get_playerstate_mp1:
 lwz r3, var_state_mgr(sp)
@@ -81,6 +84,10 @@ cmpwi r3, 0
 beq _hook_end
 lwz r3, var_morphball(sp)
 lwz r3, 0(r3)
+lwz r0, VelOff(r3)
+stw r0, var_hor_vel_x(sp)
+lwz r0, VelOff+0x4(r3)
+stw r0, var_hor_vel_y(sp)
 lwz r5, var_state_mgr(sp)
 lwz r0, TransformOff+0xc(r3)
 stw r0, var_position_x(sp)
@@ -89,7 +96,15 @@ stw r0, var_position_y(sp)
 lwz r0, TransformOff+0x2c(r3)
 stw r0, var_position_z(sp)
 addi r4, sp, var_position_x
+
 bl BombJumpSub
+# We want to retain horizontal velocity when jumping, so add it back here
+lwz r3, var_morphball(sp)
+lwz r3, 0(r3)
+lwz r0, var_hor_vel_x(sp)
+stw r0, VelOff(r3)
+lwz r0, var_hor_vel_y(sp)
+stw r0, VelOff+0x4(r3)
 
 _hook_end:
 lwz r0, var_saved_lr(sp)
@@ -174,7 +189,8 @@ bool SpringballButton::init_mod(Game game, Region region) {
 }
 
 void SpringballButton::springball_code_gc(Game game, u32 start_point, u32 bomb_pup_id, u32 has_power_up, u32 bomb_jump) {
-  LOOKUP(transform_offset);
+  LOOKUP(xf_offset);
+  LOOKUP(vel_offset);
   const u32 hook_buffer = GuestAllocAligned(kSpringballHookBufferSizeGC, 2);
   const u32 springball_trigger = GetVariableManager()->get_address("springball_trigger");
 
@@ -184,10 +200,11 @@ void SpringballButton::springball_code_gc(Game game, u32 start_point, u32 bomb_p
     fmt::arg("springball_addr", springball_trigger),
     fmt::arg("bomb_pup_id", bomb_pup_id),
     fmt::arg("has_power_up_addr", has_power_up),
-    fmt::arg("transform_off", transform_offset),
+    fmt::arg("transform_off", xf_offset),
     fmt::arg("bomb_jump_addr", bomb_jump),
     fmt::arg("hook_return_addr", start_point + 8),
-    fmt::arg("get_playerstate_fn", game == Game::PRIME_2_GCN ? "get_playerstate_mp2" : "get_playerstate_mp1")
+    fmt::arg("get_playerstate_fn", game == Game::PRIME_2_GCN ? "get_playerstate_mp2" : "get_playerstate_mp1"),
+    fmt::arg("vel_off", vel_offset)
   ));
 }
 

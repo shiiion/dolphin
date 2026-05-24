@@ -133,7 +133,11 @@ void PrimeMod::add_code_change(u32 addr, u32 code, std::string_view group) {
 void PrimeMod::add_asm_patch(std::string_view asm_patch, std::string_view group) {
   using namespace Common::GekkoAssembler;
   auto result = Assemble(asm_patch, 0);
-  ASSERT(!IsFailure(result));
+  if (IsFailure(result)) {
+    fprintf(stderr, "Assembler failure: %s\n", GetFailure(result).FormatError().c_str());
+    fflush(stderr);
+    ASSERT(false);
+  }
   std::vector<CodeBlock> const& code_changes_blocks = GetT(result);
   for (auto const& block : code_changes_blocks) {
     for (u32 i = 0; i < block.instructions.size(); i += 4) {

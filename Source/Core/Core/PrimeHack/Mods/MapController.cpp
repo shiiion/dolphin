@@ -107,8 +107,8 @@ float MapController::get_player_yaw() const {
     return 0.f;
   }
   Transform xf;
-  LOOKUP(transform_offset);
-  xf.read_from(*active_guard, camera + transform_offset);
+  LOOKUP(xf_offset);
+  xf.read_from(*active_guard, camera + xf_offset);
   vec3 planar_fwd = vec3(0, 0, 1).cross(xf.right());
   active_guard = nullptr;
   return kPi + atan2(planar_fwd.x, planar_fwd.y);
