@@ -218,6 +218,7 @@ void init_db(AddressDB& addr_db) {
   addr_db.register_dynamic_address(Game::PRIME_2_GCN, "screw_state", "player", {mrp1(0x390)});
   addr_db.register_dynamic_address(Game::PRIME_2_GCN, "orbit_state", "player", {mrp1(0x3a4)});
   addr_db.register_dynamic_address(Game::PRIME_2_GCN, "firstperson_pitch", "player", {mrp1(0x604)});
+  addr_db.register_dynamic_address(Game::PRIME_2_GCN, "player_state", "player", {mrp1(0x1314), rp0});
 
   addr_db.register_dynamic_address(Game::PRIME_2_GCN, "world_id", "world", {mrp1(0x8)});
 

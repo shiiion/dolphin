@@ -26,10 +26,16 @@ constexpr std::string_view door_override_template_mp2 = R"(
 .4byte HookBuffer
 
 .locate HookBuffer
+lwz r0, DamageVulnOff(r3)
+cmpwi r0, 0
+# Don't modify damage vulnerability if fully reflective to all beams, it is either disabled or a
+# door with a lock previously on it which the game specially handles
+beq _end
 li r0, 1
 stb r0, (DamageVulnOff+0x3)(r3) # Regular projectile
 stb r0, (DamageVulnOff+ChargeVulnTable+0x3)(r3) # Charge shot
 stb r0, (DamageVulnOff+ComboVulnTable+0x3)(r3) # Missile combo
+_end:
 addi r3, r3, DamageVulnOff
 blr
 )";
