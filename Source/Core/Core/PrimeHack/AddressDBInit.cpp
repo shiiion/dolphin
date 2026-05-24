@@ -296,6 +296,7 @@ void init_db(AddressDB& addr_db) {
   addr_db.register_address(Game::PRIME_3_STANDALONE, "xf_offset", 0x3c, 0x3c);
 
   addr_db.register_dynamic_address(Game::PRIME_3_STANDALONE, "object_list", "state_manager", {rp0, mrp1(0x1010), rp0});
+  addr_db.register_dynamic_address(Game::PRIME_3_STANDALONE, "area_id", "state_manager", {rp0, mrp1(0x2150)});
   addr_db.register_dynamic_address(Game::PRIME_3_STANDALONE, "player", "state_manager", {rp0, mrp1(0x2184), rp0});
   addr_db.register_dynamic_address(Game::PRIME_3_STANDALONE, "camera_manager", "state_manager", {mrp1(0x10), mrp1(0xc), mrp1(0x16)});
   addr_db.register_dynamic_address(Game::PRIME_3_STANDALONE, "audio_manager", "state_manager", {mrp1(0x250), rp0});
