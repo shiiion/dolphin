@@ -146,6 +146,7 @@ void ViewModifier::run_mod_mp1_gc() {
 }
 
 void ViewModifier::run_mod_mp2() {
+  constexpr u32 kMenuWorldID = 0x69802220;
   LOOKUP(state_manager);
   LOOKUP(tweakgun);
 
@@ -153,6 +154,13 @@ void ViewModifier::run_mod_mp2() {
   if (object_list == 0) {
     return;
   }
+
+  LOOKUP_DYN(world_id);
+  if (read32(world_id) == kMenuWorldID) {
+    set_code_group_state("disable_fov_updates", ModState::DISABLED);
+    return;
+  }
+  set_code_group_state("disable_fov_updates", ModState::ENABLED);
 
   LOOKUP_DYN(camera_manager);
   if (camera_manager == 0) {
@@ -178,6 +186,7 @@ void ViewModifier::run_mod_mp2() {
 }
 
 void ViewModifier::run_mod_mp2_gc() {
+  constexpr u32 kMenuWorldID = 0x69802220;
   LOOKUP(tweakgun_offset);
 
   LOOKUP_DYN(world);
@@ -188,6 +197,13 @@ void ViewModifier::run_mod_mp2_gc() {
   if (read32(world + 0x4) != 4) {
     return;
   }
+
+  LOOKUP_DYN(world_id);
+  if (read32(world_id) == kMenuWorldID) {
+    set_code_group_state("disable_fov_updates", ModState::DISABLED);
+    return;
+  }
+  set_code_group_state("disable_fov_updates", ModState::ENABLED);
 
   LOOKUP_DYN(camera_manager);
   if (camera_manager == 0) {
@@ -346,15 +362,15 @@ void ViewModifier::init_mod_mp1_gc_r2() {
 
 void ViewModifier::init_mod_mp2(Region region) {
   if (region == Region::NTSC_U) {
-    add_code_change(0x800a10b8, 0x60000000);
-    add_code_change(0x800a10f8, 0x60000000);
-    add_code_change(0x800a02dc, 0x60000000);
+    add_code_change(0x800a10b8, 0x60000000, "disable_fov_updates");
+    add_code_change(0x800a10f8, 0x60000000, "disable_fov_updates");
+    add_code_change(0x800a02dc, 0x60000000, "disable_fov_updates");
     add_code_change(0x802c8114, 0x38600001, "culling");
     add_code_change(0x802c8114 + 0x4, 0x4e800020, "culling");
   } else if (region == Region::PAL) {
-    add_code_change(0x800a2700, 0x60000000);
-    add_code_change(0x800a2740, 0x60000000);
-    add_code_change(0x800a1924, 0x60000000);
+    add_code_change(0x800a2700, 0x60000000, "disable_fov_updates");
+    add_code_change(0x800a2740, 0x60000000, "disable_fov_updates");
+    add_code_change(0x800a1924, 0x60000000, "disable_fov_updates");
     add_code_change(0x802ca730, 0x38600001, "culling");
     add_code_change(0x802ca730 + 0x4, 0x4e800020, "culling");
   }
@@ -362,15 +378,15 @@ void ViewModifier::init_mod_mp2(Region region) {
 
 void ViewModifier::init_mod_mp2_gc(Region region) {
   if (region == Region::NTSC_U) {
-    add_code_change(0x801b0b38, 0x60000000);
-    add_code_change(0x801b19ec, 0x60000000);
-    add_code_change(0x801b0afc, 0x60000000);
+    add_code_change(0x801b0b38, 0x60000000, "disable_fov_updates");
+    add_code_change(0x801b19ec, 0x60000000, "disable_fov_updates");
+    add_code_change(0x801b0afc, 0x60000000, "disable_fov_updates");
     add_code_change(0x802f84c0, 0x38600001, "culling");
     add_code_change(0x802f84c0 + 0x4, 0x4e800020, "culling");
   } else if (region == Region::PAL) {
-    add_code_change(0x801b0e44, 0x60000000);
-    add_code_change(0x801b1cf8, 0x60000000);
-    add_code_change(0x801b0e08, 0x60000000);
+    add_code_change(0x801b0e44, 0x60000000, "disable_fov_updates");
+    add_code_change(0x801b1cf8, 0x60000000, "disable_fov_updates");
+    add_code_change(0x801b0e08, 0x60000000, "disable_fov_updates");
     add_code_change(0x802f8818, 0x38600001, "culling");
     add_code_change(0x802f8818 + 0x4, 0x4e800020, "culling");
   }

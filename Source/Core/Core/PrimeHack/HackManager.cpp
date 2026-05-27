@@ -36,6 +36,7 @@ Region sLastRegion = Region::INVALID_REGION;
 std::vector<GameChangeCallback> sGameChangeCbList;
 
 bool sHardcoreEnabled = false;
+bool sChangesStashed = false;
 
 // Dynalib tracking globals
 std::unordered_map<std::string, std::pair<u32, u32>> sModuleList;
@@ -449,6 +450,10 @@ void AddOnGameChangeCallback(GameChangeCallback cb) {
 }
 
 void StashMemoryChanges() {
+  if (sChangesStashed) {
+    return;
+  }
+  sChangesStashed = true;
   Core::CPUThreadGuard guard(Core::System::GetInstance());
   foreach_mod([&guard](PrimeMod& mod) {
     mod.set_temporary_cpu_guard(&guard);
@@ -463,6 +468,10 @@ void StashMemoryChanges() {
 }
 
 void RestoreMemoryChanges() {
+  if (!sChangesStashed) {
+    return;
+  }
+  sChangesStashed = false;
   Core::CPUThreadGuard guard(Core::System::GetInstance());
   foreach_mod([&guard](PrimeMod& mod) {
     mod.set_temporary_cpu_guard(&guard);

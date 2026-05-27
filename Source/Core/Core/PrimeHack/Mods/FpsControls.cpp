@@ -268,6 +268,7 @@ void FpsControls::run_mod_mp1(Region region) {
   LOOKUP_DYN(cursor);
   LOOKUP_DYN(firstperson_pitch);
   if (locked) {
+    set_code_group_state("disable_gun_move", ModState::DISABLED);
     update_pitchyaw_locked();
     writef32(pitch, firstperson_pitch);
 
@@ -294,6 +295,7 @@ void FpsControls::run_mod_mp1(Region region) {
     menu_open = false;
   }
 
+  set_code_group_state("disable_gun_move", ModState::ENABLED);
   set_cursor_pos(0, 0);
   write32(0, cursor + 0x9c);
   write32(0, cursor + 0x15c);
@@ -403,6 +405,7 @@ void FpsControls::run_mod_mp2(Region region) {
   LOOKUP_DYN(firstperson_pitch);
   LOOKUP_DYN(cursor);
   if (locked) {
+    set_code_group_state("disable_gun_move", ModState::DISABLED);
     update_pitchyaw_locked();
     writef32(pitch, firstperson_pitch);
 
@@ -429,6 +432,7 @@ void FpsControls::run_mod_mp2(Region region) {
     menu_open = false;
   }
 
+  set_code_group_state("disable_gun_move", ModState::ENABLED);
   set_cursor_pos(0, 0);
   write32(0, cursor + 0x9c);
   write32(0, cursor + 0x15c);
@@ -612,11 +616,14 @@ void FpsControls::run_mod_mp3(Game active_game, Region active_region) {
   LOOKUP_DYN(cursor);
   const auto mp3_handle_cursor = [this, cursor, active_region] (bool locked, bool for_reticle) {
     if (locked) {
+      set_code_group_state("disable_gun_move", ModState::ENABLED);
       write32(0, cursor + 0x9c);
       write32(0, cursor + 0x15c);
     } else if (for_reticle) {
+      set_code_group_state("disable_gun_move", ModState::DISABLED);
       handle_reticle(*active_guard, cursor + 0x9c, cursor + 0x15c, active_region, GetFov(Game::PRIME_3));
     } else {
+      set_code_group_state("disable_gun_move", ModState::DISABLED);
       handle_cursor(*active_guard, cursor + 0x9c, cursor + 0x15c, active_region);
     }
 
@@ -967,7 +974,7 @@ void FpsControls::init_mod_mp1(Region region) {
     add_code_change(0x8019fbcc, 0x60000000);
 
     // This stops armcannon stuttering by having the XF updater think you're in orbit mode
-    add_code_change(0x8018b8d4, 0x48000354);
+    add_code_change(0x8018b8d4, 0x48000354, "disable_gun_move");
 
     add_code_change(0x80075f24, 0x60000000, "beam_menu");
     add_code_change(0x80075f0c, 0x60000000, "visor_menu");
@@ -988,7 +995,7 @@ void FpsControls::init_mod_mp1(Region region) {
     add_code_change(0x80015894, 0x48000108);
 
     // This stops armcannon stuttering by having the XF updater think you're in orbit mode
-    add_code_change(0x8018bb6c, 0x48000354);
+    add_code_change(0x8018bb6c, 0x48000354, "disable_gun_move");
 
     add_code_change(0x80075f74, 0x60000000, "beam_menu");
     add_code_change(0x80075f8c, 0x60000000, "visor_menu");
@@ -1116,7 +1123,7 @@ void FpsControls::init_mod_mp2(Region region) {
     add_code_change(0x80143d00, 0x48000050);
 
     // This stops armcannon stuttering by having the XF updater think you're in orbit mode
-    add_code_change(0x8018a7ec, 0x48000468);
+    add_code_change(0x8018a7ec, 0x48000468, "disable_gun_move");
 
     add_code_change(0x8006fde0, 0x60000000, "beam_menu");
     add_code_change(0x8006fdc4, 0x60000000, "visor_menu");
@@ -1138,7 +1145,7 @@ void FpsControls::init_mod_mp2(Region region) {
     add_code_change(0x80145474, 0x48000050);
 
     // This stops armcannon stuttering by having the XF updater think you're in orbit mode
-    add_code_change(0x8018bf88, 0x48000468);
+    add_code_change(0x8018bf88, 0x48000468, "disable_gun_move");
 
     add_code_change(0x80071358, 0x60000000, "beam_menu");
     add_code_change(0x8007133c, 0x60000000, "visor_menu");
@@ -1227,10 +1234,10 @@ void FpsControls::init_mod_mp3(Game game, Region region) {
     add_code_change(0x8017f88c, 0x60000000);
 
     // This stops armcannon stuttering by having the XF updater think you're in orbit mode
-    add_code_change(0x80183734, 0x48000498);
+    add_code_change(0x80183734, 0x48000498, "disable_gun_move");
     // This makes sure the stupid gun shoots where you're actually aiming because of course prime 3
     // does this differently too
-    add_code_change(0x80184e98, 0x60000000);
+    add_code_change(0x80184e98, 0x60000000, "disable_gun_move");
 
     // Grapple Lasso
     add_grapple_lasso_code_mp3(0x800dde64, 0x80170cf0, 0x80171ad8);
@@ -1252,8 +1259,8 @@ void FpsControls::init_mod_mp3(Game game, Region region) {
     add_code_change(0x8017f1d8, 0x60000000);
 
     // This stops armcannon stuttering by having the XF updater think you're in orbit mode
-    add_code_change(0x80183080, 0x48000498);
-    add_code_change(0x801847e4, 0x60000000);
+    add_code_change(0x80183080, 0x48000498, "disable_gun_move");
+    add_code_change(0x801847e4, 0x60000000, "disable_gun_move");
 
     // Grapple Lasso
     add_grapple_lasso_code_mp3(0x800dde44, 0x8017063c, 0x80171424);
@@ -1291,8 +1298,8 @@ void FpsControls::init_mod_mp3_standalone(Game game, Region region) {
     add_code_change(0x80183288, 0x60000000);
 
     // This stops armcannon stuttering by having the XF updater think you're in orbit mode
-    add_code_change(0x80186f98, 0x48000498);
-    add_code_change(0x801886f0, 0x60000000);
+    add_code_change(0x80186f98, 0x48000498, "disable_gun_move");
+    add_code_change(0x801886f0, 0x60000000, "disable_gun_move");
 
     add_code_change(0x800617c8, 0x60000000, "visor_menu");
 
@@ -1318,8 +1325,8 @@ void FpsControls::init_mod_mp3_standalone(Game game, Region region) {
     add_code_change(0x80183dc8, 0x60000000);
 
     // This stops armcannon stuttering by having the XF updater think you're in orbit mode
-    add_code_change(0x80187ad8, 0x48000498);
-    add_code_change(0x801886f0, 0x60000000);
+    add_code_change(0x80187ad8, 0x48000498, "disable_gun_move");
+    add_code_change(0x801886f0, 0x60000000, "disable_gun_move");
 
     add_code_change(0x80061a88, 0x60000000, "visor_menu");
 
