@@ -877,6 +877,7 @@ lfs f0, 0x244(sp)  # Y component of new origin
 stfs f0, 0x58(r31) # Set player transform Y origin
 lfs f0, 0x248(sp)  # Z component of new origin
 stfs f0, 0x68(r31) # Set player transform Z origin
+.skip 4
 addi r4, r31, 0x3c # SetTransform is called on player, have the transform be set to itself)";
   add_asm_patch(fmt::format(fmt::runtime(patch_str), fmt::arg("start", start_point)));
 }

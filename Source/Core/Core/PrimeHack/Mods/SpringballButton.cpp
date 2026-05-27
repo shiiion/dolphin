@@ -19,8 +19,8 @@ stb r5, 0(r4)
 cmpwi r3, 0
 )";
 
-constexpr u32 kSpringballHookBufferSizeGC = 0xf0;
-constexpr std::string_view spring_ball_template_gc = R"(
+constexpr u32 kSpringballHookBufferSizeMP1GC = 0x118;
+constexpr std::string_view spring_ball_template_mp1_gc = R"(
 .defvar HookStart, 0x{hook_start_addr:x}
 .defvar HookBuffer, 0x{hook_buffer_addr:x}
 .defvar SpringballInputAddr, 0x{springball_addr:x}
@@ -47,19 +47,6 @@ b _hook_start
 .defvar var_hor_vel_x, 36
 .defvar var_hor_vel_y, 40
 
-get_playerstate_mp1:
-lwz r3, var_state_mgr(sp)
-lwz r3, 0x8b8(r3)
-lwz r3, 0(r3)
-blr
-
-get_playerstate_mp2:
-# Chain: Stack -> Morphball+0 -> Player+1314 -> PlayerState
-lwz r3, var_morphball(sp)
-lwz r3, 0(r3)
-lwz r3, 0x1314(r3)
-blr
-
 _hook_start:
 stwu sp, -var_back_chain(sp)
 mfspr r0, LR
@@ -76,8 +63,29 @@ lbz r3, 0(r3)
 cmpwi r3, 0
 beq _hook_end
 
+# Use the cached collision info list to ensure we're on some kind of surface
+lis r3, _allowedNormalZ@ha
+ori r3, r3, _allowedNormalZ@l
+lfs f2, 0(r3)
+lwz r3, var_morphball(sp)
+lwz r4, 0x74(r3)
+__cond:
+cmplwi r4, 0
+beq _hook_end
+lfs f0, 0x78+0x50(r3)
+fcmpo cr0, f0, f2
+bge __pass
+__iter:
+addi r3, r3, 0x60
+subi r4, r4, 1
+b __cond
+
+# Detected a springball-able surface
+__pass:
 # Check that player has bombs
-bl {get_playerstate_fn}
+lwz r3, var_state_mgr(sp)
+lwz r3, 0x8b8(r3)
+lwz r3, 0(r3)
 li r4, BombPowerupId
 bl HasPowerup
 cmpwi r3, 0
@@ -118,6 +126,129 @@ addi sp, sp, var_back_chain
 # Since LR is already in r0, skip LR->r0 prologue
 stwu sp, -0x20(sp)
 b HookReturn
+
+_allowedNormalZ:
+.float 0.70710677
+)";
+
+constexpr u32 kSpringballHookBufferSizeMP2GC = 0x110;
+constexpr std::string_view spring_ball_template_mp2_gc = R"(
+.defvar HookStart, 0x{hook_start_addr:x}
+.defvar HookBuffer, 0x{hook_buffer_addr:x}
+.defvar SpringballInputAddr, 0x{springball_addr:x}
+.defvar BombPowerupId, {bomb_pup_id}
+.defsym HasPowerup, 0x{has_power_up_addr:x}
+.defvar TransformOff, 0x{transform_off:x}
+.defvar VelOff, 0x{vel_off:x}
+.defsym BombJumpSub, 0x{bomb_jump_addr:x}
+.defsym HookReturn, 0x{hook_return_addr:x}
+
+.locate HookStart
+b _hook_start
+
+.locate HookBuffer
+.defvar var_back_chain, 52
+.defvar var_saved_lr, 48
+.defvar var_morphball, 8
+.defvar var_finalinput, 12
+.defvar var_state_mgr, 16
+.defvar var_dt, 20
+.defvar var_position_x, 24
+.defvar var_position_y, 28
+.defvar var_position_z, 32
+.defvar var_hor_vel_x, 36
+.defvar var_hor_vel_y, 40
+.defvar var_saved_reset_timer, 44
+
+_hook_start:
+stwu sp, -var_back_chain(sp)
+mfspr r0, LR
+stw r0, var_saved_lr(sp)
+stw r3, var_morphball(sp)
+stw r4, var_finalinput(sp)
+stw r5, var_state_mgr(sp)
+stfs f1, var_dt(sp)
+
+# Check input being pressed
+lis r3, SpringballInputAddr@ha
+ori r3, r3, SpringballInputAddr@l
+lbz r3, 0(r3)
+cmpwi r3, 0
+beq _hook_end
+
+# Use the cached collision info list to ensure we're on some kind of surface
+lis r3, _allowedNormalZ@ha
+ori r3, r3, _allowedNormalZ@l
+lfs f2, 0(r3)
+lwz r3, var_morphball(sp)
+lwz r4, 0x74(r3)
+__cond:
+cmplwi r4, 0
+beq _hook_end
+lfs f0, 0x78+0x48(r3)
+fcmpo cr0, f0, f2
+bge __pass
+__iter:
+addi r3, r3, 0x60
+subi r4, r4, 1
+b __cond
+
+# Detected a springball-able surface
+__pass:
+# Check that player has bombs
+lwz r3, var_morphball(sp)
+lwz r3, 0(r3)
+lwz r3, 0x1314(r3)
+li r4, BombPowerupId
+bl HasPowerup
+cmpwi r3, 0
+beq _hook_end
+lwz r3, var_morphball(sp)
+lwz r3, 0(r3)
+lwz r4, 0xebc(r3)
+lwz r0, 0x668(r4)
+stw r0, var_saved_reset_timer(sp)
+lwz r0, VelOff(r3)
+stw r0, var_hor_vel_x(sp)
+lwz r0, VelOff+0x4(r3)
+stw r0, var_hor_vel_y(sp)
+lwz r5, var_state_mgr(sp)
+lwz r0, TransformOff+0xc(r3)
+stw r0, var_position_x(sp)
+lwz r0, TransformOff+0x1c(r3)
+stw r0, var_position_y(sp)
+lwz r0, TransformOff+0x2c(r3)
+stw r0, var_position_z(sp)
+addi r4, sp, var_position_x
+
+bl BombJumpSub
+# We want to retain horizontal velocity when jumping, so add it back here
+lwz r3, var_morphball(sp)
+lwz r3, 0(r3)
+lwz r0, var_saved_reset_timer(sp)
+lwz r4, 0xebc(r3)
+# Springball shouldn't affect the reset timer for bombs
+stw r0, 0x668(r4)
+lwz r0, var_hor_vel_x(sp)
+stw r0, VelOff(r3)
+lwz r0, var_hor_vel_y(sp)
+stw r0, VelOff+0x4(r3)
+
+_hook_end:
+lwz r0, var_saved_lr(sp)
+lwz r3, var_morphball(sp)
+lwz r4, var_finalinput(sp)
+lwz r5, var_state_mgr(sp)
+lfs f1, var_dt(sp)
+addi sp, sp, var_back_chain
+
+# Rerun clobbered instruction from trampoline
+# Since LR is already in r0, skip LR->r0 prologue
+stwu sp, -0x20(sp)
+b HookReturn
+
+_allowedNormalZ:
+.float 0.70710677
 )";
 
 } // namespace
@@ -191,21 +322,35 @@ bool SpringballButton::init_mod(Game game, Region region) {
 void SpringballButton::springball_code_gc(Game game, u32 start_point, u32 bomb_pup_id, u32 has_power_up, u32 bomb_jump) {
   LOOKUP(xf_offset);
   LOOKUP(vel_offset);
-  const u32 hook_buffer = GuestAllocAligned(kSpringballHookBufferSizeGC, 2);
   const u32 springball_trigger = GetVariableManager()->get_address("springball_trigger");
 
-  add_asm_patch(fmt::format(fmt::runtime(spring_ball_template_gc),
-    fmt::arg("hook_start_addr", start_point),
-    fmt::arg("hook_buffer_addr", hook_buffer),
-    fmt::arg("springball_addr", springball_trigger),
-    fmt::arg("bomb_pup_id", bomb_pup_id),
-    fmt::arg("has_power_up_addr", has_power_up),
-    fmt::arg("transform_off", xf_offset),
-    fmt::arg("bomb_jump_addr", bomb_jump),
-    fmt::arg("hook_return_addr", start_point + 8),
-    fmt::arg("get_playerstate_fn", game == Game::PRIME_2_GCN ? "get_playerstate_mp2" : "get_playerstate_mp1"),
-    fmt::arg("vel_off", vel_offset)
-  ));
+  if (game == Game::PRIME_1_GCN || game == Game::PRIME_1_GCN_R1 || game == Game::PRIME_1_GCN_R2) {
+    const u32 hook_buffer = GuestAllocAligned(kSpringballHookBufferSizeMP1GC, 2);
+    add_asm_patch(fmt::format(fmt::runtime(spring_ball_template_mp1_gc),
+      fmt::arg("hook_start_addr", start_point),
+      fmt::arg("hook_buffer_addr", hook_buffer),
+      fmt::arg("springball_addr", springball_trigger),
+      fmt::arg("bomb_pup_id", bomb_pup_id),
+      fmt::arg("has_power_up_addr", has_power_up),
+      fmt::arg("transform_off", xf_offset),
+      fmt::arg("bomb_jump_addr", bomb_jump),
+      fmt::arg("hook_return_addr", start_point + 8),
+      fmt::arg("vel_off", vel_offset)
+    ));
+  } else if (game == Game::PRIME_2_GCN) {
+    const u32 hook_buffer = GuestAllocAligned(kSpringballHookBufferSizeMP2GC, 2);
+    add_asm_patch(fmt::format(fmt::runtime(spring_ball_template_mp2_gc),
+      fmt::arg("hook_start_addr", start_point),
+      fmt::arg("hook_buffer_addr", hook_buffer),
+      fmt::arg("springball_addr", springball_trigger),
+      fmt::arg("bomb_pup_id", bomb_pup_id),
+      fmt::arg("has_power_up_addr", has_power_up),
+      fmt::arg("transform_off", xf_offset),
+      fmt::arg("bomb_jump_addr", bomb_jump),
+      fmt::arg("hook_return_addr", start_point + 8),
+      fmt::arg("vel_off", vel_offset)
+    ));
+  }
 }
 
 void SpringballButton::springball_code(u32 start_point) {
