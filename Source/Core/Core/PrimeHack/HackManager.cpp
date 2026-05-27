@@ -198,9 +198,9 @@ void update_mod_state_from_config() {
     EnableMod<SpringballButton>();
     EnableMod<ContextSensitiveControls>();
     if (ImprovedMotionControls()) {
-      DisablePatches<ContextSensitiveControls>();
-    } else {
       EnablePatches<ContextSensitiveControls>();
+    } else {
+      DisablePatches<ContextSensitiveControls>();
     }
     SetModEnabled<MapController>(NewMapControlsEnabled());
   }
