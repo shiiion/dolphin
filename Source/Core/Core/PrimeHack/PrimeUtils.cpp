@@ -379,7 +379,7 @@ std::string_view SupportLevelToolTip(GameSupportLevel supp_level)
   case GameSupportLevel::Unsupported:
     return "This title is not supported.";
   case GameSupportLevel::LimitedSupport:
-    return "Only RVZ compression is considered suppored.\n*Other formats are known to have issues.";
+    return "Only RVZ compression is considered supported.\n*Other formats are known to have issues.";
   case GameSupportLevel::QuestionableSupport:
     return "Randovania is known to work, but compatibility is incidental.\n*Results may vary.";
   default:

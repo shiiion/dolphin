@@ -9,8 +9,6 @@
 
 namespace Common
 {
-#define EMULATOR_NAME "PrimeHack"
-
 #ifdef _DEBUG
 #define BUILD_TYPE_STR "Debug "
 #elif defined DEBUGFAST
@@ -21,8 +19,7 @@ namespace Common
 
 const std::string& GetScmRevStr()
 {
-  //make version variable tied to about dialog
-  static const std::string scm_rev_str = "PrimeHack v1.0.X";
+  static const std::string scm_rev_str = "PrimeHack";
   return scm_rev_str;
 }
 

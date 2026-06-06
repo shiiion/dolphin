@@ -6,6 +6,7 @@
 #include <QApplication>
 #include <QDesktopServices>
 #include <QUrl>
+#include <qobject.h>
 #include <QString>
 
 ModalMessageBox::ModalMessageBox(QWidget* parent, Qt::WindowModality modality)
@@ -39,14 +40,14 @@ static inline int ExecPrimeHackMessage(QWidget* parent)
 {
   ModalMessageBox msg(parent, Qt::WindowModal);
   msg.setIcon(QMessageBox::Information);
-  msg.setWindowTitle(QString::fromStdString("PrimeHack"));
+  msg.setWindowTitle(QString::fromStdString("Advisory"));
   msg.setTextFormat(Qt::RichText);
   msg.setText(QString::fromStdString(
-    "<p>PrimeHack has detected this is your initial run. "
-    "If you are new to Primehack, we highly recommend you press the <b>Default</b> button inside the controller profile window to ensure you are using the default PrimeHack controls."
+    "<p>PrimeHack has detected it is being ran for the first time:"
     "</p><p>"
-    "If you have any further questions, please see our wiki:<br>"
-    "<a href='https://github.com/shiiion/dolphin/wiki'>https://github.com/shiiion/dolphin/wiki</a></p>"));
+    "It is strongly recommended to click the <b>Default</b> button for whichever input method is being used to ensure the intended defaults are loaded.\nIt is not required, but be advised any existing settings <i>may</i> cause conflicts."
+    "</p><p>"
+    "If you have any further questions, please see our <a href='https://github.com/shiiion/dolphin/wiki'>wiki</a> or visit our <a href='https://discord.gg/Gc2HcPH'>Discord</a>.</p>"));
   msg.setStandardButtons(QMessageBox::Ok);
   msg.addButton(QMessageBox::Help);
   msg.setDefaultButton(QMessageBox::NoButton);
@@ -61,11 +62,10 @@ static inline int ExecPrimeHackWiiTabMessage(QWidget* parent)
   msg.setWindowTitle(QString::fromStdString("PrimeHack"));
   msg.setTextFormat(Qt::RichText);
   msg.setText(QString::fromStdString(
-    "<p>Unless you have a specific reason to use the 'Emulated Wii Remote' window "
-    "such as an alternate control scheme that use motion inputs, it is recommended that you set 'Wii Remote 1' to PrimeHack. "
-    "Both options work, but the PrimeHack window is specialised for making configuration easier."
+    "It is strongly recommended to use the <b>PrimeHack</b> preset, the <b>Emullated Wii Remote</b> option still works, "
+    "but lacks certain features and options that make for a more user-friendly experience."
     "</p><p>"
-    "If you would like to go to the PrimeHack window instead, press <b>Open</b>.<br>"
+    "To proceed to the PrimeHack window, press <b>Open</b>.<br>"
 ));
   msg.setStandardButtons(QMessageBox::StandardButton::Ignore);
   msg.addButton(QMessageBox::StandardButton::Open);
@@ -81,11 +81,10 @@ static inline int ExecPrimeHackGCTabMessage(QWidget* parent)
   msg.setWindowTitle(QString::fromStdString("PrimeHack"));
   msg.setTextFormat(Qt::RichText);
   msg.setText(QString::fromStdString(
-    "<p>Unless you have a specific reason to use the 'Standard Controller' window, "
-    "it is strongly recommend to set the port to PrimeHack. "
-    "Both options work, but the PrimeHack window is specialised for making configuration easier."
+    "It is strongly recommended to use the <b>PrimeHack</b> preset, the <b>Standard Controller</b> option still works, "
+    "but lacks certain features and options that make for a more user-friendly experience."
     "</p><p>"
-    "If you would like to go to the PrimeHack window instead, press <b>Open</b>.<br>"));
+    "To proceed to the PrimeHack window, press <b>Open</b>.<br>"));
   msg.setStandardButtons(QMessageBox::StandardButton::Ignore);
   msg.addButton(QMessageBox::StandardButton::Open);
   msg.setDefaultButton(QMessageBox::NoButton);

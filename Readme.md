@@ -2,7 +2,7 @@
 
 [Discord](https://discord.gg/Gc2HcPH)
 
-PrimeHack is a Dolphin Emulator fork for the Metroid Prime-series games available for Windows,
+PrimeHack is a Dolphin Emulator fork for the Metroid Prime series games available for Windows,
 Linux, macOS, and Android\*. It's licensed under the terms
 of the GNU General Public License, version 2 or later (GPLv2+).
 _\*The Android build is not officially developed or built and is provided by the community._

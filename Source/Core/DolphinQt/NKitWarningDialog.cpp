@@ -27,27 +27,28 @@ bool NKitWarningDialog::ShowUnlessDisabled(QWidget* parent)
 
 NKitWarningDialog::NKitWarningDialog(QWidget* parent) : QDialog(parent)
 {
-  setWindowTitle(tr("NKit Warning"));
+  setWindowTitle(tr("Warning"));
   setWindowIcon(Resources::GetAppIcon());
 
   QVBoxLayout* main_layout = new QVBoxLayout;
 
   QLabel* warning = new QLabel(
-      tr("You are about to run an NKit disc image. NKit disc images cause problems that don't "
-         "happen with normal disc images. These problems include:\n"
-         "\n"
-         "• The emulated loading times are longer\n"
-         "• You can't use NetPlay with people who have normal disc images\n"
-         "• Input recordings are not compatible between NKit disc images and normal disc images\n"
-         "• Savestates are not compatible between NKit disc images and normal disc images\n"
-         "• Some games can crash, such as Super Paper Mario and Metal Gear Solid: The Twin Snakes\n"
-         "• Wii games don't work at all in older versions of Dolphin and in many other programs\n"
-         "\n"
-         "Are you sure you want to continue anyway?"));
+      tr("This dump is compressed with NKit, this format is known to cause various issues ranging from performance to unexpected game behavior.<br><br> Issues include, but are not limited to:<br>"
+         "• Glitches and other unexpected behavior<br>"
+         "• Crashes<br>"
+         "• Longer load times<br>"
+         "• TAS recordings are incompatible with uncompressed dumps<br>"
+         "• Savestates are incompatible with uncompressed dumps<br>"
+         "• NKit is not backwards-compatible with older buillds of Dolphin<br><br>"
+         "Continue anyway?<br>"      
+         "<a href=\"https://dolphin-emu.org/blog/2020/07/05/dolphin-progress-report-may-and-june-2020/#about-the-nkit-format\">More information</a><br>"));
+  warning->setTextInteractionFlags(Qt::TextBrowserInteraction);
+  warning->setOpenExternalLinks(true);
+  warning->setTextFormat(Qt::RichText);
   warning->setWordWrap(true);
   main_layout->addWidget(warning);
 
-  QCheckBox* checkbox_accept = new QCheckBox(tr("I am aware of the risks and want to continue"));
+  QCheckBox* checkbox_accept = new QCheckBox(tr("I accept the risks and want to continue"));
   main_layout->addWidget(checkbox_accept);
 
   QCheckBox* checkbox_skip = new QCheckBox(tr("Don't show this again"));

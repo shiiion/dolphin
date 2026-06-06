@@ -189,7 +189,7 @@ void GamecubeControllersWidget::OnGCPadConfigure(size_t index)
       if (ModalMessageBox::primehack_gctab(this)) {
         type = MappingWindow::Type::MAPPING_GCPAD_METROID;
         Pad::ChangeUIPrimeHack(static_cast<int>(index), true);
-        m_gc_controller_boxes[index]->setCurrentIndex(2);
+        m_gc_controller_boxes[index]->setCurrentIndex(3);
       }
 
       Config::SetBase(Config::PRIMEHACK_PROMPT_TAB, true);

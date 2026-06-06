@@ -210,11 +210,11 @@ void UpdateDiscordPresence(int party_size, SecretType type, const std::string& s
   if (s_using_custom_client)
     UpdateClientID(DEFAULT_CLIENT_ID);
 
-  const std::string& title = "v" + Common::GetScmRevStr();
+  const std::string& title = EMULATOR_VERSION;
 
   DiscordRichPresence discord_presence = {};
   discord_presence.largeImageKey = "primehack_logo";
-  discord_presence.largeImageText = "PrimeHack is a fork of Dolphin Emulator to bring traditional FPS controls and settings to the Metroid Prime series.";
+  discord_presence.largeImageText = "PrimeHack is a specialized fork of Dolphin Emulator that brings mouselook FPS controls to the Metroid Prime series.";
 
   discord_presence.details = title.empty() ? "Not in-game" : title.c_str();
   if (reset_timer)

@@ -7,6 +7,7 @@
 #include <QTextEdit>
 #include <QVBoxLayout>
 #include <QtGlobal>
+#include <qstring.h>
 
 #include "Common/Version.h"
 
@@ -16,10 +17,11 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent)
 {
   setWindowTitle(tr("About"));
 
-  const QString prime_ver = QString::fromStdString(Common::GetScmRevStr());
+  const QString fork_name = QStringLiteral(EMULATOR_NAME);
+  const QString prime_hack_ver = QStringLiteral(EMULATOR_VERSION);
   const QString text =
     QStringLiteral(R"(
-<p style='font-size:38pt; font-weight:400;'>%PRIMEVER_STRING%</p>
+<p style='font-size:38pt; font-weight:400;'>%FORKNAME_STRING% %PRIMEVER_STRING%</p>
 <p style='font-size:18pt;'>Dolphin v%VERSION_STRING%</p>
 
 <p style='font-size: small;'>
@@ -42,14 +44,16 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent)
 <p>
 <a href='https://github.com/shiiion/dolphin/blob/master/license.txt'>%LICENSE%</a> |
 <a href='https://github.com/shiiion/dolphin/graphs/contributors'>%AUTHORS%</a> |
-<a href='https://github.com/shiiion/dolphin/wiki'>%SUPPORT%</a>
+<a href='https://github.com/shiiion/dolphin/wiki'>%SUPPORT%</a> |
+<a href='https://discord.gg/Gc2HcPH'>%DISCORD%</a>
 )")
-          .replace(QStringLiteral("%PRIMEVER_STRING%"), prime_ver)
+          .replace(QStringLiteral("%FORKNAME_STRING%"), fork_name)
+          .replace(QStringLiteral("%PRIMEVER_STRING%"), prime_hack_ver)
           .replace(QStringLiteral("%VERSION_STRING%"),
                    QString::fromUtf8(Common::GetScmDescStr().c_str()))
           .replace(QStringLiteral("%BRANCH%"),
                    // i18n: "Branch" means the version control term, not a literal tree branch.
-                   tr("Version: %1").arg(prime_ver))
+                   tr("Version: %1").arg(fork_name))
           .replace(QStringLiteral("%REVISION%"),
                    tr("Revision: %1").arg(QString::fromUtf8(Common::GetScmRevGitStr().c_str())))
           .replace(QStringLiteral("%QT_VERSION%"),
@@ -65,7 +69,8 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent)
                    tr("This software should not be used to play games you do not legally own."))
           .replace(QStringLiteral("%LICENSE%"), tr("License"))
           .replace(QStringLiteral("%AUTHORS%"), tr("Authors"))
-          .replace(QStringLiteral("%SUPPORT%"), tr("Support"));
+          .replace(QStringLiteral("%SUPPORT%"), tr("Wiki"))
+          .replace(QStringLiteral("%DISCORD%"), tr("Discord"));
 
   QLabel* text_label = new QLabel(text);
   text_label->setTextInteractionFlags(Qt::TextBrowserInteraction);
