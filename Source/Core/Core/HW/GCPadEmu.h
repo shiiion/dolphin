@@ -21,6 +21,7 @@ class AnalogStick;
 class Buttons;
 class MixedTriggers;
 class PrimeHackModes;
+class IMUGyroscope;
 }  // namespace ControllerEmu
 
 enum class PadGroup
@@ -40,7 +41,8 @@ enum class PadGroup
   Camera,
   Misc,
   ControlStick,
-  Modes
+  Modes,
+  GyroCamera
 };
 
 class GCPad : public ControllerEmu::EmulatedController
@@ -65,11 +67,13 @@ public:
 
   bool CheckSpringBallCtrl();
   bool PrimeControllerMode();
+  bool PrimeUseGyro();
 
   void SetPrimeMode(bool controller);
 
   bool CheckPitchRecentre();
   std::tuple<double, double> GetPrimeStickXY();
+  std::tuple<double, double> GetPrimeGyroPitchYaw();
 
   std::tuple<double, double, bool, bool, bool> GetPrimeSettings();
 
@@ -127,15 +131,19 @@ private:
   ControllerEmu::ControlGroup* m_primehack_camera;
   ControllerEmu::ControlGroup* m_primehack_misc;
   ControllerEmu::AnalogStick* m_primehack_stick;
+  ControllerEmu::IMUGyroscope* m_primehack_gyro;
   ControllerEmu::PrimeHackModes* m_primehack_modes;
 
   ControllerEmu::SettingValue<double> m_primehack_camera_sensitivity;
   ControllerEmu::SettingValue<double> m_primehack_horizontal_sensitivity;
   ControllerEmu::SettingValue<double> m_primehack_vertical_sensitivity;
+  ControllerEmu::SettingValue<double> m_primehack_gyro_horizontal_sensitivity;
+  ControllerEmu::SettingValue<double> m_primehack_gyro_vertical_sensitivity;
 
   ControllerEmu::SettingValue<bool> m_primehack_invert_y;
   ControllerEmu::SettingValue<bool> m_primehack_invert_x;
   ControllerEmu::SettingValue<bool> m_primehack_remap_map_controls;
+  ControllerEmu::SettingValue<bool> m_primehack_gyro_enable;
 
   static constexpr u8 STICK_GATE_RADIUS = 0x60;
   static constexpr u8 STICK_CENTER = 0x80;

@@ -32,21 +32,24 @@ void ResetRumble(int pad_num);
 
 bool GetMicButton(int pad_num);
 
-void ChangeUIPrimeHack(int number, bool useMetroidUI);
+void ChangeUIPrimeHack(int pad_num, bool useMetroidUI);
 
-bool CheckSpringBall();
-bool CheckPitchRecentre();
-bool PrimeUseController();
+bool CheckSpringBall(int pad_num);
+bool CheckPitchRecentre(int pad_num);
+bool PrimeUseController(int pad_num);
 
-void PrimeSetMode(bool controller);
+void PrimeSetMode(int pad_num, bool controller);
 
-bool CheckForward();
-bool CheckBack();
-bool CheckLeft();
-bool CheckRight();
-bool CheckJump();
+bool PrimeUseGyro(int pad_num);
 
-std::tuple<double, double> GetPrimeStickXY();
+bool CheckForward(int pad_num);
+bool CheckBack(int pad_num);
+bool CheckLeft(int pad_num);
+bool CheckRight(int pad_num);
+bool CheckJump(int pad_num);
 
-std::tuple<double, double, bool, bool, bool> PrimeSettings();
+std::tuple<double, double> GetPrimeStickXY(int pad_num);
+std::tuple<double, double> GetPrimeGyroPitchYaw(int pad_num);
+
+std::tuple<double, double, bool, bool, bool> PrimeSettings(int pad_num);
 }  // namespace Pad

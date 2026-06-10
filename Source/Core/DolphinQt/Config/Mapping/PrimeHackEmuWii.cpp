@@ -41,11 +41,9 @@ void PrimeHackEmuWii::CreateMainLayout()
 
   auto* groupbox1 = new QVBoxLayout();
   auto* groupbox2 = new QVBoxLayout();
+  auto* groupbox3 = new QVBoxLayout();
 
-  auto* modes_group = Wiimote::GetWiimoteGroup(GetPort(), WiimoteEmu::WiimoteGroup::Modes);
-  auto* modes = CreateGroupBox(tr("Mode"), modes_group);
-
-  auto* ce_modes = static_cast<ControllerEmu::PrimeHackModes*>(modes_group);
+  auto* modes = CreateGroupBox(tr("Mode"), Wiimote::GetWiimoteGroup(GetPort(), WiimoteEmu::WiimoteGroup::Modes));
 
   const auto combo_hbox = new QHBoxLayout;
   combo_hbox->setAlignment(Qt::AlignCenter);
@@ -105,11 +103,18 @@ void PrimeHackEmuWii::CreateMainLayout()
     GetPort(), WiimoteEmu::WiimoteGroup::ControlStick));
 
   controller_box->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-  controller_box->setEnabled(ce_modes->GetSelectedDevice() == 1);
+  controller_box->setEnabled(Wiimote::PrimeUseController(GetPort()));
 
   groupbox2->addWidget(controller_box, 2, Qt::AlignTop);
 
   layout->addLayout(groupbox2, 0, 1, Qt::AlignTop);
+
+  gyro_box = CreateGroupBox(tr("Gyro Camera"), Wiimote::GetWiimoteGroup(GetPort(), WiimoteEmu::WiimoteGroup::GyroCamera));
+  gyro_box->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  gyro_box->setEnabled(Wiimote::PrimeUseController(GetPort()) && Wiimote::PrimeUseGyro(GetPort()));
+
+  groupbox3->addWidget(gyro_box);
+  layout->addLayout(groupbox3, 0, 2);
 
   setLayout(layout);
 }
@@ -226,11 +231,9 @@ void PrimeHackEmuWii::Connect(MappingWindow* window)
 
 void PrimeHackEmuWii::OnDeviceSelected()
 {
-  auto* ce_modes = static_cast<ControllerEmu::PrimeHackModes*>(
-    Wiimote::GetWiimoteGroup(GetPort(), WiimoteEmu::WiimoteGroup::Modes));
-
-  ce_modes->SetSelectedDevice(m_radio_mouse->isChecked() ? 0 : 1);
-  controller_box->setEnabled(!m_radio_mouse->isChecked());
+  Wiimote::PrimeSetMode(GetPort(), m_radio_controller->isChecked());
+  controller_box->setEnabled(m_radio_controller->isChecked());
+  gyro_box->setEnabled(m_radio_controller->isChecked() && Wiimote::PrimeUseGyro(GetPort()));
 
   ConfigChanged();
   SaveSettings();
@@ -245,13 +248,15 @@ void PrimeHackEmuWii::ConfigChanged()
 
 void PrimeHackEmuWii::Update()
 {
-  bool checked = Wiimote::PrimeUseController();
+  bool use_controller = Wiimote::PrimeUseController(GetPort());
 
-  controller_box->setEnabled(checked);
+  controller_box->setEnabled(use_controller);
+  gyro_box->setEnabled(use_controller && Wiimote::PrimeUseGyro(GetPort()));
 
-  if (m_radio_controller->isChecked() != checked) {
-    m_radio_controller->setChecked(checked);
-    m_radio_mouse->setChecked(!checked);
+  if (m_radio_controller->isChecked() != use_controller)
+  {
+    m_radio_controller->setChecked(use_controller);
+    m_radio_mouse->setChecked(!use_controller);
   }
 }
 
@@ -277,6 +282,7 @@ void PrimeHackEmuWii::LoadSettings()
   m_radio_mouse->setChecked(checked);
   m_radio_controller->setChecked(!checked);
   controller_box->setEnabled(!checked);
+  gyro_box->setEnabled(!checked && Wiimote::PrimeUseGyro(GetPort()));
 }
 
 void PrimeHackEmuWii::SaveSettings()

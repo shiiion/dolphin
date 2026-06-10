@@ -19,6 +19,7 @@ public:
   InputConfig* GetConfig() override;
 
   QGroupBox* controller_box;
+  QGroupBox* gyro_box;
   QRadioButton* m_radio_mouse;
   QRadioButton* m_radio_controller;
   QComboBox* m_morphball_combobox;

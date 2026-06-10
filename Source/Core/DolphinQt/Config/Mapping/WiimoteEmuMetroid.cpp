@@ -190,10 +190,7 @@ void WiimoteEmuMetroid::CreateMainLayout()
 
   auto* groupbox3 = new QVBoxLayout();
 
-  auto* modes_group = Wiimote::GetWiimoteGroup(GetPort(), WiimoteEmu::WiimoteGroup::Modes);
-  auto* modes = CreateGroupBox(tr("Mode"), modes_group);
-
-  auto* ce_modes = static_cast<ControllerEmu::PrimeHackModes*>(modes_group);
+  auto* modes = CreateGroupBox(tr("Mode"), Wiimote::GetWiimoteGroup(GetPort(), WiimoteEmu::WiimoteGroup::Modes));
 
   const auto combo_hbox = new QHBoxLayout;
   combo_hbox->setAlignment(Qt::AlignCenter);
@@ -216,13 +213,22 @@ void WiimoteEmuMetroid::CreateMainLayout()
 
   camera_control = CreateGroupBox(tr("Camera (Controller)"), Wiimote::GetWiimoteGroup(
     GetPort(), WiimoteEmu::WiimoteGroup::ControlStick));
-  camera_control->setEnabled(ce_modes->GetSelectedDevice() == 1);
+  camera_control->setEnabled(Wiimote::PrimeUseController(GetPort()));
   groupbox3->addWidget(camera_control, 1);
+
+  // Column 4
+  auto* groupbox4 = new QVBoxLayout();
+  gyro_control = CreateGroupBox(tr("Gyro Camera"), Wiimote::GetWiimoteGroup(GetPort(), WiimoteEmu::WiimoteGroup::GyroCamera));
+  gyro_control->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  gyro_control->setEnabled(Wiimote::PrimeUseController(GetPort()) &&
+                           Wiimote::PrimeUseGyro(GetPort()));
+  groupbox4->addWidget(gyro_control);
 
   layout->addLayout(groupbox0);
   layout->addLayout(groupbox1);
   layout->addLayout(groupbox2);
   layout->addLayout(groupbox3);
+  layout->addLayout(groupbox4);
 
   setLayout(layout);
 }
@@ -246,11 +252,9 @@ void WiimoteEmuMetroid::Connect()
 
 void WiimoteEmuMetroid::OnDeviceSelected()
 {
-  auto* ce_modes = static_cast<ControllerEmu::PrimeHackModes*>(
-    Wiimote::GetWiimoteGroup(GetPort(), WiimoteEmu::WiimoteGroup::Modes));
-
-  ce_modes->SetSelectedDevice(m_radio_mouse->isChecked() ? 0 : 1);
-  camera_control->setEnabled(!m_radio_mouse->isChecked());
+  Wiimote::PrimeSetMode(GetPort(), m_radio_controller->isChecked());
+  camera_control->setEnabled(m_radio_controller->isChecked());
+  gyro_control->setEnabled(m_radio_controller->isChecked() && Wiimote::PrimeUseGyro(GetPort()));
 
   ConfigChanged();
   SaveSettings();
@@ -302,13 +306,15 @@ void WiimoteEmuMetroid::ConfigChanged()
 
 void WiimoteEmuMetroid::Update()
 {
-  bool checked = Wiimote::PrimeUseController();
+  bool use_controller = Wiimote::PrimeUseController(GetPort());
 
-  camera_control->setEnabled(checked);
+  camera_control->setEnabled(use_controller);
+  gyro_control->setEnabled(use_controller && Wiimote::PrimeUseGyro(GetPort()));
 
-  if (m_radio_controller->isChecked() != checked) {
-    m_radio_controller->setChecked(checked);
-    m_radio_mouse->setChecked(!checked);
+  if (m_radio_controller->isChecked() != use_controller)
+  {
+    m_radio_controller->setChecked(use_controller);
+    m_radio_mouse->setChecked(!use_controller);
   }
 }
 
@@ -337,6 +343,7 @@ void WiimoteEmuMetroid::LoadSettings()
   m_radio_mouse->setChecked(checked);
   m_radio_controller->setChecked(!checked);
   camera_control->setEnabled(!checked);
+  gyro_control->setEnabled(!checked && Wiimote::PrimeUseGyro(GetPort()));
 
   QString text = tr(morph_group->GetAltProfileName().c_str());
 

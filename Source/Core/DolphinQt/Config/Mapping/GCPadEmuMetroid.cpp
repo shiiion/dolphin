@@ -110,11 +110,7 @@ void GCPadEmuMetroid::CreateMainLayout()
   // Column 3
 
   auto* groupbox3 = new QVBoxLayout();
-
-  auto* modes_group = Pad::GetGroup(GetPort(), PadGroup::Modes);
-  auto* modes = CreateGroupBox(tr("Mode"), modes_group);
-
-  auto* ce_modes = static_cast<ControllerEmu::PrimeHackModes*>(modes_group);
+  auto* modes = CreateGroupBox(tr("Mode"), Pad::GetGroup(GetPort(), PadGroup::Modes));
 
   const auto combo_hbox = new QHBoxLayout;
   combo_hbox->setAlignment(Qt::AlignCenter);
@@ -135,15 +131,22 @@ void GCPadEmuMetroid::CreateMainLayout()
       Pad::GetGroup(GetPort(), PadGroup::Camera));
   groupbox3->addWidget(camera_options, 0, Qt::AlignTop);
 
-  camera_control = CreateGroupBox(tr("Camera (Controller)"), Pad::GetGroup(
-    GetPort(), PadGroup::ControlStick));
-  camera_control->setEnabled(ce_modes->GetSelectedDevice() == 1);
+  camera_control = CreateGroupBox(tr("Camera Control"), Pad::GetGroup(GetPort(), PadGroup::ControlStick));
+  camera_control->setEnabled(Pad::PrimeUseController(GetPort()));
   groupbox3->addWidget(camera_control, 1);
+
+  // Column 4
+  auto* groupbox4 = new QVBoxLayout();
+  gyro_control = CreateGroupBox(tr("Gyro Camera"), Pad::GetGroup(GetPort(), PadGroup::GyroCamera));
+  gyro_control->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  gyro_control->setEnabled(Pad::PrimeUseController(GetPort()) && Pad::PrimeUseGyro(GetPort()));
+  groupbox4->addWidget(gyro_control);
 
   layout->addLayout(groupbox0);
   layout->addLayout(groupbox1);
   layout->addLayout(groupbox2);
   layout->addLayout(groupbox3);
+  layout->addLayout(groupbox4);
 
   setLayout(layout);
 }
@@ -160,11 +163,9 @@ void GCPadEmuMetroid::Connect()
 
 void GCPadEmuMetroid::OnDeviceSelected()
 {
-  auto* ce_modes = static_cast<ControllerEmu::PrimeHackModes*>(
-    Pad::GetGroup(GetPort(), PadGroup::Modes));
-
-  ce_modes->SetSelectedDevice(m_radio_mouse->isChecked() ? 0 : 1);
-  camera_control->setEnabled(!m_radio_mouse->isChecked());
+  Pad::PrimeSetMode(GetPort(), m_radio_controller->isChecked());
+  camera_control->setEnabled(m_radio_controller->isChecked());
+  gyro_control->setEnabled(m_radio_controller->isChecked() && Pad::PrimeUseGyro(GetPort()));
 
   ConfigChanged();
   SaveSettings();
@@ -177,13 +178,15 @@ void GCPadEmuMetroid::ConfigChanged()
 
 void GCPadEmuMetroid::Update()
 {
-  bool checked = Pad::PrimeUseController();
+  bool use_controller = Pad::PrimeUseController(GetPort());
 
-  camera_control->setEnabled(checked);
+  camera_control->setEnabled(use_controller);
+  gyro_control->setEnabled(use_controller && Pad::PrimeUseGyro(GetPort()));
 
-  if (m_radio_controller->isChecked() != checked) {
-    m_radio_controller->setChecked(checked);
-    m_radio_mouse->setChecked(!checked);
+  if (m_radio_controller->isChecked() != use_controller)
+  {
+    m_radio_controller->setChecked(use_controller);
+    m_radio_mouse->setChecked(!use_controller);
   }
 }
 
@@ -209,6 +212,7 @@ void GCPadEmuMetroid::LoadSettings()
   m_radio_mouse->setChecked(checked);
   m_radio_controller->setChecked(!checked);
   camera_control->setEnabled(!checked);
+  gyro_control->setEnabled(!checked && Pad::PrimeUseGyro(GetPort()));
 }
 
 void GCPadEmuMetroid::SaveSettings()

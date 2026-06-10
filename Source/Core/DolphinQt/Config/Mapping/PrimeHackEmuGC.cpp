@@ -34,11 +34,9 @@ void PrimeHackEmuGC::CreateMainLayout()
 
   auto* groupbox1 = new QVBoxLayout();
   auto* groupbox2 = new QVBoxLayout();
+  auto* groupbox3 = new QVBoxLayout();
 
-  auto* modes_group = Pad::GetGroup(GetPort(), PadGroup::Modes);
-  auto* modes = CreateGroupBox(tr("Mode"), modes_group);
-
-  auto* ce_modes = static_cast<ControllerEmu::PrimeHackModes*>(modes_group);
+  auto* modes = CreateGroupBox(tr("Mode"), Pad::GetGroup(GetPort(), PadGroup::Modes));
 
   const auto combo_hbox = new QHBoxLayout;
   combo_hbox->setAlignment(Qt::AlignCenter);
@@ -79,11 +77,18 @@ void PrimeHackEmuGC::CreateMainLayout()
     GetPort(), PadGroup::ControlStick));
 
   controller_box->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-  controller_box->setEnabled(ce_modes->GetSelectedDevice() == 1);
+  controller_box->setEnabled(Pad::PrimeUseController(GetPort()));
 
   groupbox2->addWidget(controller_box, 2, Qt::AlignTop);
 
   layout->addLayout(groupbox2, 0, 1, Qt::AlignTop);
+
+  gyro_box = CreateGroupBox(tr("Gyro Camera"), Pad::GetGroup(GetPort(), PadGroup::GyroCamera));
+  gyro_box->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  gyro_box->setEnabled(Pad::PrimeUseController(GetPort()) && Pad::PrimeUseGyro(GetPort()));
+
+  groupbox3->addWidget(gyro_box);
+  layout->addLayout(groupbox3, 0, 2);
 
   setLayout(layout);
 }
@@ -100,11 +105,9 @@ void PrimeHackEmuGC::Connect(MappingWindow* window)
 
 void PrimeHackEmuGC::OnDeviceSelected()
 {
-  auto* ce_modes = static_cast<ControllerEmu::PrimeHackModes*>(
-    Pad::GetGroup(GetPort(), PadGroup::Modes));
-
-  ce_modes->SetSelectedDevice(m_radio_button->isChecked() ? 0 : 1);
-  controller_box->setEnabled(!m_radio_button->isChecked());
+  Pad::PrimeSetMode(GetPort(), m_radio_controller->isChecked());
+  controller_box->setEnabled(m_radio_controller->isChecked());
+  gyro_box->setEnabled(m_radio_controller->isChecked() && Pad::PrimeUseGyro(GetPort()));
 
   ConfigChanged();
   SaveSettings();
@@ -120,13 +123,15 @@ void PrimeHackEmuGC::ConfigChanged()
 
 void PrimeHackEmuGC::Update()
 {
-  bool checked = Pad::PrimeUseController();
+  bool use_controller = Pad::PrimeUseController(GetPort());
 
-  controller_box->setEnabled(checked);
+  controller_box->setEnabled(use_controller);
+  gyro_box->setEnabled(use_controller && Pad::PrimeUseGyro(GetPort()));
 
-  if (m_radio_controller->isChecked() != checked) {
-    m_radio_controller->setChecked(checked);
-    m_radio_button->setChecked(!checked);
+  if (m_radio_controller->isChecked() != use_controller)
+  {
+    m_radio_controller->setChecked(use_controller);
+    m_radio_button->setChecked(!use_controller);
   }
 }
 
@@ -152,6 +157,7 @@ void PrimeHackEmuGC::LoadSettings()
   m_radio_button->setChecked(checked);
   m_radio_controller->setChecked(!checked);
   controller_box->setEnabled(!checked);
+  gyro_box->setEnabled(!checked && Pad::PrimeUseGyro(GetPort()));
 }
 
 void PrimeHackEmuGC::SaveSettings()

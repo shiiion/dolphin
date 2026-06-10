@@ -12,6 +12,7 @@
 
 #include "InputCommon/ControllerEmu/Control/Input.h"
 #include "InputCommon/ControllerEmu/ControlGroup/AnalogStick.h"
+#include "InputCommon/ControllerEmu/ControlGroup/IMUGyroscope.h"
 #include "InputCommon/ControllerEmu/ControlGroup/Buttons.h"
 #include "InputCommon/ControllerEmu/ControlGroup/ControlGroup.h"
 #include "InputCommon/ControllerEmu/ControlGroup/MixedTriggers.h"
@@ -37,21 +38,6 @@ static const u16 dpad_bitmasks[] = {PAD_BUTTON_UP, PAD_BUTTON_DOWN, PAD_BUTTON_L
                                     PAD_BUTTON_RIGHT};
 static const u8 triforce_bitmask[] = {SWITCH_TEST, SWITCH_SERVICE, SWITCH_COIN};
 
-static const char* const named_buttons[] = {"A", "B", "X", "Y", "Z", "Start"};
-static const char* const metroid_named_buttons[] = { "Shoot / Select", "Jump / Cancel", "Morph Ball", "Missile", "Map", "Menu / Hint" };
-
-static const char* const prime_beams[] = { "Beam 1", "Beam 2", "Beam 3", "Beam 4" };
-static const char* const prime_visors[] = { "Visor 1", "Visor 2", "Visor 3", "Visor 4" };
-
-static const char* const named_triggers[] = {
-    // i18n: The left trigger button (labeled L on real controllers)
-    _trans("L"),
-    // i18n: The right trigger button (labeled R on real controllers)
-    _trans("R"),
-    // i18n: The left trigger button (labeled L on real controllers) used as an analog input
-    _trans("L-Analog"),
-    // i18n: The right trigger button (labeled R on real controllers) used as an analog input
-    _trans("R-Analog")};
 
 GCPad::GCPad(const unsigned int index) : m_index(index)
 {
@@ -131,12 +117,20 @@ GCPad::GCPad(const unsigned int index) : m_index(index)
 );
 
   constexpr auto gate_radius = ControlState(STICK_GATE_RADIUS) / STICK_RADIUS;
-  groups.emplace_back(m_primehack_stick =
-    new ControllerEmu::OctagonAnalogStick(_trans("Camera Control"), gate_radius));
+  groups.emplace_back(m_primehack_stick = new ControllerEmu::OctagonAnalogStick(
+                          "PrimeHack CameraStick", _trans("Camera Control"), gate_radius));
 
   m_primehack_stick->AddSetting(&m_primehack_horizontal_sensitivity, {"Horizontal Sensitivity", nullptr, nullptr, _trans("Horizontal Sensitivity")}, 45, 1, 100);
   m_primehack_stick->AddSetting(&m_primehack_vertical_sensitivity, {"Vertical Sensitivity", nullptr, nullptr, _trans("Vertical Sensitivity")}, 35, 1, 100);
+  m_primehack_stick->AddSetting(&m_primehack_gyro_enable, {"Enable Gyro", nullptr, nullptr, _trans("Enable Gyro")}, false);
   m_primehack_stick->AddInput(ControllerEmu::Translatability::Translate, _trans("Reset Camera Pitch"));
+
+  groups.emplace_back(m_primehack_gyro = new ControllerEmu::IMUGyroscope(
+                          "PrimeHack CameraGyro", _trans("Gyro Camera")));
+
+  m_primehack_gyro->AddSetting(&m_primehack_gyro_horizontal_sensitivity, {"Horizontal Sensitivity", nullptr, nullptr, _trans("Horizontal Sensitivity")}, 0.45, 0.1, 10.0);
+  m_primehack_gyro->AddSetting(&m_primehack_gyro_vertical_sensitivity, {"Vertical Sensitivity", nullptr, nullptr, _trans("Vertical Sensitivity")}, 0.3, 0.1, 10.0);
+  m_primehack_gyro->AddInput(ControllerEmu::Translatability::Translate, _trans("Activate"));
 
   groups.emplace_back(m_primehack_modes = new ControllerEmu::PrimeHackModes(_trans("PrimeHack")));
 
@@ -186,6 +180,8 @@ ControllerEmu::ControlGroup* GCPad::GetGroup(PadGroup group)
     return m_primehack_stick;
   case PadGroup::Modes:
     return m_primehack_modes;
+  case PadGroup::GyroCamera:
+    return m_primehack_gyro;
   default:
     return nullptr;
   }
@@ -392,12 +388,26 @@ void GCPad::ChangeUIPrimeHack(bool useMetroidUI)
   if (using_metroid_ui == useMetroidUI)
     return;
 
+  constexpr const char* const named_buttons[] = {
+    A_BUTTON, B_BUTTON, X_BUTTON,
+    Y_BUTTON, Z_BUTTON, START_BUTTON
+  };
+
+  constexpr const char* const metroid_named_buttons[] = {
+    _trans("Shoot / Select"), _trans("Jump / Cancel"), _trans("Morph Ball"),
+    _trans("Missile"), _trans("Map"), _trans("Menu / Hint")
+  };
+
+  constexpr const char* const named_triggers[] = {L_DIGITAL, R_DIGITAL, L_ANALOG, R_ANALOG};
+
+  constexpr const char* const prime_beams[] = {_trans("Beam 1"), _trans("Beam 2"), _trans("Beam 3"), _trans("Beam 4")};
+  constexpr const char* const prime_visors[] = {_trans("Visor 1"), _trans("Visor 2"), _trans("Visor 3"), _trans("Visor 4")};
 
   for (int i = 0; i < 6; i++)
   {
     std::string_view ui_name = useMetroidUI ? metroid_named_buttons[i] : named_buttons[i];
 
-    m_buttons->controls[i]->ui_name = _trans(ui_name);
+    m_buttons->controls[i]->ui_name = ui_name;
     m_buttons->controls[i]->display_alt = useMetroidUI;
   }
 
@@ -405,17 +415,17 @@ void GCPad::ChangeUIPrimeHack(bool useMetroidUI)
   {
     std::string_view ui_name = useMetroidUI ? prime_beams[i] : named_directions[i];
 
-    m_c_stick->controls[i]->ui_name = _trans(ui_name);
+    m_c_stick->controls[i]->ui_name = ui_name;
     m_c_stick->controls[i]->display_alt = useMetroidUI;
 
     ui_name = useMetroidUI ? prime_visors[i] : named_directions[i];
 
-    m_dpad->controls[i]->ui_name = _trans(ui_name);
+    m_dpad->controls[i]->ui_name = ui_name;
     m_dpad->controls[i]->display_alt = useMetroidUI;
   }
 
   // Controls both instances in UI for analog feedback and bind text
-  m_triggers->controls[0]->ui_name = useMetroidUI ? "L" : _trans("L");
+  m_triggers->controls[0]->ui_name = useMetroidUI ? _trans("Lock-On") : named_triggers[0];
   m_triggers->controls[0]->display_alt = useMetroidUI;
 
   using_metroid_ui = useMetroidUI;
@@ -436,6 +446,16 @@ std::tuple<double, double> GCPad::GetPrimeStickXY()
   return std::make_tuple(stick_state.x * m_primehack_horizontal_sensitivity.GetValue(), stick_state.y * -m_primehack_vertical_sensitivity.GetValue());
 }
 
+std::tuple<double, double> GCPad::GetPrimeGyroPitchYaw()
+{
+  const auto gyro_state = m_primehack_gyro->GetState().value_or(ControllerEmu::IMUGyroscope::StateData{});
+  const auto gyro_hsens = m_primehack_gyro_horizontal_sensitivity.GetValue() * (360.0 / MathUtil::TAU);
+  const auto gyro_vsens = m_primehack_gyro_vertical_sensitivity.GetValue() * (360.0 / MathUtil::TAU);
+  const auto gyro_act = (double)(m_primehack_gyro->controls[6]->GetState() > 0.5);
+
+  return std::make_tuple(gyro_state.x * gyro_vsens * gyro_act, -gyro_state.z * gyro_hsens * gyro_act);
+}
+
 bool GCPad::CheckPitchRecentre()
 {
   return m_primehack_stick->controls[5]->GetState() > 0.5;
@@ -444,6 +464,11 @@ bool GCPad::CheckPitchRecentre()
 bool GCPad::PrimeControllerMode()
 {
   return m_primehack_modes->GetSelectedDevice() == 1;
+}
+
+bool GCPad::PrimeUseGyro()
+{
+  return m_primehack_gyro_enable.GetValue();
 }
 
 void GCPad::SetPrimeMode(bool controller)

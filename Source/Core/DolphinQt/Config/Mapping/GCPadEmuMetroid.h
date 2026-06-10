@@ -19,6 +19,7 @@ public:
   InputConfig* GetConfig() override;
 
   QGroupBox* camera_control;
+  QGroupBox* gyro_control;
   QRadioButton* m_radio_mouse;
   QRadioButton* m_radio_controller;
   QPushButton* m_help_button;

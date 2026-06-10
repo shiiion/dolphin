@@ -72,7 +72,8 @@ enum class WiimoteGroup
   Misc,
   ControlStick,
   Modes,
-  AltProfileControls
+  AltProfileControls,
+  GyroCamera
 };
 
 enum class NunchukGroup;
@@ -193,9 +194,12 @@ public:
   bool IsGrappleBinded();
   bool CheckImprovedMotions();
   bool PrimeControllerMode();
+  void SetPrimeMode(bool controller);
+  bool PrimeUseGyro();
   std::tuple<bool, bool> GetBVMenuOptions();
 
   std::tuple<double, double> GetPrimeStickXY();
+  std::tuple<double, double> GetPrimeGyroPitchYaw();
   bool CheckPitchRecentre();
 
   std::tuple <double, double, bool, bool, bool, bool, bool> GetPrimeSettings();
@@ -345,6 +349,7 @@ private:
   ControllerEmu::PrimeHackAltProfile* m_primehack_altprofile_controls;
   ControllerEmu::PrimeHackModes* m_primehack_modes;
   ControllerEmu::AnalogStick* m_primehack_stick;
+  ControllerEmu::IMUGyroscope* m_primehack_gyro;
 
   ControllerEmu::SettingValue<bool> m_sideways_setting;
   ControllerEmu::SettingValue<bool> m_upright_setting;
@@ -357,6 +362,8 @@ private:
   ControllerEmu::SettingValue<double> m_primehack_cursor_sensitivity;
   ControllerEmu::SettingValue<double> m_primehack_horizontal_sensitivity;
   ControllerEmu::SettingValue<double> m_primehack_vertical_sensitivity;
+  ControllerEmu::SettingValue<double> m_primehack_gyro_horizontal_sensitivity;
+  ControllerEmu::SettingValue<double> m_primehack_gyro_vertical_sensitivity;
 
   ControllerEmu::SettingValue<bool> m_primehack_invert_y;
   ControllerEmu::SettingValue<bool> m_primehack_invert_x;
@@ -369,6 +376,7 @@ private:
   ControllerEmu::SettingValue<bool> m_primehack_scalesens;
   ControllerEmu::SettingValue<bool> m_primehack_movereticle;
   ControllerEmu::SettingValue<bool> m_primehack_remap_map_controls;
+  ControllerEmu::SettingValue<bool> m_primehack_gyro_enable;
 
   static constexpr u8 STICK_GATE_RADIUS = 0x60;
   static constexpr u8 STICK_CENTER = 0x80;

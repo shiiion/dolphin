@@ -101,30 +101,34 @@ ControllerEmu::ControlGroup* GetShinkansenGroup(int number, WiimoteEmu::Shinkans
 
 void ChangeUIPrimeHack(int number, bool useMetroidUI);
 
-bool CheckVisor(int visor_count);
-bool CheckBeam(int beam_count);
-bool CheckBeamScroll(bool direction);
-bool CheckVisorScroll(bool direction);
-bool CheckSpringBall();
-bool CheckImprovedMotions();
-bool CheckForward();
-bool CheckBack();
-bool CheckLeft();
-bool CheckRight();
-bool CheckJump();
+bool CheckVisor(int number, int visor_count);
+bool CheckBeam(int number, int beam_count);
+bool CheckBeamScroll(int number, bool direction);
+bool CheckVisorScroll(int number, bool direction);
+bool CheckSpringBall(int number);
+bool CheckImprovedMotions(int number);
+bool CheckForward(int number);
+bool CheckBack(int number);
+bool CheckLeft(int number);
+bool CheckRight(int number);
+bool CheckJump(int number);
 
-bool CheckGrapple();
-bool UseGrappleTapping();
-bool GrappleCtlBound();
-bool PrimeUseController();
+bool CheckGrapple(int number);
+bool UseGrappleTapping(int number);
+bool GrappleCtlBound(int number);
+bool PrimeUseController(int number);
 
-bool PrimeUseController();
-bool CheckPitchRecentre();
+void PrimeSetMode(int number, bool controller);
 
-std::tuple<double, double> GetPrimeStickXY();
-std::tuple<bool, bool> GetBVMenuOptions();
+bool PrimeUseGyro(int number);
 
-std::tuple<double, double, bool, bool, bool, bool, bool> PrimeSettings();
+bool CheckPitchRecentre(int number);
+
+std::tuple<double, double> GetPrimeStickXY(int number);
+std::tuple<double, double> GetPrimeGyroPitchYaw(int number);
+std::tuple<bool, bool> GetBVMenuOptions(int number);
+
+std::tuple<double, double, bool, bool, bool, bool, bool> PrimeSettings(int number);
 WiimoteSource GetSource(unsigned int index);
 }  // namespace Wiimote
 

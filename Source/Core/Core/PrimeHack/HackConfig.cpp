@@ -75,83 +75,83 @@ void EnableDefaultMods() {
 }
 
 bool CheckBeamCtl(int beam_num) {
-  return Wiimote::CheckBeam(beam_num);
+  return Wiimote::CheckBeam(0, beam_num);
 }
 
 bool CheckVisorCtl(int visor_num) {
-  return Wiimote::CheckVisor(visor_num);
+  return Wiimote::CheckVisor(0, visor_num);
 }
 
 bool CheckVisorScrollCtl(bool direction) {
-  return Wiimote::CheckVisorScroll(direction);
+  return Wiimote::CheckVisorScroll(0, direction);
 }
 
 bool CheckBeamScrollCtl(bool direction) {
-  return Wiimote::CheckBeamScroll(direction);
+  return Wiimote::CheckBeamScroll(0, direction);
 }
 
 bool CheckSpringBallCtl() {
   if (GetActiveGame() >= Game::PRIME_1_GCN) {
-    return Pad::CheckSpringBall();
+    return Pad::CheckSpringBall(0);
   } else {
-    return Wiimote::CheckSpringBall();
+    return Wiimote::CheckSpringBall(0);
   }
 }
 
 bool ImprovedMotionControls() {
-  return Wiimote::CheckImprovedMotions();
+  return Wiimote::CheckImprovedMotions(0);
 }
 
 bool CheckForward() {
   if (GetActiveGame() >= Game::PRIME_1_GCN) {
-    return Pad::CheckForward();
+    return Pad::CheckForward(0);
   } else {
-    return Wiimote::CheckForward();
+    return Wiimote::CheckForward(0);
   }
 }
 
 bool CheckBack() {
   if (GetActiveGame() >= Game::PRIME_1_GCN) {
-    return Pad::CheckBack();
+    return Pad::CheckBack(0);
   } else {
-    return Wiimote::CheckBack();
+    return Wiimote::CheckBack(0);
   }
 }
 
 bool CheckLeft() {
   if (GetActiveGame() >= Game::PRIME_1_GCN) {
-    return Pad::CheckLeft();
+    return Pad::CheckLeft(0);
   } else {
-    return Wiimote::CheckLeft();
+    return Wiimote::CheckLeft(0);
   }
 }
 
 bool CheckRight() {
   if (GetActiveGame() >= Game::PRIME_1_GCN) {
-    return Pad::CheckRight();
+    return Pad::CheckRight(0);
   } else {
-    return Wiimote::CheckRight();
+    return Wiimote::CheckRight(0);
   }
 }
 
 bool CheckJump() {
   if (GetActiveGame() >= Game::PRIME_1_GCN) {
-    return Pad::CheckJump();
+    return Pad::CheckJump(0);
   } else {
-    return Wiimote::CheckJump();
+    return Wiimote::CheckJump(0);
   }
 }
 
 bool CheckGrappleCtl() {
-  return Wiimote::CheckGrapple();
+  return Wiimote::CheckGrapple(0);
 }
 
 bool GrappleTappingMode() {
-  return Wiimote::UseGrappleTapping();
+  return Wiimote::UseGrappleTapping(0);
 }
 
 bool GrappleCtlBound() {
-  return Wiimote::GrappleCtlBound();
+  return Wiimote::GrappleCtlBound(0);
 }
 
 void SetEFBToTexture(bool toggle) {
@@ -260,10 +260,10 @@ void UpdateHackSettings() {
 
   if (GetActiveGame() >= Game::PRIME_1_GCN) {
     std::tie<double, double, bool, bool, bool>(camera, cursor, invertx, inverty, new_controls) =
-      Pad::PrimeSettings();
+      Pad::PrimeSettings(0);
   } else {
     std::tie<double, double, bool, bool, bool, bool>(camera, cursor, invertx, inverty, scale_sens, lock, new_controls) =
-      Wiimote::PrimeSettings();
+      Wiimote::PrimeSettings(0);
   }
 
   SetSensitivity((float)camera);
@@ -351,9 +351,9 @@ void SetScaleCursorSensitivity(bool scale) {
 bool CheckPitchRecentre() {
   if (ControllerMode()) {
     if (GetActiveGame() >= Game::PRIME_1_GCN) {
-      return Pad::CheckPitchRecentre();
+      return Pad::CheckPitchRecentre(0);
     } else {
-      return Wiimote::CheckPitchRecentre();
+      return Wiimote::CheckPitchRecentre(0);
     }
   }
 
@@ -366,19 +366,21 @@ bool ControllerMode() {
   }
 
   if (GetActiveGame() >= Game::PRIME_1_GCN) {
-    return Pad::PrimeUseController();
+    return Pad::PrimeUseController(0);
   } else {
-    return Wiimote::PrimeUseController();
+    return Wiimote::PrimeUseController(0);
   }
 }
 
 double GetHorizontalAxis() {
   if (GetActiveGame() >= Game::PRIME_1_GCN) {
-    if (Pad::PrimeUseController()) {
-      return std::get<0>(Pad::GetPrimeStickXY());
+    if (Pad::PrimeUseController(0)) {
+      return std::get<0>(Pad::GetPrimeStickXY(0))
+             + (Pad::PrimeUseGyro(0) ? std::get<1>(Pad::GetPrimeGyroPitchYaw(0)) : 0.0);
     }
-  } else if (Wiimote::PrimeUseController()) {
-    return std::get<0>(Wiimote::GetPrimeStickXY());
+  } else if (Wiimote::PrimeUseController(0)) {
+    return std::get<0>(Wiimote::GetPrimeStickXY(0))
+           + (Wiimote::PrimeUseGyro(0) ? std::get<1>(Wiimote::GetPrimeGyroPitchYaw(0)) : 0.0);
   }
 
   if (!Host_RendererHasFocus()) {
@@ -390,11 +392,13 @@ double GetHorizontalAxis() {
 
 double GetVerticalAxis() {
   if (GetActiveGame() >= Game::PRIME_1_GCN) {
-    if (Pad::PrimeUseController()) {
-      return std::get<1>(Pad::GetPrimeStickXY());
+    if (Pad::PrimeUseController(0)) {
+      return std::get<1>(Pad::GetPrimeStickXY(0))
+             + (Pad::PrimeUseGyro(0) ? std::get<0>(Pad::GetPrimeGyroPitchYaw(0)) : 0.0);
     }
-  } else if (Wiimote::PrimeUseController()) {
-    return std::get<1>(Wiimote::GetPrimeStickXY());
+  } else if (Wiimote::PrimeUseController(0)) {
+    return std::get<1>(Wiimote::GetPrimeStickXY(0))
+           + (Wiimote::PrimeUseGyro(0) ? std::get<0>(Wiimote::GetPrimeGyroPitchYaw(0)) : 0.0);
   }
 
   if (!Host_RendererHasFocus()) {
@@ -417,7 +421,7 @@ CameraLock GetLockCamera() {
 }
 
 std::tuple<bool, bool> GetMenuOptions() {
-  return Wiimote::GetBVMenuOptions();
+  return Wiimote::GetBVMenuOptions(0);
 }
 
 AddressDB* GetAddressDB() {

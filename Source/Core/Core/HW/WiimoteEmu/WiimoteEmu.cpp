@@ -74,16 +74,6 @@ static const u16 metroid_button_bitmasks[] = {
     Wiimote::BUTTON_A,     Wiimote::BUTTON_B,    Wiimote::BUTTON_ONE, Wiimote::BUTTON_TWO,
     Wiimote::BUTTON_MINUS, Wiimote::BUTTON_PLUS, Wiimote::PAD_DOWN};
 
-constexpr std::array<std::string_view, 7> named_buttons{
-    "A", "B", "1", "2", "-", "+", "Home",
-};
-
-constexpr std::array<std::string_view, 7> metroid_named_buttons{
-  "Shoot / Select", "Jump / Cancel", "Map", "Menu / Hint", "Visor Menu \nMenu -", "Beam Menu \nHypermode \nMenu +", "Missile",
-};
-
-static const char* const prime_beams[] = {"Beam 1", "Beam 2", "Beam 3", "Beam 4"};
-static const char* const prime_visors[] = {"Visor 1", "Visor 2", "Visor 3", "Visor 4"};
 
 void Wiimote::Reset()
 {
@@ -328,6 +318,9 @@ Wiimote::Wiimote(const unsigned int index) : m_index(index), m_bt_device_index(i
   m_options->AddSetting(&m_sideways_setting,
                         {SIDEWAYS_OPTION, nullptr, nullptr, _trans("Sideways Wii Remote")}, false);
 
+  constexpr const char* const prime_beams[] = {_trans("Beam 1"), _trans("Beam 2"), _trans("Beam 3"), _trans("Beam 4")};
+  constexpr const char* const prime_visors[] = {_trans("Visor 1"), _trans("Visor 2"), _trans("Visor 3"), _trans("Visor 4")};
+
   // Adding PrimeHack Buttons
   groups.emplace_back(m_primehack_beams = new ControllerEmu::ControlGroup(_trans("PrimeHack"), ControllerEmu::GroupType::Beams));
   for (const char* prime_button : prime_beams)
@@ -389,12 +382,20 @@ Wiimote::Wiimote(const unsigned int index) : m_index(index), m_bt_device_index(i
       {"Cursor Sensitivity", nullptr, nullptr, _trans("Cursor Sensitivity")}, 15, 1, 100);
 
   constexpr auto gate_radius = ControlState(STICK_GATE_RADIUS) / STICK_RADIUS;
-  groups.emplace_back(m_primehack_stick =
-    new ControllerEmu::OctagonAnalogStick(_trans("Camera Control"), gate_radius));
+  groups.emplace_back(m_primehack_stick = new ControllerEmu::OctagonAnalogStick(
+                          "PrimeHack CameraStick", _trans("Camera Control"), gate_radius));
 
   m_primehack_stick->AddSetting(&m_primehack_horizontal_sensitivity, {"Horizontal Sensitivity", nullptr, nullptr, _trans("Horizontal Sensitivity")}, 45, 1, 100);
   m_primehack_stick->AddSetting(&m_primehack_vertical_sensitivity, {"Vertical Sensitivity", nullptr, nullptr, _trans("Vertical Sensitivity")}, 35, 1, 100);
+  m_primehack_stick->AddSetting(&m_primehack_gyro_enable, {"Enable Gyro", nullptr, nullptr, _trans("Enable Gyro")}, false);
   m_primehack_stick->AddInput(Translatability::Translate, _trans("Reset Camera Pitch"));
+
+  groups.emplace_back(m_primehack_gyro = new ControllerEmu::IMUGyroscope(
+                          "PrimeHack CameraGyro", _trans("Gyro Camera")));
+
+  m_primehack_gyro->AddSetting(&m_primehack_gyro_horizontal_sensitivity, {"Horizontal Sensitivity", nullptr, nullptr, _trans("Horizontal Sensitivity")}, 0.45, 0.1, 10.0);
+  m_primehack_gyro->AddSetting(&m_primehack_gyro_vertical_sensitivity, {"Vertical Sensitivity", nullptr, nullptr, _trans("Vertical Sensitivity")}, 0.3, 0.1, 10.0);
+  m_primehack_gyro->AddInput(ControllerEmu::Translatability::Translate, _trans("Activate"));
 
   groups.emplace_back(m_primehack_modes = new ControllerEmu::PrimeHackModes(_trans("PrimeHack")));
 
@@ -481,6 +482,8 @@ ControllerEmu::ControlGroup* Wiimote::GetWiimoteGroup(WiimoteGroup group) const
     return m_primehack_modes;
   case WiimoteGroup::AltProfileControls:
     return m_primehack_altprofile_controls;
+  case WiimoteGroup::GyroCamera:
+    return m_primehack_gyro;
   default:
     ASSERT(false);
     return nullptr;
@@ -1175,6 +1178,19 @@ void Wiimote::ChangeUIPrimeHack(bool useMetroidUI)
   // Swap D-Pad Down (Missile) and HOME
   std::swap(m_buttons->controls[6], m_dpad->controls[1]);
 
+  constexpr const char* named_buttons[] = {
+    A_BUTTON, B_BUTTON, ONE_BUTTON, TWO_BUTTON, MINUS_BUTTON, PLUS_BUTTON, HOME_BUTTON
+  };
+  constexpr const char* metroid_named_buttons[] = {
+    _trans("Shoot / Select"),
+    _trans("Jump / Cancel"),
+    _trans("Map"),
+    _trans("Menu / Hint"),
+    _trans("Visor Menu \nMenu -"),
+    _trans("Beam Menu \nHypermode \nMenu +"),
+    _trans("Missile")
+  };
+
   for (int i = 0; i < 7; i++)
   {
     std::string_view ui_name = useMetroidUI ? metroid_named_buttons[i] : named_buttons[i];
@@ -1182,13 +1198,13 @@ void Wiimote::ChangeUIPrimeHack(bool useMetroidUI)
     if (ui_name == "Home")
       ui_name = "HOME";
 
-    m_buttons->controls[i]->ui_name = _trans(ui_name);
+    m_buttons->controls[i]->ui_name = ui_name;
     m_buttons->controls[i]->display_alt = useMetroidUI;
   }
 
   if (!useMetroidUI) {
     // Make sure to revert the D-Pad name
-    m_dpad->controls[1]->ui_name = _trans(named_directions[1]);
+    m_dpad->controls[1]->ui_name = named_directions[1];
     m_dpad->controls[1]->display_alt = false;
   }
 
@@ -1254,6 +1270,16 @@ std::tuple<double, double> Wiimote::GetPrimeStickXY()
   return std::make_tuple(stick_state.x * m_primehack_horizontal_sensitivity.GetValue(), stick_state.y * -m_primehack_vertical_sensitivity.GetValue());
 }
 
+std::tuple<double, double> Wiimote::GetPrimeGyroPitchYaw()
+{
+  const auto gyro_state = m_primehack_gyro->GetState().value_or(ControllerEmu::IMUGyroscope::StateData{});
+  const auto gyro_hsens = m_primehack_gyro_horizontal_sensitivity.GetValue() * (360.0 / MathUtil::TAU);
+  const auto gyro_vsens = m_primehack_gyro_vertical_sensitivity.GetValue() * (360.0 / MathUtil::TAU);
+  const auto gyro_act = (double)(m_primehack_gyro->controls[6]->GetState() > 0.5);
+
+  return std::make_tuple(gyro_state.x * gyro_vsens * gyro_act, -gyro_state.z * gyro_hsens * gyro_act);
+}
+
 bool Wiimote::CheckPitchRecentre()
 {
   return m_primehack_stick->controls[5]->GetState() > 0.5;
@@ -1267,6 +1293,16 @@ std::tuple<bool, bool> Wiimote::GetBVMenuOptions()
 bool Wiimote::PrimeControllerMode()
 {
   return m_primehack_modes->GetSelectedDevice() == 1;
+}
+
+void Wiimote::SetPrimeMode(bool controller)
+{
+  m_primehack_modes->SetSelectedDevice(controller ? 1 : 0);
+}
+
+bool Wiimote::PrimeUseGyro()
+{
+  return m_primehack_gyro_enable.GetValue();
 }
 
 std::tuple<double, double, bool, bool, bool, bool, bool> Wiimote::GetPrimeSettings()
