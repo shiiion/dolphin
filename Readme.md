@@ -69,6 +69,10 @@ git submodule update --init --recursive
 
 ### macOS Build Steps:
 
+> **Building on a current macOS (Xcode 26+, CMake 4+)?** The plain steps below
+> may need extra flags on a modern toolchain. See
+> [`BUILDING_MACOS_MODERN.md`](BUILDING_MACOS_MODERN.md) (Español + English).
+
 A binary supporting a single architecture can be built using the following steps: 
 
 1. `mkdir build`
