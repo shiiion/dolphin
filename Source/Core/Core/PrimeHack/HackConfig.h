@@ -25,6 +25,7 @@ bool CheckBack();
 bool CheckLeft();
 bool CheckRight();
 bool CheckJump();
+bool CheckLockOn();
 
 bool CheckGrappleCtl();
 bool GrappleTappingMode();

@@ -142,6 +142,14 @@ bool CheckJump() {
   }
 }
 
+bool CheckLockOn() {
+  if (GetActiveGame() >= Game::PRIME_1_GCN) {
+    return Pad::CheckLockOn();
+  } else {
+    return Wiimote::CheckLockOn();
+  }
+}
+
 bool CheckGrappleCtl() {
   return Wiimote::CheckGrapple();
 }

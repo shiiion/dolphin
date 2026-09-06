@@ -5,7 +5,10 @@
 #include "Core/PrimeHack/GuestAllocator.h"
 #include "Core/PrimeHack/Mods/StrafeControlPatches.h"
 #include "Core/PrimeHack/PrimeUtils.h"
+#include "Core/PrimeHack/HackConfig.h"
+#include "Core/PrimeHack/Mods/ModHeaders.h"
 #include "Core/System.h"
+#include "Core/HW/Wiimote.h"
 
 #include <cmath>
 
@@ -635,9 +638,22 @@ void FpsControls::run_mod_mp3(Game active_game, Region active_region) {
 
   swap_alt_profiles(read32(ball_state), read32(menu_state), read32(screw_state));
 
-  // Handles menu screen cursor
-  LOOKUP(cursor_dlg_enabled);
-  if (read8(cursor_dlg_enabled)) {
+  // handles menu screen cursor
+  LOOKUP(web_interface_list);
+  const u32 ui_depth = read32(web_interface_list);
+  const u32 web_interface = read32(web_interface_list + ui_depth * sizeof(u32));
+  if (web_interface != 0) {
+    const u32 web_interface_current_page_id = read32(web_interface + 0xa4);
+    const u32 map_page_id = 0x4c;
+    if (web_interface_current_page_id == map_page_id && prime::NewMapControlsEnabled() && !prime::CheckLockOn()) {
+      prime::EnableMod<MapController>();
+      write32(0x3f4ccccd, cursor + 0x9c);   // x: Button 9 [planet]
+      write32(0x00000000, cursor + 0x15c);  // y: Button 9 [planet]
+      return;
+    }
+    if (prime::NewMapControlsEnabled()) {
+      prime::DisableMod<MapController>();
+    }
     mp3_handle_cursor(false, false);
     return;
   }

@@ -241,6 +241,7 @@ void init_db(AddressDB& addr_db) {
   addr_db.register_address(Game::PRIME_3, "world_id_base", 0x8066fcfc, 0x8067357c);
   addr_db.register_address(Game::PRIME_3, "rso_list_base", 0x805c9a5c, 0x805ccec4);
   addr_db.register_address(Game::PRIME_3, "xf_offset", 0x3c, 0x3c);
+  addr_db.register_address(Game::PRIME_3, "web_interface_list", 0x805c8d74, 0x805cc1d4); // first entry of this list is an index pointing to the list entry currently used. If zero then no CWebInterface is currently used. The list is used to organize stacked UI Elements.
 
   addr_db.register_dynamic_address(Game::PRIME_3, "object_list", "state_manager", {rp0, mrp1(0x1010), rp0});
   addr_db.register_dynamic_address(Game::PRIME_3, "area_id", "state_manager", {rp0, mrp1(0x2150)});
@@ -294,6 +295,7 @@ void init_db(AddressDB& addr_db) {
   addr_db.register_address(Game::PRIME_3_STANDALONE, "world_id_base", 0x8067dc0c, 0x80680234);
   addr_db.register_address(Game::PRIME_3_STANDALONE, "rso_list_base", 0x805c7dac, 0x805ca3c4);
   addr_db.register_address(Game::PRIME_3_STANDALONE, "xf_offset", 0x3c, 0x3c);
+  addr_db.register_address(Game::PRIME_3_STANDALONE, "web_interface_list", 0x805c70c4, 0x805c96dc); // first entry of this list is an index pointing to the list entry currently used. If zero then no CWebInterface is currently used. The list is used to organize stacked UI Elements.
 
   addr_db.register_dynamic_address(Game::PRIME_3_STANDALONE, "object_list", "state_manager", {rp0, mrp1(0x1010), rp0});
   addr_db.register_dynamic_address(Game::PRIME_3_STANDALONE, "area_id", "state_manager", {rp0, mrp1(0x2150)});

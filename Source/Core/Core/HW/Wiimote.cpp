@@ -287,6 +287,13 @@ bool CheckJump() {
   return wiimote->groups[0].get()->controls[1]->control_ref->State() > 0.5;
 }
 
+bool CheckLockOn() {
+  WiimoteEmu::Wiimote* wiimote = static_cast<WiimoteEmu::Wiimote*>(s_config.GetController(0));
+
+  return wiimote->GetNunchukGroup(WiimoteEmu::NunchukGroup::Buttons)->
+      controls[1].get()->control_ref->State() > 0.5;
+}
+
 bool CheckGrapple() {
   WiimoteEmu::Wiimote* wiimote = static_cast<WiimoteEmu::Wiimote*>(s_config.GetController(0));
 
